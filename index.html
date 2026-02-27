@@ -3308,6 +3308,9 @@ tr:hover td{background:var(--green-pale);}
   </div>
 </div>
 <script>
+// ── Anthropic API Key ─────────────────────────────────────────────
+const ANTHROPIC_API_KEY = "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";
+
 // ── Mobile nav toggle ────────────────────────────────────────────
 function toggleNav() {
   const nav     = document.getElementById('main-nav');
@@ -6626,7 +6629,7 @@ async function cotFetchTC() {
   if (btn) { btn.textContent = '...'; btn.disabled = true; }
   try {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-dangerous-direct-browser-access': 'true' },
       body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:60,
         messages:[{ role:'user', content:'Current GTQ to MXN exchange rate today, single decimal number only, no text' }]})
     });
@@ -7256,7 +7259,7 @@ async function antFetchTC() {
   const btn = document.querySelector('button[onclick="antFetchTC()"]');
   if (btn) { btn.textContent='...'; btn.disabled=true; }
   try {
-    const r = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+    const r = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_API_KEY,'anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:60,
         messages:[{role:'user',content:'Current GTQ to MXN exchange rate as a single decimal number only'}]})});
     const d = await r.json();
@@ -7445,7 +7448,7 @@ async function pagoFetchTC() {
   const btn = document.querySelector('button[onclick="pagoFetchTC()"]');
   if (btn) { btn.textContent='...'; btn.disabled=true; }
   try {
-    const r = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+    const r = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_API_KEY,'anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:60,
         messages:[{role:'user',content:'Current GTQ to MXN exchange rate as a single decimal number only'}]})});
     const d = await r.json();
@@ -7646,7 +7649,7 @@ function vgtLoadXML(input) {
       const prodDB = DB.iproductos.map(p => p.nombre + ' [id:' + p.id + ']').join(', ');
       const schema = '{"numero_autorizacion":"","serie":"","numero_dte":"","fecha_emision":"","comprador_nit":"","comprador_nombre":"","total_gtq":0,"total_iva":0,"productos":[{"descripcion":"","cantidad":0,"precio_unitario_con_iva":0,"total":0,"producto_id_ajua":""}]}';
       const r = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-dangerous-direct-browser-access': 'true' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514', max_tokens: 1000,
           messages: [{ role: 'user', content:
@@ -7969,7 +7972,7 @@ async function vintFetchTC() {
   if (btn) { btn.textContent='...'; btn.disabled=true; }
   try {
     const r = await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST', headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_API_KEY,'anthropic-dangerous-direct-browser-access':'true'},
       body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:60,
         messages:[{role:'user',content:'MXN to GTQ exchange rate today as a single decimal number only, no text'}]})
     });
@@ -8631,6 +8634,8 @@ async function salReadEdiwinAI() {
       method:'POST',
       headers:{
         'Content-Type':'application/json',
+        'x-api-key':ANTHROPIC_API_KEY,
+        'anthropic-dangerous-direct-browser-access':'true',
         'anthropic-beta': 'pdfs-2024-09-25'
       },
       body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:2000,
@@ -8812,7 +8817,7 @@ async function salReadAlbaranAI() {
     const presDB    = DB.ipresentaciones.map(pr=>pr.nombre+' [id:'+pr.id+'] '+pr.lbsBulto+'lbs').join(', ');
     const schema    = '{"orden_compra":"","numero_entrega":"","planta":"","fecha":"","productos":[{"descripcion":"","cantidad":0,"precio_unitario":0,"total":0,"producto_id_ajua":"","presentacion_id_ajua":""}],"total_general":0}';
     const r = await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',headers:{'Content-Type':'application/json'},
+      method:'POST',headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_API_KEY,'anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,
         messages:[{role:'user',content:[
           {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
