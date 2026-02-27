@@ -3241,7 +3241,7 @@ tr:hover td{background:var(--green-pale);}
 <div id="toast"></div>
 
 <!-- Firebase Config Modal (shown on first run) -->
-<div id="fb-config-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;">
+<div id="fb-config-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;">
   <div style="background:var(--s1);border-radius:14px;padding:28px;max-width:480px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.4);">
     <div style="font-family:var(--fh);font-size:1.2rem;font-weight:800;color:var(--green-deep);margin-bottom:6px;">☁️ Conectar a Firebase</div>
     <div style="font-size:.8rem;color:var(--muted);margin-bottom:18px;">Pega aquí tu configuración de Firebase para activar la base de datos en la nube. Los datos existentes se subirán automáticamente.</div>
@@ -3277,7 +3277,13 @@ function fbSaveConfig() {
     toast('⚠ Completa API Key y Project ID', true); return;
   }
   localStorage.setItem(FB_CONFIG_KEY, JSON.stringify(cfg));
-  document.getElementById('fb-config-modal').style.display = 'none';
+  // Double-verify it saved correctly
+  const verify = localStorage.getItem(FB_CONFIG_KEY);
+  if (!verify) {
+    toast('⚠ Error guardando configuración — intenta de nuevo', true); return;
+  }
+  const modal = document.getElementById('fb-config-modal');
+  if (modal) modal.style.display = 'none';
   toast('⚙ Conectando a Firebase...');
   initFirebase(cfg);
 }
@@ -3292,7 +3298,6 @@ function fbSkipConfig() {
 function fbCheckConfig() {
   const saved = localStorage.getItem(FB_CONFIG_KEY);
   if (!saved) {
-    // First time — show config modal
     document.getElementById('fb-config-modal').style.display = 'flex';
     return;
   }
@@ -3302,6 +3307,11 @@ function fbCheckConfig() {
   }
   try {
     const cfg = JSON.parse(saved);
+    // Validate config has required fields before trying to connect
+    if (!cfg.apiKey || !cfg.projectId) {
+      document.getElementById('fb-config-modal').style.display = 'flex';
+      return;
+    }
     initFirebase(cfg);
   } catch(e) {
     fbShowStatus('offline');
