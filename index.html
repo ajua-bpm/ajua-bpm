@@ -3296,18 +3296,32 @@ function fbSkipConfig() {
 }
 
 function fbCheckConfig() {
+  // ── Credenciales Firebase hardcodeadas ─────────────────────────
+  // Los empleados nunca necesitan configurar nada
+  const FIREBASE_CONFIG = {
+    apiKey:            "AIzaSyCbYbUyMgNxcmkawV3vtOieUT-Hdgr08iY",
+    authDomain:        "ajuabmp.firebaseapp.com",
+    projectId:         "ajuabmp",
+    appId:             "1:681963417089:web:96b3b75e8d995b0e501a00",
+    storageBucket:     "ajuabmp.firebasestorage.app",
+    messagingSenderId: "681963417089",
+  };
+  // Guardar en localStorage para compatibilidad
+  localStorage.setItem(FB_CONFIG_KEY, JSON.stringify(FIREBASE_CONFIG));
+  initFirebase(FIREBASE_CONFIG);
+  // Ocultar modal por si acaso
+  const modal = document.getElementById('fb-config-modal');
+  if (modal) modal.style.display = 'none';
+  return;
+  // (código legacy abajo — nunca se ejecuta)
   const saved = localStorage.getItem(FB_CONFIG_KEY);
   if (!saved) {
     document.getElementById('fb-config-modal').style.display = 'flex';
     return;
   }
-  if (saved === 'skip') {
-    fbShowStatus('config');
-    return;
-  }
+  if (saved === 'skip') { fbShowStatus('config'); return; }
   try {
     const cfg = JSON.parse(saved);
-    // Validate config has required fields before trying to connect
     if (!cfg.apiKey || !cfg.projectId) {
       document.getElementById('fb-config-modal').style.display = 'flex';
       return;
