@@ -612,10 +612,57 @@ tr:hover td{background:var(--green-pale);}
 /* ─── RESPONSIVE ──────────────────────────────────── */
 @media(max-width:768px){
   .app{grid-template-columns:1fr;grid-template-rows:56px 1fr;}
-  nav{display:none;}
+  nav{
+    display:flex;
+    position:fixed;
+    top:0; left:-280px;
+    width:280px;
+    height:100dvh;
+    z-index:2000;
+    transition:left .25s ease;
+    box-shadow:4px 0 24px rgba(0,0,0,.35);
+    padding-top:60px;
+  }
+  nav.open{left:0;}
+  .nav-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.45);
+    z-index:1999;
+  }
+  .nav-overlay.open{display:block;}
+  .hamburger{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:40px; height:40px;
+    background:rgba(255,255,255,.15);
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    margin-right:8px;
+    font-size:1.3rem;
+    color:var(--cream);
+    flex-shrink:0;
+  }
+  header{
+    display:flex;
+    align-items:center;
+    padding:0 12px;
+  }
+  .logo{font-size:.95rem;}
   .stats{grid-template-columns:repeat(2,1fr);}
   .g3,.g4,.g5{grid-template-columns:1fr;}
-  main{padding:14px;}
+  main{padding:12px 10px;}
+  .card{padding:14px 12px;}
+  .fgrid.g3,.fgrid.g2{grid-template-columns:1fr;}
+  table{font-size:.72rem;}
+  .btn{font-size:.72rem;padding:7px 10px;}
+}
+@media(min-width:769px){
+  .hamburger{display:none;}
+  .nav-overlay{display:none!important;}
 }
 </style>
 
@@ -694,6 +741,7 @@ tr:hover td{background:var(--green-pale);}
 </div>
 <div class="app">
 <header>
+<button class="hamburger" onclick="toggleNav()" id="hamburger-btn">☰</button>
 <div class="logo">AJÚA <em>·</em> BPM Control</div>
 <div class="hright">
 <span class="hbadge">AGROINDUSTRIA</span>
@@ -701,7 +749,8 @@ tr:hover td{background:var(--green-pale);}
 <span id="hclock">--:--:--</span>
 </div>
 </header>
-<nav>
+<div class="nav-overlay" id="nav-overlay" onclick="toggleNav()"></div>
+<nav id="main-nav">
 <div class="ns">General</div>
 <div class="ni active" onclick="show('dashboard',this)"><span class="ico">⬛</span>Dashboard</div>
 <div class="ns">1 · Transporte</div>
@@ -3259,6 +3308,29 @@ tr:hover td{background:var(--green-pale);}
   </div>
 </div>
 <script>
+// ── Mobile nav toggle ────────────────────────────────────────────
+function toggleNav() {
+  const nav     = document.getElementById('main-nav');
+  const overlay = document.getElementById('nav-overlay');
+  const btn     = document.getElementById('hamburger-btn');
+  if (!nav) return;
+  const isOpen = nav.classList.contains('open');
+  nav.classList.toggle('open', !isOpen);
+  if (overlay) overlay.classList.toggle('open', !isOpen);
+  if (btn) btn.textContent = isOpen ? '☰' : '✕';
+}
+
+// Close nav when a menu item is clicked (mobile)
+function closeNavOnMobile() {
+  if (window.innerWidth > 768) return;
+  const nav     = document.getElementById('main-nav');
+  const overlay = document.getElementById('nav-overlay');
+  const btn     = document.getElementById('hamburger-btn');
+  if (nav) nav.classList.remove('open');
+  if (overlay) overlay.classList.remove('open');
+  if (btn) btn.textContent = '☰';
+}
+
 // ══════════════════════════════════════════════════════════════════
 // FIREBASE CONFIG & INIT
 // ══════════════════════════════════════════════════════════════════
@@ -4357,7 +4429,7 @@ function tick(){
 }
 setInterval(tick,1000);tick();
 
-function show(id,el){
+function show(id,el){closeNavOnMobile();
   if (AUTH_SESSION && id !== 'dashboard' && id !== 'usuarios') {
     if (!authCanAccess(id)) {
       toast('⚠ No tienes acceso a este módulo', true); return;
