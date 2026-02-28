@@ -5920,13 +5920,10 @@ const AUTH_ROLE_DEFAULTS = {
 // ── Ensure default admin exists ───────────────────────────────────
 function authEnsureDB() {
   if (!DB.usuarios) DB.usuarios = [];
-  const ver = parseInt(localStorage.getItem(AUTH_VER_KEY)||'0');
-  if (ver >= AUTH_VERSION && DB.usuarios.length > 0) return;
 
-  // Check if Admin exists, create if not
-  const hasAdmin = DB.usuarios.some(u => u.rol === 'superadmin');
-  if (!hasAdmin) {
-    DB.usuarios.unshift({
+  // Only create default admin if there are ZERO users
+  if (DB.usuarios.length === 0) {
+    DB.usuarios.push({
       id:      'default-admin',
       nombre:  'Admin',
       clave:   'admin123',
@@ -5936,19 +5933,22 @@ function authEnsureDB() {
       ts:      new Date().toISOString(),
     });
     save();
+    return;
   }
 
-  // Ensure all existing admin/superadmin users have all modules
+  // Patch: ensure fields exist on existing users without overwriting data
+  let changed = false;
   DB.usuarios.forEach(u => {
-    if (u.rol === 'superadmin' || u.rol === 'admin') {
-      u.modulos = AUTH_ALL_MODULES;
+    if (!u.modulos) {
+      u.modulos = (u.rol === 'superadmin' || u.rol === 'admin')
+        ? AUTH_ALL_MODULES
+        : (AUTH_ROLE_DEFAULTS[u.rol] || []);
+      changed = true;
     }
-    if (!u.modulos) u.modulos = AUTH_ROLE_DEFAULTS[u.rol] || [];
-    if (u.activo === undefined) u.activo = true;
+    if (u.activo === undefined) { u.activo = true; changed = true; }
   });
-
+  if (changed) save();
   localStorage.setItem(AUTH_VER_KEY, String(AUTH_VERSION));
-  save();
 }
 
 // ── Session ───────────────────────────────────────────────────────
@@ -13390,7 +13390,7 @@ function limpiarTodo() {
   save();
   authEnsureDB();
   renderAll();
-  toast('✓ Base completamente limpiada — usuario Admin / admin123');
+  toast('✓ Base completamente limpiada — inicia sesión con tus credenciales');
 }
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -13410,8 +13410,7 @@ window.addEventListener('DOMContentLoaded', () => {
       hint.style.display = 'block';
       hint.style.background = 'rgba(0,217,139,.08)';
       hint.style.borderColor = 'rgba(0,217,139,.3)';
-      hint.style.color = 'var(--acc)';
-      hint.textContent = 'Primera vez: usuario "Admin", clave "admin123"';
+      // No hint shown - contact administrator for credentials
     }
   }
 });
