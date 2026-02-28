@@ -6065,7 +6065,7 @@ function testRefresh() {
           <span style="color:${u.activo!==false?'#00ff88':'#ff6b6b'};">●</span>
           <span style="color:#fff;margin:0 6px;">${u.nombre}</span>
           <span style="color:#888;">${u.rol}</span>
-          <span style="color:#555;margin-left:6px;">clave:${u.clave||'—'}</span>
+          <span style="color:#555;margin-left:6px;">clave:${u.claveHash||u.clave||'—'}</span>
         </div>`
       ).join('');
     }
@@ -6086,7 +6086,8 @@ function testLogin() {
 
   const user = (DB.usuarios||[]).find(u =>
     u.nombre.toLowerCase() === nombre.toLowerCase() &&
-    u.clave === clave && u.activo !== false
+    (u.clave === clave || u.claveHash === clave) &&
+    u.activo !== false
   );
   if (!user) {
     const all = (DB.usuarios||[]).map(u => u.nombre + '(' + u.clave + ')').join(', ');
@@ -6280,7 +6281,7 @@ function authDoLogin(nombre, clave) {
 
   const user = (DB.usuarios||[]).find(u =>
     u.nombre.toLowerCase() === nombre.toLowerCase() &&
-    u.clave === clave &&
+    (u.clave === clave || u.claveHash === clave) &&
     u.activo !== false
   );
 
@@ -6374,7 +6375,7 @@ function saveUsuario() {
     const u = DB.usuarios.find(u => u.id === id);
     if (u) {
       u.nombre  = nombre;
-      if (clave) u.clave = clave;
+      if (clave) { u.clave = clave; u.claveHash = clave; }
       u.rol     = rol;
       u.modulos = modulos;
     }
@@ -6384,13 +6385,14 @@ function saveUsuario() {
       toast('⚠ Ya existe un usuario con ese nombre', true); return;
     }
     DB.usuarios.push({
-      id:      uid(),
+      id:        uid(),
       nombre,
       clave,
+      claveHash: clave,
       rol,
       modulos,
-      activo:  true,
-      ts:      new Date().toISOString(),
+      activo:    true,
+      ts:        new Date().toISOString(),
     });
   }
 
