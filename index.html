@@ -685,7 +685,7 @@ tr:hover td{background:var(--green-pale);}
     background:rgba(253,252,235,.95);border:none;border-radius:16px;
     padding:44px 40px;width:100%;max-width:380px;
     box-shadow:0 20px 60px rgba(0,0,0,.35);
-  ">
+  " id="login-card">
 <div style="text-align:center;margin-bottom:28px;">
 <div style="font-size:2rem;margin-bottom:6px;">🌿</div>
 <div style="font-family:var(--fh);font-size:1.3rem;font-weight:700;color:var(--acc);">AJÚA</div>
@@ -5882,6 +5882,354 @@ tr:hover td{background:var(--green-pale);}
   </div>
 </div>
 <script>
+// ══════════════════════════════════════════════════════════════════
+// SISTEMA DE AUTENTICACIÓN Y USUARIOS
+// ══════════════════════════════════════════════════════════════════
+
+const AUTH_VERSION   = 6;
+const AUTH_SESS_KEY  = 'ajua_session_v6';
+const AUTH_VER_KEY   = 'ajua_auth_ver';
+
+let AUTH_SESSION = null; // { id, nombre, rol, modulos }
+
+const AUTH_ROLES = {
+  superadmin: 'Super Admin',
+  admin:      'Administrador',
+  supervisor: 'Supervisor',
+  operador:   'Operador',
+};
+
+const AUTH_ALL_MODULES = [
+  'dashboard','limptrans','desptrans','limpbodega','fumigacion','roedores',
+  'capacitacion','enfermos','acceso-lavado','visitas','vidrioplas','basculas',
+  'lavprod','inv-stock','inv-entrada','inv-cotizador','maquila','inv-salida',
+  'ventas-gt','ventas-int','reporte','inv-trazabilidad','inv-config',
+  'proveedores','pedidos-walmart','usuarios',
+];
+
+// Modules unlocked by role by default
+const AUTH_ROLE_DEFAULTS = {
+  superadmin: AUTH_ALL_MODULES,
+  admin:      AUTH_ALL_MODULES,
+  supervisor: AUTH_ALL_MODULES.filter(m => m !== 'usuarios'),
+  operador:   ['dashboard','limptrans','desptrans','limpbodega','roedores',
+               'capacitacion','enfermos','acceso-lavado','visitas','vidrioplas',
+               'basculas','lavprod'],
+};
+
+// ── Ensure default admin exists ───────────────────────────────────
+function authEnsureDB() {
+  if (!DB.usuarios) DB.usuarios = [];
+  const ver = parseInt(localStorage.getItem(AUTH_VER_KEY)||'0');
+  if (ver >= AUTH_VERSION && DB.usuarios.length > 0) return;
+
+  // Check if Admin exists, create if not
+  const hasAdmin = DB.usuarios.some(u => u.rol === 'superadmin');
+  if (!hasAdmin) {
+    DB.usuarios.unshift({
+      id:      'default-admin',
+      nombre:  'Admin',
+      clave:   'admin123',
+      rol:     'superadmin',
+      modulos: AUTH_ALL_MODULES,
+      activo:  true,
+      ts:      new Date().toISOString(),
+    });
+    save();
+  }
+
+  // Ensure all existing admin/superadmin users have all modules
+  DB.usuarios.forEach(u => {
+    if (u.rol === 'superadmin' || u.rol === 'admin') {
+      u.modulos = AUTH_ALL_MODULES;
+    }
+    if (!u.modulos) u.modulos = AUTH_ROLE_DEFAULTS[u.rol] || [];
+    if (u.activo === undefined) u.activo = true;
+  });
+
+  localStorage.setItem(AUTH_VER_KEY, String(AUTH_VERSION));
+  save();
+}
+
+// ── Session ───────────────────────────────────────────────────────
+function authResumeSession() {
+  try {
+    const raw = sessionStorage.getItem(AUTH_SESS_KEY);
+    if (!raw) return false;
+    const sess = JSON.parse(raw);
+    // Re-validate against DB
+    const user = (DB.usuarios||[]).find(u => u.id === sess.id && u.activo !== false);
+    if (!user) return false;
+    AUTH_SESSION = { id: user.id, nombre: user.nombre, rol: user.rol, modulos: user.modulos || [] };
+    authApplySession();
+    return true;
+  } catch(e) { return false; }
+}
+
+function authApplySession() {
+  if (!AUTH_SESSION) return;
+  // Hide login screen
+  const ls = document.getElementById('login-screen');
+  if (ls) ls.style.display = 'none';
+  // Update header
+  const nameEl = document.getElementById('auth-user-name');
+  const roleEl = document.getElementById('auth-user-role');
+  if (nameEl) nameEl.textContent = AUTH_SESSION.nombre;
+  if (roleEl) roleEl.textContent = AUTH_ROLES[AUTH_SESSION.rol] || AUTH_SESSION.rol;
+  // Filter nav
+  authFilterNav();
+}
+
+function authFilterNav() {
+  if (!AUTH_SESSION) return;
+  const isSuperOrAdmin = AUTH_SESSION.rol === 'superadmin' || AUTH_SESSION.rol === 'admin';
+  if (isSuperOrAdmin) return; // See everything
+
+  // Hide nav items user can't access
+  document.querySelectorAll('[data-module]').forEach(el => {
+    const mod = el.getAttribute('data-module');
+    const canAccess = AUTH_SESSION.modulos.includes(mod);
+    el.style.display = canAccess ? '' : 'none';
+  });
+}
+
+function authCanAccess(moduleId) {
+  if (!AUTH_SESSION) return false;
+  if (AUTH_SESSION.rol === 'superadmin' || AUTH_SESSION.rol === 'admin') return true;
+  return (AUTH_SESSION.modulos || []).includes(moduleId);
+}
+
+// ── Login / Logout ────────────────────────────────────────────────
+function authLogin() {
+  const nombre = (document.getElementById('login-user')?.value || '').trim();
+  const clave  = (document.getElementById('login-pass')?.value || '').trim();
+  const errEl  = document.getElementById('login-err');
+
+  if (!nombre || !clave) {
+    if (errEl) { errEl.style.display='block'; errEl.style.background='rgba(255,56,88,.08)'; errEl.style.borderColor='rgba(255,56,88,.3)'; errEl.style.color='var(--danger)'; errEl.textContent='Ingresa usuario y clave'; }
+    return;
+  }
+
+  const user = (DB.usuarios||[]).find(u =>
+    u.nombre.toLowerCase() === nombre.toLowerCase() &&
+    u.clave === clave &&
+    u.activo !== false
+  );
+
+  if (!user) {
+    if (errEl) { errEl.style.display='block'; errEl.style.background='rgba(255,56,88,.08)'; errEl.style.borderColor='rgba(255,56,88,.3)'; errEl.style.color='var(--danger)'; errEl.textContent='Usuario o clave incorrectos'; }
+    // Shake animation
+    const card = document.getElementById('login-card');
+    if (card) { card.style.animation='shake .3s'; setTimeout(()=>card.style.animation='',400); }
+    return;
+  }
+
+  AUTH_SESSION = { id: user.id, nombre: user.nombre, rol: user.rol, modulos: user.modulos || [] };
+  sessionStorage.setItem(AUTH_SESS_KEY, JSON.stringify(AUTH_SESSION));
+  authApplySession();
+  toast('✓ Bienvenido, ' + user.nombre);
+  show('dashboard', null);
+}
+
+function authLogout() {
+  AUTH_SESSION = null;
+  sessionStorage.removeItem(AUTH_SESS_KEY);
+  const ls = document.getElementById('login-screen');
+  if (ls) {
+    ls.style.display = 'flex';
+    // Clear fields
+    const u = document.getElementById('login-user');
+    const p = document.getElementById('login-pass');
+    if (u) u.value = '';
+    if (p) p.value = '';
+    const e = document.getElementById('login-err');
+    if (e) e.style.display = 'none';
+  }
+}
+
+// ── User CRUD ─────────────────────────────────────────────────────
+const AUTH_MODULO_LABELS = {
+  'dashboard':'Dashboard','limptrans':'Limpieza Transporte','desptrans':'Despacho Transporte',
+  'limpbodega':'Limpieza Bodega','fumigacion':'Fumigación','roedores':'Control Roedores',
+  'capacitacion':'Capacitación','enfermos':'Empleados Enfermos','acceso-lavado':'Acceso y Lavado',
+  'visitas':'Visitas','vidrioplas':'Vidrio y Plástico','basculas':'Básculas',
+  'lavprod':'Lavado Producto','inv-stock':'Inventario Stock','inv-entrada':'Ingresos Bodega',
+  'inv-cotizador':'Cotizador','maquila':'Gastos Generales','inv-salida':'Despachos',
+  'ventas-gt':'Ventas GT','ventas-int':'Ventas Int.','reporte':'Reportes',
+  'inv-trazabilidad':'Trazabilidad','inv-config':'Config Inventario',
+  'proveedores':'Proveedores','pedidos-walmart':'Pedidos Walmart','usuarios':'Usuarios',
+};
+
+function usrRolChange() {
+  const rol = document.getElementById('usr-rol')?.value;
+  const sec = document.getElementById('usr-modulos-section');
+  if (sec) sec.style.display = (rol === 'superadmin' || rol === 'admin') ? 'none' : '';
+  if (rol !== 'superadmin' && rol !== 'admin') {
+    // Pre-select default modules for role
+    const defaults = AUTH_ROLE_DEFAULTS[rol] || [];
+    AUTH_ALL_MODULES.forEach(m => {
+      const cb = document.getElementById('usr-mod-' + m);
+      if (cb) cb.checked = defaults.includes(m);
+    });
+  }
+}
+
+function usrSelectAll(val) {
+  AUTH_ALL_MODULES.forEach(m => {
+    const cb = document.getElementById('usr-mod-' + m);
+    if (cb) cb.checked = val;
+  });
+}
+
+function saveUsuario() {
+  const id      = document.getElementById('usr-edit-id')?.value || '';
+  const nombre  = (document.getElementById('usr-nombre')?.value || '').trim();
+  const clave   = (document.getElementById('usr-clave')?.value || '').trim();
+  const rol     = document.getElementById('usr-rol')?.value || 'operador';
+
+  if (!nombre) { toast('⚠ Ingresa el nombre del usuario', true); return; }
+  if (!id && !clave) { toast('⚠ Ingresa una clave de acceso', true); return; }
+
+  let modulos;
+  if (rol === 'superadmin' || rol === 'admin') {
+    modulos = AUTH_ALL_MODULES;
+  } else {
+    modulos = AUTH_ALL_MODULES.filter(m => {
+      const cb = document.getElementById('usr-mod-' + m);
+      return cb && cb.checked;
+    });
+  }
+
+  if (!DB.usuarios) DB.usuarios = [];
+
+  if (id) {
+    // Edit existing
+    const u = DB.usuarios.find(u => u.id === id);
+    if (u) {
+      u.nombre  = nombre;
+      if (clave) u.clave = clave;
+      u.rol     = rol;
+      u.modulos = modulos;
+    }
+  } else {
+    // Check duplicate name
+    if (DB.usuarios.some(u => u.nombre.toLowerCase() === nombre.toLowerCase())) {
+      toast('⚠ Ya existe un usuario con ese nombre', true); return;
+    }
+    DB.usuarios.push({
+      id:      uid(),
+      nombre,
+      clave,
+      rol,
+      modulos,
+      activo:  true,
+      ts:      new Date().toISOString(),
+    });
+  }
+
+  save();
+  cancelEditUsuario();
+  renderUsuarios();
+  toast('✅ Usuario guardado');
+}
+
+function editUsuario(id) {
+  const u = (DB.usuarios||[]).find(u => u.id === id);
+  if (!u) return;
+  document.getElementById('usr-edit-id').value  = u.id;
+  document.getElementById('usr-nombre').value   = u.nombre;
+  document.getElementById('usr-clave').value    = '';
+  document.getElementById('usr-rol').value      = u.rol;
+  document.getElementById('usuarios-form-title').textContent = 'Editando: ' + u.nombre;
+  document.getElementById('usr-cancel-btn').style.display = '';
+  usrRolChange();
+  // Check saved modules
+  (u.modulos||[]).forEach(m => {
+    const cb = document.getElementById('usr-mod-' + m);
+    if (cb) cb.checked = true;
+  });
+  document.getElementById('usuarios-form-card')?.scrollIntoView({behavior:'smooth'});
+}
+
+function cancelEditUsuario() {
+  document.getElementById('usr-edit-id').value  = '';
+  document.getElementById('usr-nombre').value   = '';
+  document.getElementById('usr-clave').value    = '';
+  document.getElementById('usr-rol').value      = 'operador';
+  document.getElementById('usuarios-form-title').textContent = 'Nuevo Usuario';
+  document.getElementById('usr-cancel-btn').style.display = 'none';
+  usrRolChange();
+  renderUsuariosForm();
+}
+
+function toggleUsuarioActivo(id) {
+  const u = (DB.usuarios||[]).find(u => u.id === id);
+  if (!u) return;
+  if (u.rol === 'superadmin' && u.id === 'default-admin') { toast('⚠ No se puede desactivar el admin principal', true); return; }
+  u.activo = !u.activo;
+  save();
+  renderUsuarios();
+  toast(u.activo ? '✓ Usuario activado' : '✓ Usuario desactivado');
+}
+
+function deleteUsuario(id) {
+  if (!confirm('¿Eliminar este usuario?')) return;
+  if (id === 'default-admin') { toast('⚠ No se puede eliminar el admin principal', true); return; }
+  DB.usuarios = (DB.usuarios||[]).filter(u => u.id !== id);
+  save();
+  renderUsuarios();
+  toast('✓ Usuario eliminado');
+}
+
+function renderUsuariosForm() {
+  const grid = document.getElementById('usr-modulos-grid');
+  if (!grid) return;
+  grid.innerHTML = AUTH_ALL_MODULES.map(m => `
+    <label style="display:flex;align-items:center;gap:6px;font-size:.72rem;cursor:pointer;padding:4px;">
+      <input type="checkbox" id="usr-mod-${m}" checked>
+      ${AUTH_MODULO_LABELS[m]||m}
+    </label>`).join('');
+  usrRolChange();
+}
+
+function renderUsuarios() {
+  // Render form modules grid
+  renderUsuariosForm();
+
+  const lista = document.getElementById('usuarios-lista');
+  if (!lista) return;
+
+  const users = DB.usuarios || [];
+  if (!users.length) {
+    lista.innerHTML = '<div class="empty">No hay usuarios registrados</div>';
+    return;
+  }
+
+  lista.innerHTML = users.map(u => {
+    const rolLabel = AUTH_ROLES[u.rol] || u.rol;
+    const active   = u.activo !== false;
+    return `<div style="background:var(--s1);border:1.5px solid ${active?'var(--br)':'rgba(255,56,88,.3)'};border-radius:8px;padding:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+        <div>
+          <div style="font-weight:700;font-size:.88rem;">${u.nombre}</div>
+          <div style="font-size:.7rem;color:var(--muted);margin-top:2px;">${rolLabel}${!active?' · <span style="color:var(--danger);">Inactivo</span>':''}</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn bo bsm" onclick="editUsuario('${u.id}')" style="font-size:.65rem;">✏️</button>
+          <button class="btn bo bsm" onclick="toggleUsuarioActivo('${u.id}')" style="font-size:.65rem;">${active?'🚫':'✅'}</button>
+          ${u.id !== 'default-admin' ? `<button class="btn bsm" onclick="deleteUsuario('${u.id}')" style="background:#d63030;color:#fff;font-size:.65rem;">🗑</button>` : ''}
+        </div>
+      </div>
+      ${u.rol !== 'superadmin' && u.rol !== 'admin' ? `
+        <div style="font-size:.65rem;color:var(--muted);">
+          Módulos: ${(u.modulos||[]).length} de ${AUTH_ALL_MODULES.length}
+        </div>` : `<div style="font-size:.65rem;color:var(--acc);">Acceso completo a todos los módulos</div>`}
+    </div>`;
+  }).join('');
+}
+
+
+
 // ── Anthropic API Key ─────────────────────────────────────────────
 const ANTHROPIC_API_KEY = "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";
 
@@ -6515,6 +6863,7 @@ function pwMostrarCierre(rec) {
             <option value="aceptado">✅ Aceptado completo</option>
             <option value="parcial">⚠️ Aceptado parcial</option>
             <option value="rechazado">❌ Rechazado</option>
+            <option value="no_llevado">📦 No lo llevé (sin stock)</option>
           </select>
         </div>
         <div class="fg" id="pw-cr-aceptadas-wrap-${r.n}" style="display:none;">
@@ -6531,8 +6880,9 @@ function pwMostrarCierre(rec) {
 
 function pwCierreToggle(n) {
   const estado = document.getElementById('pw-cr-estado-'+n)?.value;
-  document.getElementById('pw-cr-aceptadas-wrap-'+n).style.display  = estado==='parcial' ? '' : 'none';
-  document.getElementById('pw-cr-rechazadas-wrap-'+n).style.display = estado==='parcial' ? '' : 'none';
+  const showParcial = estado === 'parcial';
+  document.getElementById('pw-cr-aceptadas-wrap-'+n).style.display  = showParcial ? '' : 'none';
+  document.getElementById('pw-cr-rechazadas-wrap-'+n).style.display = showParcial ? '' : 'none';
   if (estado === 'aceptado') {
     const rb = (DB.pedidosWalmart.find(p=>p.id===pwActivoId)?.rubros||[]).find(r=>r.n===n);
     if (rb) document.getElementById('pw-cr-aceptadas-'+n) && (document.getElementById('pw-cr-aceptadas-'+n).value = rb.cajasPedidas);
