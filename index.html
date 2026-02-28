@@ -611,6 +611,7 @@ tr:hover td{background:var(--green-pale);}
 
 /* ─── RESPONSIVE ──────────────────────────────────── */
 @media(max-width:768px){
+  #sec-dashboard>div[style*="grid"]{grid-template-columns:1fr!important;}
   .app{grid-template-columns:1fr;grid-template-rows:56px 1fr;}
   nav{
     display:flex;
@@ -808,6 +809,2564 @@ tr:hover td{background:var(--green-pale);}
 <div class="ct">Módulos</div>
 <div id="dash-modulos"></div>
 </div>
+</div>
+</div>
+<div class="sec" id="sec-transporte-limpieza">
+<div class="ph"><h1>Control de Limpieza y Transporte</h1><p>Verificación de limpieza y desinfección del furgón — 2 a 3 veces por semana</p></div>
+<div class="card">
+<div class="ct">Nuevo Registro de Limpieza</div>
+<div class="fgrid g3">
+<div class="fg"><label>Fecha</label><input type="date" id="tl-fecha"></div>
+<div class="fg"><label>Responsable</label>
+<select id="tl-resp-sel" onchange="document.getElementById('tl-resp').value=this.value" style="margin-bottom:4px;">
+<option value="">— Seleccionar responsable —</option>
+</select>
+<input id="tl-resp" placeholder="O escribir manualmente" style="font-size:.7rem;">
+</div>
+<div class="fg"><label>Hora Limpieza</label><input type="time" id="tl-hora"></div>
+</div>
+<div class="fgrid g2">
+<div class="fg"><label>Placa del Vehículo</label><input id="tl-placa" placeholder="Ej. P-123456"></div>
+<div class="fg"><label>Tipo de Limpieza</label>
+<select id="tl-tipo">
+<option value="completa">Completa (Exterior + Interior)</option>
+<option value="exterior">Solo Exterior</option>
+<option value="interior">Solo Interior</option>
+<option value="desinfeccion">Desinfección Profunda</option>
+</select>
+</div>
+</div>
+<p style="font-size:.68rem;color:var(--muted2);margin-bottom:10px;">Marcar SI / NO para cada elemento:</p>
+<table class="cl-table" style="margin-bottom:14px;">
+<thead><tr>
+<th style="text-align:left;width:160px">Área</th>
+<th style="text-align:left">Elemento</th>
+<th width="120">Cumple</th>
+</tr></thead>
+<tbody id="tl-checklist"></tbody>
+</table>
+<div style="border:1px solid var(--br);border-radius:4px;padding:14px;margin-bottom:12px;background:var(--s2);">
+<div style="font-family:var(--fh);font-size:.78rem;font-weight:600;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;">
+        📷 Evidencia Fotográfica <span id="tl-photo-badge" style="font-family:var(--fm);font-size:.65rem;color:var(--muted2);">0 fotos</span>
+</div>
+<div class="alrt alrt-g" style="font-size:.68rem;margin-bottom:10px;padding:7px 10px;">Solo se permite capturar desde la cámara del dispositivo — no se pueden cargar desde la galería.</div>
+<video id="tl-cam-video" autoplay playsinline muted style="display:none;width:100%;max-width:420px;border-radius:4px;border:2px solid var(--acc);margin-bottom:8px;background:#000;"></video>
+<canvas id="tl-cam-canvas" style="display:none;"></canvas>
+<div id="tl-cam-open" style="margin-bottom:8px;">
+<div class="fg" style="margin-bottom:8px;max-width:280px;">
+<label>¿Qué muestra la foto?</label>
+<select id="tl-photo-label">
+<option value="exterior_lavado">Exterior — Lavado de Furgón</option>
+<option value="exterior_carroceria">Exterior — Lavado Carrocería</option>
+<option value="interior_barrido">Interior — Barrido Furgón</option>
+<option value="interior_desinfeccion">Interior — Desinfección</option>
+<option value="cabina">Cabina</option>
+<option value="general">Vista General</option>
+</select>
+</div>
+<button class="btn bo bsm" style="border-color:var(--acc);color:var(--acc);" onclick="tlOpenCam()">📷 Abrir Cámara</button>
+</div>
+<div id="tl-cam-active" style="display:none;margin-bottom:8px;">
+<div class="fa">
+<button class="btn bp bsm" onclick="tlCapture()">⬤ Capturar</button>
+<button class="btn bo bsm" onclick="tlSwitchCam()">🔄 Voltear</button>
+<button class="btn bo bsm" style="border-color:var(--danger);color:var(--danger);" onclick="tlCloseCam()">✕ Cerrar</button>
+</div>
+</div>
+<div id="tl-photos-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-top:6px;"></div>
+</div>
+<div class="fg" style="margin-bottom:12px;"><label>Comentarios y Recomendaciones</label><textarea id="tl-obs" rows="2" placeholder="Observaciones..."></textarea></div>
+<div class="fa">
+<button class="btn bp" onclick="saveTL()">Guardar Registro</button>
+<button class="btn bo" onclick="printSec('sec-transporte-limpieza')">🖨 Imprimir</button>
+</div>
+</div>
+<div class="tw">
+<div class="twh"><span class="twt">Historial</span><button class="btn bo bsm" onclick="exportCSV('tl')">↓ CSV</button></div>
+<div style="overflow-x:auto;">
+<table><thead><tr><th>Fecha</th><th>Responsable</th><th>Hora</th><th>Placa</th><th>Tipo</th><th>Ext.Furgón</th><th>Carrocería</th><th>Barrido</th><th>Desinfección</th><th>Cabina</th><th>Fotos</th><th>Obs</th><th></th></tr></thead>
+<tbody id="tl-tbody"></tbody></table>
+</div>
+</div>
+</div>
+<div class="sec" id="sec-despacho">
+<div class="ph"><h1>Despacho Transporte</h1><p>Inspección del vehículo antes de cada despacho — una vez por viaje</p></div>
+<div class="tabs">
+<div class="tab active" onclick="dtTab('form',this)">📋 Nueva Inspección</div>
+<div class="tab" onclick="dtTab('conductores',this)">🧑‍✈️ Conductores</div>
+<div class="tab" onclick="dtTab('clientes',this)">📍 Clientes / Rutas</div>
+</div>
+<div id="dt-tab-form">
+<div class="card">
+<div class="ct">Nueva Inspección de Despacho</div>
+<div class="fgrid g3">
+<div class="fg"><label>Fecha</label><input type="date" id="dt-fecha"></div>
+<div class="fg"><label>Hora de Despacho</label><input type="time" id="dt-hora"></div>
+<div class="fg"><label>Placa del Vehículo</label><input id="dt-placa" placeholder="Ej. P-123456"></div>
+</div>
+<div class="fgrid g2" style="margin-bottom:0;">
+<div class="fg">
+<label>Conductor</label>
+<select id="dt-conductor-sel" onchange="dtSelectConductor(this.value)">
+<option value="">— Seleccionar conductor —</option>
+</select>
+</div>
+<div class="fg"><label>Cliente / Destino</label>
+<select id="dt-cliente-sel" onchange="dtSelectCliente(this.value)">
+<option value="">— Seleccionar cliente —</option>
+</select>
+</div>
+</div>
+<div id="dt-conductor-card" style="display:none;background:var(--s2);border:1px solid var(--br);border-radius:4px;padding:12px;margin:10px 0;display:none;">
+<div style="display:flex;gap:14px;align-items:center;">
+<div id="dt-cond-foto" style="width:56px;height:56px;border-radius:50%;background:var(--s3);border:2px solid var(--acc);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.4rem;">👤</div>
+<div style="flex:1;">
+<div id="dt-cond-nombre" style="font-family:var(--fh);font-size:.88rem;font-weight:600;"></div>
+<div id="dt-cond-lic" style="font-size:.7rem;color:var(--muted2);margin-top:2px;"></div>
+<div id="dt-cond-venc" style="font-size:.7rem;margin-top:2px;"></div>
+</div>
+<div id="dt-cond-licfoto" style="width:80px;height:52px;border-radius:3px;border:1px solid var(--br);overflow:hidden;background:var(--s3);display:flex;align-items:center;justify-content:center;font-size:.6rem;color:var(--muted2);">Licencia</div>
+</div>
+</div>
+<div id="dt-cliente-card" style="display:none;background:var(--s2);border:1px solid var(--br2);border-radius:4px;padding:10px 12px;margin-bottom:10px;">
+<div style="font-size:.68rem;color:var(--muted2);letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px;">Destino</div>
+<div id="dt-cli-nombre" style="font-size:.82rem;font-weight:600;"></div>
+<div id="dt-cli-dir" style="font-size:.7rem;color:var(--muted2);margin-top:2px;"></div>
+</div>
+<div class="fgrid g2">
+<div class="fg"><label>Tipo de Carga</label>
+<select id="dt-carga">
+<option value="">— Seleccionar —</option>
+<option>Empaques vacíos</option><option>Producto terminado</option>
+<option>Materia prima</option><option>Mixto</option>
+</select>
+</div>
+<div class="fg"><label>Temperatura de Carga (°C)</label><input type="number" id="dt-temp" placeholder="Ej. 4" step="0.1"></div>
+</div>
+<table class="cl-table" style="margin-bottom:14px;">
+<thead><tr><th style="text-align:left">Área</th><th style="text-align:left;width:300px">Criterio de Control</th><th>¿Cumple?</th><th style="text-align:left;width:150px">Observaciones</th></tr></thead>
+<tbody id="dt-checklist"></tbody>
+</table>
+<div id="dt-result" style="display:none;padding:12px 16px;border-radius:4px;margin-bottom:12px;text-align:center;border:2px solid;">
+<div style="font-size:.65rem;color:var(--muted2);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px;">Resultado de Inspección</div>
+<div id="dt-result-score" style="font-family:var(--fh);font-size:1.8rem;font-weight:700;"></div>
+<div id="dt-result-label" style="font-size:.78rem;font-weight:600;margin-top:2px;"></div>
+</div>
+<div class="fgrid g2" style="margin-bottom:12px;">
+<div class="fg"><label>Observaciones Generales</label><textarea id="dt-obs" rows="2" placeholder="Novedades o comentarios..."></textarea></div>
+<div class="fg"><label>Acción Correctiva (si aplica)</label><textarea id="dt-accion" rows="2" placeholder="Acción tomada ante incumplimientos..."></textarea></div>
+</div>
+<div class="fg" style="max-width:300px;margin-bottom:14px;">
+<label>¿Despacho Autorizado?</label>
+<select id="dt-autorizado">
+<option value="si">✓ Sí — Autorizado</option>
+<option value="condicional">⚠ Condicional — Con observaciones</option>
+<option value="no">✕ No — Rechazado</option>
+</select>
+</div>
+<div style="border:1px solid var(--br);border-radius:4px;padding:14px;margin-bottom:12px;background:var(--s2);">
+<div style="font-family:var(--fh);font-size:.78rem;font-weight:600;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;">
+          📷 Evidencia Fotográfica <span id="dt-photo-badge" style="font-family:var(--fm);font-size:.65rem;color:var(--muted2);">0 fotos</span>
+</div>
+<div class="alrt alrt-g" style="font-size:.68rem;margin-bottom:10px;padding:7px 10px;">Solo se permite capturar desde la cámara — no se puede cargar desde la galería.</div>
+<video id="dt-cam-video" autoplay playsinline muted style="display:none;width:100%;max-width:420px;border-radius:4px;border:2px solid var(--acc2);margin-bottom:8px;background:#000;"></video>
+<canvas id="dt-cam-canvas" style="display:none;"></canvas>
+<div id="dt-cam-open" style="margin-bottom:8px;">
+<div class="fg" style="margin-bottom:8px;max-width:280px;">
+<label>¿Qué muestra la foto?</label>
+<select id="dt-photo-label">
+<option value="interior">Interior del vehículo</option><option value="exterior">Exterior del vehículo</option>
+<option value="refrigeracion">Sistema de refrigeración</option><option value="puertas">Sellos / Puertas</option>
+<option value="carga">Área de carga</option><option value="temp">Lectura de temperatura</option><option value="general">Vista general</option>
+</select>
+</div>
+<button class="btn bo bsm" style="border-color:var(--acc2);color:var(--acc2);" onclick="dtOpenCam()">📷 Abrir Cámara</button>
+</div>
+<div id="dt-cam-active" style="display:none;margin-bottom:8px;">
+<div class="fa">
+<button class="btn bp bsm" onclick="dtCapture()">⬤ Capturar</button>
+<button class="btn bo bsm" onclick="dtSwitchCam()">🔄 Voltear</button>
+<button class="btn bo bsm" style="border-color:var(--danger);color:var(--danger);" onclick="dtCloseCam()">✕ Cerrar</button>
+</div>
+</div>
+<div id="dt-photos-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-top:6px;"></div>
+</div>
+<div class="fa"><button class="btn bp" onclick="saveDT()">Guardar Inspección</button><button class="btn bo" onclick="printSec('sec-despacho')">🖨 Imprimir</button></div>
+</div>
+<div class="tw">
+<div class="twh"><span class="twt">Historial de Inspecciones</span><button class="btn bo bsm" onclick="exportCSV('dt')">↓ CSV</button></div>
+<div style="overflow-x:auto;">
+<table><thead><tr><th>Fecha</th><th>Hora</th><th>Placa</th><th>Conductor</th><th>Cliente/Destino</th><th>Carga</th><th>Temp</th><th>Resultado</th><th>Autorizado</th><th>Fotos</th><th></th></tr></thead>
+<tbody id="dt-tbody"></tbody></table>
+</div>
+</div>
+</div>
+<div id="dt-tab-conductores" style="display:none;">
+<div class="card">
+<div class="ct">Agregar Conductor</div>
+<div class="fgrid g3">
+<div class="fg"><label>Nombre Completo</label><input id="cond-nombre" placeholder="Nombre y apellidos"></div>
+<div class="fg"><label>No. Licencia</label><input id="cond-lic" placeholder="Ej. L-12345678"></div>
+<div class="fg"><label>Tipo de Licencia</label>
+<select id="cond-tipo-lic">
+<option>Tipo A — Motocicletas</option><option>Tipo B — Automóviles</option>
+<option>Tipo C — Camión liviano</option><option>Tipo E — Transporte pesado</option>
+<option>Tipo M — Maquinaria</option>
+</select>
+</div>
+</div>
+<div class="fgrid g3">
+<div class="fg"><label>Teléfono</label><input id="cond-tel" placeholder="+502 0000-0000"></div>
+<div class="fg"><label>DPI</label><input id="cond-dpi" placeholder="No. de DPI"></div>
+<div class="fg"><label>Vencimiento Licencia</label><input type="date" id="cond-venc"></div>
+</div>
+<div class="fgrid g2" style="margin-bottom:12px;">
+<div>
+<p style="font-size:.6rem;color:var(--muted2);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;">Fotografía del Piloto</p>
+<div style="display:flex;gap:10px;align-items:flex-start;">
+<div id="cond-foto-preview" style="width:80px;height:80px;border-radius:50%;background:var(--s2);border:2px dashed var(--br2);display:flex;align-items:center;justify-content:center;font-size:1.8rem;overflow:hidden;flex-shrink:0;">👤</div>
+<div>
+<video id="cond-cam-video" autoplay playsinline muted style="display:none;width:160px;border-radius:4px;border:2px solid var(--acc);margin-bottom:6px;background:#000;"></video>
+<canvas id="cond-cam-canvas" style="display:none;"></canvas>
+<div id="cond-cam-btns-open"><button class="btn bo bsm" style="border-color:var(--acc);color:var(--acc);" onclick="condOpenCam('foto')">📷 Tomar Foto</button></div>
+<div id="cond-cam-btns-active" style="display:none;" class="fa">
+<button class="btn bp bsm" onclick="condCapture('foto')">⬤ Capturar</button>
+<button class="btn bo bsm" onclick="condCloseCam()">✕</button>
+</div>
+</div>
+</div>
+</div>
+<div>
+<p style="font-size:.6rem;color:var(--muted2);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;">Fotografía de Licencia</p>
+<div style="display:flex;gap:10px;align-items:flex-start;">
+<div id="cond-lic-preview" style="width:110px;height:70px;border-radius:4px;background:var(--s2);border:2px dashed var(--br2);display:flex;align-items:center;justify-content:center;font-size:.65rem;color:var(--muted2);overflow:hidden;flex-shrink:0;">Licencia</div>
+<div>
+<video id="cond-lic-cam-video" autoplay playsinline muted style="display:none;width:160px;border-radius:4px;border:2px solid var(--acc2);margin-bottom:6px;background:#000;"></video>
+<canvas id="cond-lic-cam-canvas" style="display:none;"></canvas>
+<div id="cond-lic-cam-btns-open"><button class="btn bo bsm" style="border-color:var(--acc2);color:var(--acc2);" onclick="condOpenCam('licencia')">📷 Foto Licencia</button></div>
+<div id="cond-lic-cam-btns-active" style="display:none;" class="fa">
+<button class="btn bp bsm" onclick="condCapture('licencia')">⬤ Capturar</button>
+<button class="btn bo bsm" onclick="condLicCloseCam()">✕</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="fa"><button class="btn bp" onclick="saveConductor()">+ Agregar Conductor</button></div>
+</div>
+<div id="cond-lista" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;"></div>
+</div>
+<div id="dt-tab-clientes" style="display:none;">
+<div class="card">
+<div class="ct">Agregar Cliente / Destino</div>
+<div class="fgrid g3">
+<div class="fg"><label>Nombre del Cliente</label><input id="cli-nombre" placeholder="Nombre o razón social"></div>
+<div class="fg"><label>Contacto</label><input id="cli-contacto" placeholder="Persona de contacto"></div>
+<div class="fg"><label>Teléfono</label><input id="cli-tel" placeholder="+502 0000-0000"></div>
+</div>
+<div class="fgrid g2">
+<div class="fg"><label>Dirección / Ruta</label><input id="cli-dir" placeholder="Dirección de entrega"></div>
+<div class="fg"><label>Municipio / Departamento</label><input id="cli-muni" placeholder="Ej. Guatemala, Guatemala"></div>
+</div>
+<div class="fg" style="margin-bottom:12px;"><label>Notas (horarios, instrucciones de entrega...)</label><textarea id="cli-notas" rows="2"></textarea></div>
+<div class="fa"><button class="btn bp" onclick="saveCliente()">+ Agregar Cliente</button></div>
+</div>
+<div id="cli-lista" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;"></div>
+</div>
+<div id="dt-photo-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:999;align-items:center;justify-content:center;padding:16px;">
+<div style="background:var(--s1);border:1px solid var(--br);border-radius:6px;max-width:680px;width:100%;max-height:90vh;overflow-y:auto;">
+<div style="padding:12px 16px;border-bottom:1px solid var(--br);display:flex;justify-content:space-between;align-items:center;">
+<span id="dt-modal-title" style="font-family:var(--fh);font-weight:600;"></span>
+<button class="btn bo bsm" onclick="document.getElementById('dt-photo-modal').style.display='none'">✕</button>
+</div>
+<div style="padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;" id="dt-modal-photos"></div>
+</div>
+</div>
+</div>
+<div class="sec" id="sec-bodega-limpieza">
+<div class="ph"><h1>Control de Limpieza — Bodega</h1><p>Verificación diaria de limpieza y desinfección por áreas</p></div>
+<div class="card">
+<div class="ct">Nuevo Registro de Limpieza</div>
+<div class="fgrid g3">
+<div class="fg"><label>Fecha</label><input type="date" id="bl-fecha"></div>
+<div class="fg">
+<label>Responsable</label>
+<select id="bl-resp">
+<option value="">— Seleccionar responsable —</option>
+</select>
+</div>
+<div class="fg"><label>Hora Limpieza</label><input type="time" id="bl-hora"></div>
+</div>
+<table class="cl-table" style="margin-bottom:14px;"><thead><tr>
+<th style="text-align:left">Categoría</th><th style="text-align:left">Elemento</th><th>SI</th><th>NO</th><th>N/A</th>
+</tr></thead><tbody id="bl-checklist"></tbody></table>
+<div class="fg" style="margin-bottom:12px;"><label>Comentarios y Recomendaciones</label><textarea id="bl-obs" rows="2" placeholder="Observaciones generales..."></textarea></div>
+<div class="fa">
+<button class="btn bp" onclick="saveBL()">Guardar Registro</button>
+<button class="btn bo" onclick="printSec('sec-bodega-limpieza')">🖨 Imprimir</button>
+<button class="btn bo bsm" style="margin-left:auto;font-size:.68rem;color:var(--muted2);" onclick="show('empleados-db',document.querySelector('.ni[onclick*=empleados-db]'))">⚙ Gestionar empleados</button>
+</div>
+</div>
+<div class="tw">
+<div class="twh"><span class="twt">Historial</span><button class="btn bo bsm" onclick="exportCSV('bl')">↓ CSV</button></div>
+<table><thead><tr><th>Fecha</th><th>Responsable</th><th>Hora</th><th>Cumpl.</th><th>No Cumpl.</th><th>N/A</th><th>Obs.</th><th></th></tr></thead>
+<tbody id="bl-tbody"></tbody></table>
+</div>
+</div>
+<div class="sec" id="sec-fumigacion">
+<div class="ph"><h1>Control de Fumigación / Sanitización</h1><p>Cronograma anual de fumigación — Agua y Cloro — 2026</p></div>
+<div class="card">
+<div class="ct">Registrar Fumigación</div>
+<div class="fgrid g4">
+<div class="fg"><label>Instalación</label>
+<select id="fum-inst"><option>Bodega Nivel 1</option><option>Bodega Nivel 2</option></select>
+</div>
+<div class="fg"><label>Mes</label>
+<select id="fum-mes"><option>Enero</option><option>Febrero</option><option>Marzo</option><option>Abril</option><option>Mayo</option><option>Junio</option><option>Julio</option><option>Agosto</option><option>Septiembre</option><option>Octubre</option><option>Noviembre</option><option>Diciembre</option></select>
+</div>
+<div class="fg"><label>Semana</label>
+<select id="fum-sem"><option>1</option><option>2</option><option>3</option><option>4</option></select>
+</div>
+<div class="fg"><label>Responsable</label><input id="fum-resp" value="BYRON FAJARDO"></div>
+</div>
+<div class="fgrid g3">
+<div class="fg"><label>Fecha Realización</label><input type="date" id="fum-fecha"></div>
+<div class="fg"><label>Tipo de Control</label>
+<select id="fum-tipo"><option>Fumigación General</option><option>Sanitización Agua-Cloro</option><option>Control de Insectos</option></select>
+</div>
+<div class="fg"><label>Resultado</label>
+<select id="fum-res"><option value="realizado">✓ Realizado</option><option value="pendiente">⏳ Pendiente</option><option value="reprogramado">↻ Reprogramado</option></select>
+</div>
+</div>
+<div class="fg" style="margin-bottom:12px;"><label>Observaciones</label><textarea id="fum-obs" rows="2" placeholder="Productos utilizados, condiciones, etc."></textarea></div>
+<div class="fa"><button class="btn bp" onclick="saveFum()">Registrar</button></div>
+</div>
+<div class="tw">
+<div class="twh"><span class="twt">Cronograma 2026</span><button class="btn bo bsm" onclick="exportCSV('fum')">↓ CSV</button></div>
+<table><thead><tr><th>Instalación</th><th>Mes</th><th>Semana</th><th>Responsable</th><th>Fecha</th><th>Tipo</th><th>Estado</th><th>Obs</th><th></th></tr></thead>
+<tbody id="fum-tbody"></tbody></table>
+</div>
+</div>
+<div class="sec" id="sec-roedores">
+<div class="ph"><h1>Control de Plagas y Roedores</h1><p>Revisión de las 7 trampas — 2 en Nivel 1 · 5 en Nivel 2</p></div>
+<div class="card">
+<div class="ct">Nueva Revisión</div>
+<div class="fgrid g3">
+<div class="fg"><label>Fecha</label><input type="date" id="rod-fecha"></div>
+<div class="fg"><label>Responsable</label>
+<select id="rod-resp-sel">
+<option value="">— Seleccionar responsable —</option>
+</select>
+</div>
+<div class="fg"><label>Hora de Revisión</label><input type="time" id="rod-hora"></div>
+</div>
+<div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--acc2);padding:8px 0 6px;margin-top:4px;border-top:1px solid var(--br);font-weight:600;">
+      Bodega Nivel 1 — 2 trampas
+    </div>
+<div id="rod-trampas-n1" style="display:flex;flex-direction:column;gap:3px;margin-bottom:12px;"></div>
+<div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--info);padding:8px 0 6px;border-top:1px solid var(--br);font-weight:600;">
+      Bodega Nivel 2 — 5 trampas
+    </div>
+<div id="rod-trampas-n2" style="display:flex;flex-direction:column;gap:3px;margin-bottom:14px;"></div>
+<div id="rod-resumen" style="display:none;padding:10px 14px;border-radius:4px;margin-bottom:12px;font-size:.78rem;border:1px solid var(--br);background:var(--s2);">
+<div style="display:flex;gap:16px;flex-wrap:wrap;">
+<span>✓ Revisadas: <strong id="rod-cnt-rev" style="color:var(--acc);">0</strong></span>
+<span>📍 En lugar: <strong id="rod-cnt-lugar" style="color:var(--acc);">0</strong></span>
+<span>⚠ Con novedad: <strong id="rod-cnt-nov" style="color:var(--warn);">0</strong></span>
+<span>✕ Sin revisar: <strong id="rod-cnt-falt" style="color:var(--danger);">0</strong></span>
+</div>
+</div>
+<div class="fg" style="margin-bottom:12px;"><label>Observaciones Generales</label>
+<textarea id="rod-obs" rows="2" placeholder="Actividad detectada, acciones tomadas, novedades..."></textarea>
+</div>
+<div class="fa">
+<button class="btn bp" onclick="saveRod()">Guardar Revisión</button>
+<button class="btn bo" onclick="printSec('sec-roedores')">🖨 Imprimir</button>
+</div>
+</div>
+<div class="tw">
+<div class="twh"><span class="twt">Historial de Revisiones</span><button class="btn bo bsm" onclick="exportCSV('rod')">↓ CSV</button></div>
+<div style="overflow-x:auto;">
+<table>
+<thead><tr><th>Fecha</th><th>Hora</th><th>Responsable</th><th>Revisadas</th><th>En lugar</th><th>Novedades</th><th>Resultado</th><th>Obs.</th><th></th></tr></thead>
+<tbody id="rod-tbody"></tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="sec" id="sec-capacitacion">
+<div class="ph"><h1>Registro de Capacitación</h1><p>Charlas, capacitaciones y comunicaciones al personal</p></div>
+<div class="card">
+<div class="ct">Nueva Capacitación</div>
+<div class="fgrid g4">
+<div class="fg"><label>Fecha</label><input type="date" id="cap-fecha"></div>
+<div class="fg"><label>Hora Inicio</label><input type="time" id="cap-hi"></div>
+<div class="fg"><label>Hora Término</label><input type="time" id="cap-ht"></div>
+<div class="fg"><label>Duración (min)</label><input type="number" id="cap-dur" placeholder="60"></div>
+</div>
+<div class="fgrid g3">
+<div class="fg"><label>Profesional / Instructor</label><input id="cap-prof" placeholder="Nombre del instructor"></div>
+<div class="fg"><label>Cargo del Instructor</label><input id="cap-cargo" placeholder="Cargo o especialidad"></div>
+<div class="fg"><label>Lugar de Reunión</label><input id="cap-lugar" value="AJÚA"></div>
+</div>
+<div class="fgrid g2">
+<div class="fg"><label>Temas Tratados</label><textarea id="cap-temas" rows="3" placeholder="Describa los temas abordados..."></textarea></div>
+<div class="fg"><label>Tipo de Comunicación</label>
+<select id="cap-tipo" style="height:100%;">
+<option>CHARLA OPERACIONAL</option>
+<option>CHARLA INTEGRAL</option>
+<option>CHARLA VIDA SALUDABLE</option>
+<option>CHARLA RIESGO ESPECIFICO</option>
+<option>CAPACITACIÓN</option>
+</select>
+</div>
+</div>
+<div class="div"></div>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+<div>
+<span style="font-family:var(--fh);font-size:.82rem;font-weight:600;">Lista de Asistentes</span>
+<span id="cap-count-badge" style="margin-left:8px;" class="chip cb">0 seleccionados</span>
+</div>
+<div class="fa" style="margin:0;gap:6px;">
+<button class="btn bo bsm" onclick="capSelAll(true)">✓ Todos</button>
+<button class="btn bo bsm" onclick="capSelAll(false)">✗ Ninguno</button>
+<button class="btn bo bsm" style="color:var(--muted2);font-size:.65rem;" onclick="show('empleados-db',document.querySelector('.ni[onclick*=empleados-db]'))">⚙ Gestionar empleados</button>
+</div>
+</div>
+<div style="border:1px solid var(--br);border-radius:4px;overflow:hidden;margin-bottom:14px;">
+<table style="width:100%;border-collapse:collapse;">
+<thead>
+<tr style="background:var(--s2);">
+<th style="width:36px;padding:7px 10px;"><input type="checkbox" id="cap-chk-all" onchange="capSelAll(this.checked)" style="accent-color:var(--acc);"></th>
+<th style="text-align:left;padding:7px 10px;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);">Nombre</th>
+<th style="text-align:left;padding:7px 10px;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);">DPI</th>
+<th style="text-align:left;padding:7px 10px;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);">Cargo / Puesto</th>
+<th style="text-align:left;padding:7px 10px;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);">Área</th>
+</tr>
+</thead>
+<tbody id="cap-asistentes-tbody"></tbody>
+</table>
+<div id="cap-no-empleados" style="display:none;padding:20px;text-align:center;font-size:.74rem;color:var(--muted2);">
+        No hay empleados en la base de datos. <a onclick="show('empleados-db',document.querySelector('.ni[onclick*=empleados-db]'))" style="color:var(--acc);cursor:pointer;">Agrégalos aquí →</a>
+</div>
+</div>
+<div style="margin-bottom:12px;">
+<div style="font-size:.7rem;color:var(--muted2);margin-bottom:7px;">Asistentes externos (no registrados en la BD):</div>
+<div id="cap-externos-list"></div>
+<button class="btn bo bsm" onclick="capAddExterno()" style="margin-top:6px;">+ Agregar externo</button>
+</div>
+<div class="fg" style="margin-bottom:12px;"><label>Observaciones</label><textarea id="cap-obs" rows="2"></textarea></div>
+<div class="fa">
+<button class="btn bp" onclick="saveCap()">Guardar Capacitación</button>
+<button class="btn bo" onclick="printSec('sec-capacitacion')">🖨 Imprimir</button>
+</div>
+</div>
+<div class="tw">
+<div class="twh">
+<span class="twt">Historial de Capacitaciones</span>
+<div class="fa" style="margin:0;gap:6px;">
+<button class="btn bo bsm" onclick="exportCSV('cap')">↓ CSV</button>
+</div>
+</div>
+<table>
+<thead><tr><th>Fecha</th><th>Instructor</th><th>Tipo</th><th>Tema</th><th>Lugar</th><th>Asistentes</th><th>Excel</th><th></th></tr></thead>
+<tbody id="cap-tbody"></tbody>
+</table>
+</div>
+</div>
+<div class="sec" id="sec-empleados-enfermos">
+<div class="ph"><h1>Control de Empleados Enfermos</h1><p>Registro de ausencias por enfermedad y seguimiento</p></div>
+<div class="card">
+<div class="ct">Nuevo Registro</div>
+<div class="fgrid g4">
+<div class="fg"><label>Fecha Registro</label><input type="date" id="ee-fecha"></div>
+<div class="fg">
+<label>Nombre del Empleado</label>
+<select id="ee-nombre" onchange="eeSelectEmpleado(this.value)">
+<option value="">— Seleccionar empleado —</option>
+</select>
+</div>
+<div class="fg">
+<label>Departamento / Área</label>
+<input id="ee-dpto" readonly placeholder="Se llena automáticamente" style="color:var(--acc);cursor:default;">
+</div>
+<div class="fg"><label>Diagnóstico</label><input id="ee-diag" placeholder="Diagnóstico médico"></div>
+</div>
+<div class="fgrid g4">
+<div class="fg"><label>Fecha Inicio Baja</label><input type="date" id="ee-ini"></div>
+<div class="fg"><label>Fecha Fin Baja</label><input type="date" id="ee-fin"></div>
+<div class="fg"><label>Días de Baja</label><input type="number" id="ee-dias" placeholder="0" min="0"></div>
+<div class="fg"><label>Estado</label>
+<select id="ee-estado"><option value="baja">En Baja</option><option value="reintegrado">Reintegrado</option><option value="seguimiento">En Seguimiento</option></select>
+</div>
+</div>
+<div class="fg" style="margin-bottom:12px;"><label>Comentarios</label><textarea id="ee-obs" rows="2" placeholder="Notas adicionales..."></textarea></div>
+<div class="fa"><button class="btn bp" onclick="saveEE()">Registrar</button></div>
+</div>
+<div class="tw">
+<div class="twh"><span class="twt">Registro de Ausencias</span><button class="btn bo bsm" onclick="exportCSV('ee')">↓ CSV</button></div>
+<table><thead><tr><th>Fecha</th><th>Empleado</th><th>Depto.</th><th>Diagnóstico</th><th>Inicio Baja</th><th>Fin Baja</th><th>Días</th><th>Estado</th><th></th></tr></thead>
+<tbody id="ee-tbody"></tbody></table>
+</div>
+</div>
+<div class="sec" id="sec-acceso-lavado">
+<div class="ph"><h1>Control de Acceso y Lavado de Manos</h1><p>Registro diario por turno — horarios fijos de lavado: 10:00 · 12:00 · 14:00 · 16:00</p></div>
+<div class="card">
+<div class="ct">Configurar Turno del Día</div>
+<div class="fgrid g4">
+<div class="fg"><label>Fecha</label><input type="date" id="al-fecha"></div>
+<div class="fg"><label>Turno</label>
+<select id="al-turno">
+<option value="AM">Turno AM</option>
+<option value="PM">Turno PM</option>
+<option value="COMPLETO">Turno Completo</option>
+</select>
+</div>
+<div class="fg"><label>Hora Ingreso (turno)</label><input type="time" id="al-hi-turno" value="07:00"></div>
+<div class="fg"><label>Hora Salida (turno)</label><input type="time" id="al-hs-turno" value="17:00"></div>
+</div>
+<div style="background:var(--s2);border:1px solid var(--br);border-radius:4px;padding:12px;margin-bottom:14px;">
+<div style="font-size:.6rem;color:var(--muted2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;">Horarios Fijos de Lavado de Manos</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+<label style="display:flex;align-items:center;gap:6px;font-size:.75rem;cursor:pointer;">
+<input type="checkbox" id="al-fix-1" checked style="accent-color:var(--acc);width:14px;height:14px;"> 10:00 am
+        </label>
+<label style="display:flex;align-items:center;gap:6px;font-size:.75rem;cursor:pointer;">
+<input type="checkbox" id="al-fix-2" checked style="accent-color:var(--acc);width:14px;height:14px;"> 12:00 pm
+        </label>
+<label style="display:flex;align-items:center;gap:6px;font-size:.75rem;cursor:pointer;">
+<input type="checkbox" id="al-fix-3" checked style="accent-color:var(--acc);width:14px;height:14px;"> 14:00 pm
+        </label>
+<label style="display:flex;align-items:center;gap:6px;font-size:.75rem;cursor:pointer;">
+<input type="checkbox" id="al-fix-4" checked style="accent-color:var(--acc);width:14px;height:14px;"> 16:00 pm
+        </label>
+<span style="font-size:.66rem;color:var(--muted2);margin-left:8px;">Desmarca los que no apliquen al turno</span>
+</div>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+<div>
+<span style="font-family:var(--fh);font-size:.82rem;font-weight:600;">Empleados del Turno</span>
+<span id="al-count-badge" class="chip cb" style="margin-left:8px;">0 seleccionados</span>
+</div>
+<div class="fa" style="margin:0;gap:6px;">
+<button class="btn bo bsm" onclick="alSelAll(true)">✓ Todos</button>
+<button class="btn bo bsm" onclick="alSelAll(false)">✗ Ninguno</button>
+</div>
+</div>
+<div style="border:1px solid var(--br);border-radius:4px;overflow:hidden;margin-bottom:14px;">
+<table style="width:100%;border-collapse:collapse;">
+<thead>
+<tr style="background:var(--s2);">
+<th style="width:36px;padding:7px 10px;"><input type="checkbox" id="al-chk-all" onchange="alSelAll(this.checked)" style="accent-color:var(--acc);"></th>
+<th style="text-align:left;padding:7px 10px;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);">Empleado</th>
+<th style="text-align:left;padding:7px 10px;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);">Área</th>
+<th style="text-align:center;padding:7px 10px;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--acc);">10:00</th>
+<th style="text-align:center;padding:7px 10px;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--acc);">12:00</th>
+<th style="text-align:center;padding:7px 10px;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--acc);">14:00</th>
+<th style="text-align:center;padding:7px 10px;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--acc);">16:00</th>
+</tr>
+</thead>
+<tbody id="al-emp-tbody"></tbody>
+</table>
+<div id="al-no-empleados" style="display:none;padding:20px;text-align:center;font-size:.74rem;color:var(--muted2);">
+        No hay empleados. <a onclick="show('empleados-db',document.querySelector('.ni[onclick*=empleados-db]'))" style="color:var(--acc);cursor:pointer;">Agrégalos aquí →</a>
+</div>
+</div>
+<div class="fa">
+<button class="btn bp" onclick="saveAL()">💾 Guardar Turno</button>
+<button class="btn bo" onclick="printSec('sec-acceso-lavado')">🖨 Imprimir</button>
+</div>
+</div>
+<div class="tw">
+<div class="twh">
+<span class="twt">Historial de Turnos</span>
+<div class="fa" style="margin:0;gap:6px;">
+<button class="btn bo bsm" onclick="exportCSV('al')">↓ CSV</button>
+</div>
+</div>
+<table>
+<thead><tr><th>Fecha</th><th>Turno</th><th>Ingreso</th><th>Salida</th><th>Empleados</th><th>Lavados completos</th><th>Excel</th><th></th></tr></thead>
+<tbody id="al-tbody"></tbody>
+</table>
+</div>
+</div>
+<div class="sec" id="sec-visitas">
+<div class="ph"><h1>Control de Visitas</h1><p>Registro de visitas externas a las instalaciones</p></div>
+<div class="card">
+<div class="ct">Registrar Visita</div>
+<div class="fgrid g4">
+<div class="fg"><label>Fecha</label><input type="date" id="vis-fecha"></div>
+<div class="fg"><label>Nombre del Visitante</label><input id="vis-nombre" placeholder="Nombre completo"></div>
+<div class="fg"><label>Empresa / Institución</label><input id="vis-empresa" placeholder="Empresa (opcional)"></div>
+<div class="fg"><label>DPI / Identificación</label><input id="vis-dpi" placeholder="No. DPI"></div>
+</div>
+<div class="fgrid g4">
+<div class="fg"><label>Motivo de Visita</label><input id="vis-motivo" placeholder="Motivo"></div>
+<div class="fg"><label>Área que Visita</label><input id="vis-area" placeholder="Bodega, Producción..."></div>
+<div class="fg"><label>Hora Entrada</label><input type="time" id="vis-he"></div>
+<div class="fg"><label>Hora Salida</label><input type="time" id="vis-hs"></div>
+</div>
+<div class="fg" style="margin-bottom:12px;"><label>Autorizado por</label><input id="vis-aut" placeholder="Nombre del responsable que autoriza"></div>
+<div class="fa"><button class="btn bp" onclick="saveVis()">Registrar Visita</button></div>
+</div>
+<div class="tw">
+<div class="twh"><span class="twt">Registro de Visitas</span><button class="btn bo bsm" onclick="exportCSV('vis')">↓ CSV</button></div>
+<table><thead><tr><th>Fecha</th><th>Visitante</th><th>Empresa</th><th>DPI</th><th>Motivo</th><th>Área</th><th>H. Entrada</th><th>H. Salida</th><th>Autoriza</th><th></th></tr></thead>
+<tbody id="vis-tbody"></tbody></table>
+</div>
+</div>
+<div class="sec" id="sec-vidrio">
+<div class="ph"><h1>Control de Vidrio y Plástico Quebradizo</h1><p>Revisión mensual — ✔ No quebrado (cumple) | ✕ Quebrado (no cumple)</p></div>
+<div class="card">
+<div class="ct">Nueva Revisión Mensual</div>
+<div class="fgrid g3">
+<div class="fg"><label>Fecha de Revisión</label><input type="date" id="vp-fecha"></div>
+<div class="fg"><label>Responsable</label><input id="vp-resp" placeholder="Nombre inspector"></div>
+<div class="fg"><label>Mes de Revisión</label>
+<select id="vp-mes"><option>Enero</option><option>Febrero</option><option>Marzo</option><option>Abril</option><option>Mayo</option><option>Junio</option><option>Julio</option><option>Agosto</option><option>Septiembre</option><option>Octubre</option><option>Noviembre</option><option>Diciembre</option></select>
+</div>
+</div>
+<table class="cl-table" style="margin-bottom:14px;">
+<thead><tr><th style="text-align:left">Nivel</th><th style="text-align:left">Elemento</th><th>✔ Cumple</th><th>✕ No Cumple</th><th style="text-align:left;width:150px">Observaciones</th></tr></thead>
+<tbody id="vp-checklist"></tbody>
+</table>
+<div class="fa"><button class="btn bp" onclick="saveVP()">Guardar Revisión</button><button class="btn bo" onclick="printSec('sec-vidrio')">🖨 Imprimir</button></div>
+</div>
+<div class="tw">
+<div class="twh"><span class="twt">Historial de Revisiones</span><button class="btn bo bsm" onclick="exportCSV('vp')">↓ CSV</button></div>
+<table><thead><tr><th>Fecha</th><th>Mes</th><th>Responsable</th><th>Cumplen</th><th>No Cumplen</th><th>% OK</th><th></th></tr></thead>
+<tbody id="vp-tbody"></tbody></table>
+</div>
+</div>
+<div class="sec" id="sec-basculas">
+<div class="ph"><h1>Verificación de Básculas</h1><p>Masa madre: 10 libras — Revisión diaria de las 4 básculas</p></div>
+<div class="tabs">
+<div class="tab active" onclick="basTab('revision',this)">📋 Revisión Diaria</div>
+<div class="tab" onclick="basTab('calibracion',this)">🔧 Calibraciones</div>
+</div>
+<div id="bas-tab-revision">
+<div class="card">
+<div class="ct">Nueva Revisión</div>
+<div class="fgrid g3">
+<div class="fg"><label>Fecha</label><input type="date" id="bas-fecha"></div>
+<div class="fg"><label>Responsable</label>
+<select id="bas-resp-sel">
+<option value="">— Seleccionar responsable —</option>
+</select>
+</div>
+<div class="fg"><label>Hora de Revisión</label><input type="time" id="bas-hora"></div>
+</div>
+<div id="bas-cal-status" style="display:none;padding:10px 14px;border-radius:4px;margin-bottom:14px;font-size:.74rem;"></div>
+<div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--acc);padding:8px 0 8px;border-top:1px solid var(--br);font-weight:600;">
+        Las 4 Básculas — Masa madre: 10.00 lbs
+      </div>
+<div id="bas-basculas-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px;"></div>
+<div id="bas-resumen" style="display:none;padding:10px 14px;border-radius:4px;margin-bottom:12px;background:var(--s2);border:1px solid var(--br);font-size:.78rem;">
+<div style="display:flex;gap:18px;flex-wrap:wrap;">
+<span>✓ Cumplen: <strong id="bas-cnt-ok" style="color:var(--acc);">0</strong></span>
+<span>✕ No cumplen: <strong id="bas-cnt-fail" style="color:var(--danger);">0</strong></span>
+<span>— Sin revisar: <strong id="bas-cnt-pend" style="color:var(--muted2);">4</strong></span>
+</div>
+</div>
+<div class="fg" style="margin-bottom:12px;"><label>Observaciones Generales</label>
+<textarea id="bas-obs" rows="2" placeholder="Novedades, acciones tomadas..."></textarea>
+</div>
+<div class="fa">
+<button class="btn bp" onclick="saveBas()">Guardar Revisión</button>
+<button class="btn bo" onclick="printSec('sec-basculas')">🖨 Imprimir</button>
+</div>
+</div>
+<div class="tw">
+<div class="twh">
+<span class="twt">Historial de Revisiones</span>
+<button class="btn bo bsm" onclick="exportCSV('bas')">↓ CSV</button>
+</div>
+<div style="overflow-x:auto;">
+<table>
+<thead><tr><th>Fecha</th><th>Hora</th><th>Responsable</th><th>Báscula 1</th><th>Báscula 2</th><th>Báscula 3</th><th>Báscula 4</th><th>Resultado</th><th>Obs.</th><th></th></tr></thead>
+<tbody id="bas-tbody"></tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="bas-tab-calibracion" style="display:none;">
+<div class="card">
+<div class="ct">Registrar Calibración</div>
+<div class="fgrid g3">
+<div class="fg"><label>Báscula</label>
+<select id="cal-bascula">
+<option value="1">Báscula 1</option>
+<option value="2">Báscula 2</option>
+<option value="3">Báscula 3</option>
+<option value="4">Báscula 4</option>
+<option value="todas">Todas las básculas</option>
+</select>
+</div>
+<div class="fg"><label>Fecha de Calibración</label><input type="date" id="cal-fecha"></div>
+<div class="fg"><label>Próxima Calibración</label><input type="date" id="cal-proxima"></div>
+</div>
+<div class="fgrid g3">
+<div class="fg"><label>Empresa Calibradora</label><input id="cal-empresa" placeholder="Nombre de la empresa"></div>
+<div class="fg"><label>Técnico Responsable</label><input id="cal-tecnico" placeholder="Nombre del técnico"></div>
+<div class="fg"><label>Motivo</label>
+<select id="cal-motivo">
+<option>Calibración semestral</option>
+<option>Falla detectada</option>
+<option>Calibración anual</option>
+<option>Post-reparación</option>
+</select>
+</div>
+</div>
+<div style="border:1px solid var(--br);border-radius:4px;padding:14px;margin-bottom:12px;background:var(--s2);">
+<div style="font-family:var(--fh);font-size:.78rem;font-weight:600;margin-bottom:8px;">
+          📄 Certificado de Calibración
+        </div>
+<video id="cal-cam-video" autoplay playsinline muted style="display:none;width:100%;max-width:400px;border-radius:4px;border:2px solid var(--acc2);margin-bottom:8px;background:#000;"></video>
+<canvas id="cal-cam-canvas" style="display:none;"></canvas>
+<div id="cal-cert-preview" style="display:none;margin-bottom:8px;">
+<img id="cal-cert-img" style="max-width:100%;max-height:200px;border-radius:4px;border:1px solid var(--br);">
+<button class="btn bo bsm" style="margin-top:6px;border-color:var(--danger);color:var(--danger);" onclick="calDeleteCert()">✕ Quitar foto</button>
+</div>
+<div id="cal-cam-open-btn">
+<button class="btn bo bsm" style="border-color:var(--acc2);color:var(--acc2);" onclick="calOpenCam()">📷 Fotografiar Certificado</button>
+</div>
+<div id="cal-cam-active" style="display:none;" class="fa" style="margin-top:6px;">
+<button class="btn bp bsm" onclick="calCapture()">⬤ Capturar</button>
+<button class="btn bo bsm" onclick="calCloseCam()">✕ Cerrar</button>
+</div>
+</div>
+<div class="fg" style="margin-bottom:12px;"><label>Resultado / Observaciones</label>
+<textarea id="cal-obs" rows="2" placeholder="Resultado de la calibración, ajustes realizados..."></textarea>
+</div>
+<div class="fa"><button class="btn bp" onclick="saveCalib()">+ Registrar Calibración</button></div>
+</div>
+<div id="bas-cal-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:16px;"></div>
+<div class="tw">
+<div class="twh"><span class="twt">Historial de Calibraciones</span></div>
+<div style="overflow-x:auto;">
+<table>
+<thead><tr><th>Báscula</th><th>Fecha</th><th>Empresa</th><th>Técnico</th><th>Motivo</th><th>Próx. Calib.</th><th>Estado</th><th>Cert.</th><th></th></tr></thead>
+<tbody id="cal-tbody"></tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sec" id="sec-lavado-prod">
+<div class="ph"><h1>Control de Lavado y Desinfección</h1><p>Registro diario por tanque — cada tanque tiene su propio tratamiento</p></div>
+<div class="card">
+<div class="ct">Nuevo Registro de Lavado</div>
+<div class="fgrid g3">
+<div class="fg"><label>Fecha</label><input type="date" id="lp-fecha"></div>
+<div class="fg"><label>Responsable</label>
+<select id="lp-resp-sel">
+<option value="">— Seleccionar responsable —</option>
+</select>
+</div>
+<div class="fg"><label>Hora</label><input type="time" id="lp-hora"></div>
+</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+<span style="font-size:.65rem;padding:4px 10px;border-radius:20px;background:rgba(74,158,255,.12);border:1px solid rgba(74,158,255,.3);color:var(--info);">💧 Agua-Cloro 150 PPM</span>
+<span style="font-size:.65rem;padding:4px 10px;border-radius:20px;background:rgba(245,197,24,.1);border:1px solid rgba(245,197,24,.3);color:var(--warn);">🧪 Agua-Peróxido</span>
+<span style="font-size:.65rem;padding:4px 10px;border-radius:20px;background:rgba(160,120,255,.12);border:1px solid rgba(160,120,255,.3);color:#a078ff;">🫧 Agua-Cera</span>
+<span style="font-size:.65rem;padding:4px 10px;border-radius:20px;background:rgba(0,217,139,.1);border:1px solid rgba(0,217,139,.3);color:var(--acc);">💦 Solo Agua</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-bottom:14px;" id="lp-tanques-grid"></div>
+<div class="fg" style="margin-bottom:12px;">
+<label>Observaciones</label>
+<textarea id="lp-obs" rows="2" placeholder="Novedades, concentraciones fuera de rango, acciones tomadas..."></textarea>
+</div>
+<div class="fa">
+<button class="btn bp" onclick="saveLP()">Guardar Registro</button>
+<button class="btn bo" onclick="printSec('sec-lavado-prod')">🖨 Imprimir</button>
+</div>
+</div>
+<div class="tw">
+<div class="twh"><span class="twt">Historial de Registros</span><button class="btn bo bsm" onclick="exportCSV('lp')">↓ CSV</button></div>
+<div style="overflow-x:auto;">
+<table>
+<thead><tr><th>Fecha</th><th>Hora</th><th>Responsable</th><th>Tanque 1</th><th>Tanque 2</th><th>Tanque 3</th><th>Tanque 4</th><th>Obs.</th><th></th></tr></thead>
+<tbody id="lp-tbody"></tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="sec" id="sec-inv-stock">
+<div class="ph"><h1>Stock en Tiempo Real</h1><p>Inventario actual — lbs disponibles considerando entradas, Walmart, Local GT y exportación</p></div>
+<div class="card">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+<div class="ct" style="margin:0;">Inventario Disponible</div>
+<div style="display:flex;gap:6px;flex-wrap:wrap;">
+<button class="btn bo bsm" onclick="invExportStock()">↓ Excel</button>
+<button class="btn bo bsm" onclick="printSec('sec-inv-stock')">🖨</button>
+</div>
+</div>
+<div id="inv-stock-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;"></div>
+</div>
+<div class="card" style="margin-top:14px;">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+<div class="ct" style="margin:0;">Historial de Movimientos</div>
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+<select id="inv-fil-prod" onchange="renderInvStock()" style="background:var(--s1);border:1px solid var(--br);color:var(--txt);padding:5px 8px;border-radius:4px;font-size:.72rem;">
+<option value="">Todos los productos</option>
+</select>
+</div>
+</div>
+<div style="overflow-x:auto;">
+<table style="font-size:.72rem;width:100%;">
+<thead><tr>
+<th>Fecha</th><th>Tipo</th><th>Canal</th><th>Producto</th><th>Entidad</th>
+<th>Bultos</th><th>LBS</th><th>Documento</th>
+</tr></thead>
+<tbody id="inv-mov-tbody"></tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="sec" id="sec-inv-entrada">
+<div class="ph"><h1>Ingresos a Bodega</h1><p>Registro de cada contenedor o compra que entra — en lbs brutas tal como llega</p></div>
+<div class="card">
+<div class="ct">Registrar Ingreso</div>
+<div class="fgrid g3">
+<div class="fg"><label>Producto</label>
+<select id="ine-prod" onchange="ineSelectProducto(this.value)">
+<option value="">— Seleccionar —</option>
+</select>
+</div>
+<div class="fg"><label>Fecha de ingreso</label><input type="date" id="ine-fecha"></div>
+<div class="fg"><label>Origen / Proveedor</label><input id="ine-origen" placeholder="México, proveedor..."></div>
+</div>
+<div class="fgrid g3" style="margin-top:8px;">
+<div class="fg"><label>Bultos / Unidades recibidas</label><input type="number" id="ine-bultos" step="1" placeholder="0" oninput="ineCalcPesos()"></div>
+<div class="fg"><label>KG bruto por bulto (estimado)</label><input type="number" id="ine-kgbu" step="0.01" placeholder="0" oninput="ineCalcPesos()"></div>
+<div class="fg"><label>LBS brutas totales</label><input id="ine-lbs" readonly style="color:var(--acc);cursor:default;" placeholder="Auto"></div>
+</div>
+<div class="fgrid g3" style="margin-top:8px;">
+<div class="fg"><label>Costo / lb (Q)</label><input type="number" id="ine-cxlb" step="0.0001" placeholder="Del cotizador" oninput="ineCalcPesos()"></div>
+<div class="fg"><label>No. DUCA / Referencia</label><input id="ine-duca" placeholder="No. DUCA o referencia"></div>
+<div class="fg"><label>Cotización vinculada (si aplica)</label><input id="ine-cot-ref" placeholder="Nombre de la cotización"></div>
+</div>
+<div style="background:var(--s2);border:1px solid var(--br);border-radius:4px;padding:12px;margin-top:10px;">
+<div style="font-size:.6rem;color:var(--muted2);font-weight:700;letter-spacing:.08em;margin-bottom:8px;">DOCUMENTOS DE INGRESO</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+<div>
+<div style="font-size:.64rem;color:var(--muted2);margin-bottom:4px;">Factura / Doc. Proveedor MX</div>
+<button class="btn bo bsm" id="ine-btn-prod" onclick="ineLoadDoc('prod')">📄 Cargar doc. proveedor</button>
+<span id="ine-badge-prod" style="display:none;" class="chip ck" style="font-size:.6rem;">✓</span>
+</div>
+<div>
+<div style="font-size:.64rem;color:var(--muted2);margin-bottom:4px;">Factura empresa MX</div>
+<button class="btn bo bsm" id="ine-btn-mx" onclick="ineLoadDoc('mx')">📄 Cargar factura MX</button>
+<span id="ine-badge-mx" style="display:none;" class="chip ck" style="font-size:.6rem;">✓</span>
+</div>
+<div>
+<div style="font-size:.64rem;color:var(--muted2);margin-bottom:4px;">DUCA Guatemala</div>
+<button class="btn bo bsm" id="ine-btn-duca" onclick="ineLoadDoc('duca')">📄 Cargar DUCA</button>
+<span id="ine-badge-duca" style="display:none;" class="chip ck" style="font-size:.6rem;">✓</span>
+</div>
+</div>
+<input type="file" id="ine-file-input" accept="image/*,.pdf,.xml" style="display:none;" onchange="ineHandleFile(this)">
+</div>
+<div class="fg" style="margin-top:8px;"><label>Observaciones</label><textarea id="ine-obs" rows="2" placeholder="Estado del producto, temperatura, condiciones..."></textarea></div>
+<div class="fa" style="margin-top:10px;">
+<button class="btn bp" onclick="saveIne()">📥 Registrar Ingreso</button>
+<button class="btn bo" onclick="printSec('sec-inv-entrada')">🖨</button>
+</div>
+</div>
+<div class="tw" style="margin-top:14px;">
+<div class="twh">
+<span class="twt">Historial de Ingresos</span>
+<button class="btn bo bsm" onclick="invExportEntradas()">↓ Excel</button>
+<button class="btn bo bsm" style="border-color:var(--danger);color:var(--danger);" onclick="cleanDuplicateEntradas()">🧹 Limpiar duplicados</button>
+</div>
+<div style="overflow-x:auto;">
+<table>
+<thead><tr><th>Fecha</th><th>Producto</th><th>Bultos</th><th>LBS brutas</th><th>Costo/lb Q</th><th>DUCA</th><th>Docs</th><th>Obs</th><th></th></tr></thead>
+<tbody id="ine-tbody"></tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="sec" id="sec-maquila">
+<div class="ph"><h1>Gastos Generales</h1><p>Control semanal de gastos — los reportes mensuales se generan sumando semanas</p></div>
+
+<!-- Week selector -->
+<div class="card" style="margin-bottom:14px;">
+  <div class="ct">📅 Semana de Gastos</div>
+  <div class="fgrid g3" style="margin-bottom:12px;">
+    <div class="fg">
+      <label>Semana del</label>
+      <input type="date" id="maq-semana-inicio" onchange="maqOnWeekChange()">
+    </div>
+    <div class="fg">
+      <label>Al (sábado)</label>
+      <input type="date" id="maq-semana-fin" readonly style="background:var(--s2);">
+    </div>
+    <div class="fg">
+      <label>Lbs procesadas semana</label>
+      <input type="number" id="maq-lbs-proc" placeholder="0" oninput="maqCalc()">
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+    <button class="btn bp bsm" onclick="maqNuevaSemana()">➕ Nueva semana</button>
+    <button class="btn bsm" style="background:var(--green-deep);color:var(--cream);" onclick="maqGuardarSemana()">💾 Guardar semana</button>
+    <button class="btn bo bsm" onclick="maqVerHistorial()">📋 Ver historial</button>
+    <button class="btn bo bsm" onclick="maqExportExcel()">⬇ Excel</button>
+  </div>
+  <div id="maq-semana-status" style="margin-top:8px;font-size:.75rem;color:var(--muted);"></div>
+</div>
+
+<!-- Saved weeks list -->
+<div id="maq-historial-panel" style="display:none;margin-bottom:14px;">
+  <div class="card">
+    <div class="ct">📋 Historial de Semanas</div>
+    <div id="maq-historial-lista"></div>
+  </div>
+</div>
+
+<!-- Plan de cuentas -->
+<div id="maq-cuentas-container"></div>
+
+<!-- Totals -->
+<div class="card" style="margin-top:14px;">
+  <div class="ct">💰 Resumen de la Semana</div>
+  <div id="maq-resumen-semanal"></div>
+  <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;border-top:2px solid var(--green-deep);padding-top:10px;">
+    <span style="font-weight:800;font-size:1rem;color:var(--green-deep);">TOTAL SEMANA</span>
+    <span id="maq-grand-total" style="font-weight:800;font-size:1.1rem;color:var(--green-deep);">Q 0.00</span>
+  </div>
+</div>
+
+</div>
+<div class="sec" id="sec-pedidos-walmart">
+<div class="ph">
+  <div class="ph-left">
+    <h1>📋 Pedidos Walmart</h1>
+    <p>Registro de pedidos por correo · Calendario · Seguimiento de aceptación y rechazo</p>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <button class="btn bp bsm" onclick="pwNuevoPedido()">+ Nuevo Pedido</button>
+    <button class="btn bo bsm" onclick="pwTab('calendario',document.getElementById('pw-tab-cal'))">📅 Calendario</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" id="pw-tab-lista"   onclick="pwTab('lista',this)">📋 Lista de Pedidos</div>
+  <div class="tab"        id="pw-tab-cal"     onclick="pwTab('calendario',this)">📅 Calendario</div>
+  <div class="tab"        id="pw-tab-form"    onclick="pwTab('form',this)" style="display:none;">✏️ Pedido</div>
+</div>
+
+<!-- ══ LISTA ══ -->
+<div id="pw-panel-lista">
+  <div class="card" style="padding:14px 18px;">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
+      <input id="pw-fil-fecha" type="month" style="background:var(--s2);border:1.5px solid var(--br);color:var(--txt);padding:7px 12px;border-radius:var(--r);font-family:var(--fm);font-size:.82rem;" oninput="pwRenderLista()">
+      <select id="pw-fil-estado" onchange="pwRenderLista()" style="background:var(--s2);border:1.5px solid var(--br);color:var(--txt);padding:7px 12px;border-radius:var(--r);font-family:var(--fm);font-size:.82rem;">
+        <option value="">Todos los estados</option>
+        <option value="pendiente">⏳ Pendiente</option>
+        <option value="en_curso">🚛 En curso</option>
+        <option value="cerrado">✅ Cerrado</option>
+        <option value="con_rechazo">⚠️ Con rechazo</option>
+      </select>
+    </div>
+    <div id="pw-lista-container"></div>
+  </div>
+</div>
+
+<!-- ══ CALENDARIO ══ -->
+<div id="pw-panel-calendario" style="display:none;">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="btn bo bsm" onclick="pwCalPrev()">◀</button>
+        <div id="pw-cal-titulo" style="font-family:var(--fh);font-size:1rem;font-weight:700;color:var(--green-deep);min-width:160px;text-align:center;"></div>
+        <button class="btn bo bsm" onclick="pwCalNext()">▶</button>
+      </div>
+      <button class="btn bsm" style="background:var(--green-pale);color:var(--green-deep);border:1.5px solid var(--br);font-weight:700;" onclick="pwCalHoy()">Hoy</button>
+    </div>
+    <div id="pw-cal-grid"></div>
+    <div style="display:flex;gap:14px;margin-top:12px;flex-wrap:wrap;font-size:.72rem;font-family:var(--fn);">
+      <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;background:var(--orange);border-radius:2px;display:inline-block;"></span>Pendiente</span>
+      <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;background:#1a6faa;border-radius:2px;display:inline-block;"></span>En curso</span>
+      <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;background:var(--acc);border-radius:2px;display:inline-block;"></span>Aceptado ✓</span>
+      <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;background:var(--danger);border-radius:2px;display:inline-block;"></span>Con rechazo</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FORM ══ -->
+<div id="pw-panel-form" style="display:none;">
+  <!-- Header del pedido activo -->
+  <div class="card" id="pw-form-card">
+    <div id="pw-form-header" style="margin-bottom:16px;"></div>
+
+    <!-- Datos generales -->
+    <div id="pw-form-datos" style="background:var(--green-pale);border:1.5px solid var(--br);border-radius:var(--r2);padding:14px;margin-bottom:14px;">
+      <div style="font-family:var(--fn);font-size:.65rem;font-weight:700;color:var(--green-deep);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;">📋 DATOS DEL PEDIDO</div>
+      <div class="fgrid g3">
+        <div class="fg"><label>Fecha de entrega *</label><input type="date" id="pw-fecha-entrega"></div>
+        <div class="fg"><label>Hora de entrega</label><input type="time" id="pw-hora-entrega" value="16:00"></div>
+        <div class="fg"><label>Rampa / Almacén</label><input id="pw-rampa" placeholder="Ej. 5010"></div>
+      </div>
+      <div class="fgrid g3" style="margin-top:0;">
+        <div class="fg"><label># Pedido / OC Walmart</label><input id="pw-oc" placeholder="No. de orden"></div>
+        <div class="fg"><label>Atlas / SAP ref.</label><input id="pw-atlas" placeholder="# Atlas o SAP"></div>
+        <div class="fg"><label>Nota importante</label><input id="pw-nota" placeholder="Ej. MIÉRCOLES 04 DE MARZO"></div>
+      </div>
+      <div class="fg" style="margin-top:8px;"><label>Observaciones generales</label><input id="pw-obs" placeholder="Indicaciones especiales de Walmart..."></div>
+    </div>
+
+    <!-- Excel-like grid paste -->
+    <div id="pw-paste-panel" style="background:rgba(242,104,34,.06);border:1.5px solid rgba(242,104,34,.35);border-radius:var(--r2);padding:16px;margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <div>
+          <div style="font-family:var(--fn);font-size:.78rem;font-weight:800;color:var(--orange-deep);">📋 INGRESAR RUBROS DEL PEDIDO</div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:2px;">Llena la tabla o pega el correo de Walmart y presiona ⚡ Importar</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn bsm" style="background:var(--green-pale);color:var(--green-deep);border:1.5px solid var(--br);font-weight:700;" onclick="pwGridAddRow()">+ Fila</button>
+          <button class="btn bsm" style="background:var(--orange);color:#fff;font-weight:700;" onclick="pwImportarDesdeCorreo()">⚡ Pegar correo</button>
+        </div>
+      </div>
+      <!-- Excel grid -->
+      <div style="overflow-x:auto;">
+        <table id="pw-grid-table" style="width:100%;border-collapse:collapse;font-size:.82rem;">
+          <thead>
+            <tr style="background:var(--green-pale);">
+              <th style="padding:7px 10px;text-align:left;font-family:var(--fn);font-size:.65rem;font-weight:700;color:var(--green-deep);border:1.5px solid var(--br);white-space:nowrap;min-width:90px;"># Ítem / Código</th>
+              <th style="padding:7px 10px;text-align:left;font-family:var(--fn);font-size:.65rem;font-weight:700;color:var(--green-deep);border:1.5px solid var(--br);min-width:220px;">Descripción del producto</th>
+              <th style="padding:7px 10px;text-align:center;font-family:var(--fn);font-size:.65rem;font-weight:700;color:var(--green-deep);border:1.5px solid var(--br);min-width:90px;">📦 Cajas pedidas</th>
+              <th style="padding:7px 10px;text-align:left;font-family:var(--fn);font-size:.65rem;font-weight:700;color:var(--green-deep);border:1.5px solid var(--br);min-width:160px;">Producto (inventario)</th>
+              <th style="padding:7px 10px;border:1.5px solid var(--br);width:36px;"></th>
+            </tr>
+          </thead>
+          <tbody id="pw-grid-body"></tbody>
+        </table>
+      </div>
+      <div id="pw-grid-total" style="margin-top:8px;font-family:var(--fn);font-size:.78rem;font-weight:700;color:var(--green-deep);display:none;"></div>
+      <!-- Import dialog -->
+      <div id="pw-import-dialog" style="display:none;margin-top:12px;background:var(--s1);border:1.5px solid var(--br);border-radius:var(--r);padding:12px;">
+        <div style="font-family:var(--fn);font-size:.72rem;font-weight:700;color:var(--orange-deep);margin-bottom:8px;">📧 Pega el texto del correo de Walmart:</div>
+        <textarea id="pw-correo-raw" rows="4" placeholder="Pega aquí todo el texto del correo..." style="width:100%;background:var(--s2);border:1.5px solid var(--br);color:var(--txt);padding:9px 12px;border-radius:var(--r);font-family:var(--fm);font-size:.78rem;resize:vertical;"></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button class="btn bsm" style="background:var(--orange);color:#fff;font-weight:700;" onclick="pwParsearCorreo()">⚡ Importar</button>
+          <button class="btn bsm bo" onclick="document.getElementById('pw-import-dialog').style.display='none'">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+
+
+    <div class="fa">
+      <button class="btn bp" onclick="pwGuardarPedido()">💾 Guardar Pedido</button>
+      <button class="btn bo bsm" onclick="pwTab('lista',document.getElementById('pw-tab-lista'))">← Volver</button>
+    </div>
+  </div>
+
+  <!-- Panel de cierre del día -->
+  <div class="card" id="pw-cierre-card" style="display:none;">
+    <div style="font-family:var(--fh);font-size:1rem;font-weight:700;color:var(--green-deep);margin-bottom:4px;">🔔 CIERRE DEL DÍA — Confirmar resultado del pedido</div>
+    <div style="font-size:.8rem;color:var(--muted);margin-bottom:16px;">Indica si cada rubro fue aceptado o rechazado. Esto es obligatorio antes de continuar.</div>
+    <div id="pw-cierre-rubros"></div>
+    <div id="pw-cierre-docs" style="display:none;margin-top:14px;"></div>
+    <div class="fa" style="margin-top:14px;">
+      <button class="btn bp" onclick="pwGuardarCierre()">✅ Confirmar y cerrar pedido</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="sec" id="sec-inv-salida">
+<div class="ph"><h1>Ventas Walmart</h1><p>Carga el PDF Ediwin — la IA extrae cliente, productos, cantidades y OC · IVA + retención 80% calculados automáticamente</p></div>
+<div class="card">
+<div class="ct">Registrar Venta</div>
+<div style="background:rgba(0,217,139,.05);border:2px solid rgba(0,217,139,.3);border-radius:6px;padding:16px;margin-bottom:16px;">
+<div style="font-size:.6rem;color:var(--acc);font-weight:700;letter-spacing:.08em;margin-bottom:10px;">① DOCUMENTO DE VENTA</div>
+<div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+<button id="sal-tab-ediwin"  class="btn bp"    onclick="salTab('ediwin')"  style="font-size:.74rem;">📄 PDF Ediwin</button>
+<button id="sal-tab-albaran" class="btn bo bsm" onclick="salTab('albaran')" style="font-size:.74rem;">📷 Albarán físico</button>
+<button id="sal-tab-xml"     class="btn bo bsm" onclick="salTab('xml')"     style="font-size:.74rem;">📋 XML FEL</button>
+</div>
+<div id="sal-panel-ediwin">
+<div style="font-size:.7rem;color:var(--muted2);margin-bottom:8px;">
+          Carga el PDF Ediwin de Walmart. La IA extrae automáticamente: cliente, NIT, OC, No. entrega, productos, cantidades y precios.<br>
+<strong style="color:var(--warn);">💡 Precio con IVA</strong> — ingresa el precio TAL COMO aparece en el Ediwin (ya incluye IVA). El sistema extrae el neto, el IVA y calcula la retención Walmart (80% del IVA).
+        </div>
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+<label class="btn bp" style="cursor:pointer;font-size:.8rem;padding:10px 16px;">
+            📄 Cargar PDF Ediwin
+            <input type="file" accept=".pdf,image/*" id="sal-ediwin-input" style="display:none;" onchange="salLoadEdiwin(this)">
+</label>
+<div id="sal-ediwin-badge" style="display:none;" class="chip ck">✓ Cargado</div>
+<button class="btn bo bsm" onclick="salClearForm()" style="font-size:.68rem;">🗑 Limpiar</button>
+</div>
+<div id="sal-ediwin-loading" style="display:none;font-size:.72rem;color:var(--muted2);margin-top:8px;">✨ Analizando con IA...</div>
+<div id="sal-ediwin-result"  style="display:none;margin-top:8px;background:var(--s3);border:1px solid rgba(0,217,139,.25);border-radius:4px;padding:10px;font-size:.74rem;line-height:1.8;"></div>
+</div>
+<div id="sal-panel-albaran" style="display:none;">
+<div style="font-size:.7rem;color:var(--muted2);margin-bottom:8px;">Fotografía el albarán físico — la IA lo leerá.</div>
+<video id="sal-cam-video" autoplay playsinline muted style="display:none;width:100%;max-width:340px;border-radius:4px;border:2px solid var(--acc);margin-bottom:6px;background:#000;"></video>
+<canvas id="sal-cam-canvas" style="display:none;"></canvas>
+<div id="sal-albaran-preview" style="display:none;margin-bottom:6px;">
+<img id="sal-albaran-img" style="max-width:100%;max-height:180px;border-radius:4px;border:1px solid var(--br);">
+<button class="btn bo bsm" style="margin-top:4px;border-color:var(--danger);color:var(--danger);" onclick="salDeleteAlbaran()">✕ Quitar</button>
+</div>
+<div id="sal-cam-open-btns" style="display:flex;gap:6px;flex-wrap:wrap;">
+<button class="btn bo bsm" onclick="salOpenCam()">📷 Fotografiar</button>
+<label class="btn bo bsm" style="cursor:pointer;">🖼 Cargar<input type="file" accept="image/*" id="sal-img-upload" style="display:none;" onchange="salLoadImage(this)"></label>
+</div>
+<div id="sal-cam-active" style="display:none;" class="fa">
+<button class="btn bp bsm" onclick="salCapture()">⬤ Capturar</button>
+<button class="btn bo bsm" onclick="salCloseCam()">✕</button>
+</div>
+<div id="sal-ai-btn" style="display:none;margin-top:8px;">
+<button class="btn bp" style="background:linear-gradient(135deg,var(--acc),var(--info));" onclick="salReadAlbaranAI()">✨ Leer con IA</button>
+<span id="sal-ai-loading" style="display:none;font-size:.72rem;color:var(--muted2);margin-left:8px;">Analizando...</span>
+</div>
+<div id="sal-ai-result" style="display:none;margin-top:8px;background:var(--s3);border:1px solid rgba(0,217,139,.25);border-radius:4px;padding:10px;font-size:.74rem;line-height:1.8;"></div>
+</div>
+<div id="sal-panel-xml" style="display:none;">
+<div style="font-size:.7rem;color:var(--muted2);margin-bottom:8px;">Carga el XML FEL — extrae datos fiscales automáticamente.</div>
+<div style="display:flex;gap:8px;align-items:center;">
+<label class="btn bo bsm" style="cursor:pointer;border-color:var(--info);color:var(--info);">
+            📄 Seleccionar XML FEL<input type="file" accept=".xml" id="sal-xml-input" style="display:none;" onchange="salReadXML(this)">
+</label>
+<div id="sal-xml-badge" style="display:none;" class="chip ck">✓ XML</div>
+</div>
+<div id="sal-xml-preview" style="display:none;margin-top:6px;background:var(--s3);border:1px solid rgba(0,217,139,.2);border-radius:4px;padding:8px;font-size:.7rem;line-height:1.6;"></div>
+</div>
+</div>
+<div style="background:var(--s2);border:1px solid var(--br);border-radius:4px;padding:14px;margin-bottom:14px;">
+<div style="font-size:.6rem;color:var(--warn);font-weight:700;letter-spacing:.08em;margin-bottom:10px;">② DATOS DE LA VENTA — verificar</div>
+<div class="fgrid g3">
+<div class="fg">
+<label>Cliente</label>
+<div style="background:rgba(0,217,139,.08);border:1px solid rgba(0,217,139,.3);border-radius:4px;padding:8px 12px;font-weight:700;font-size:.78rem;">
+            🏪 Walmart Guatemala
+          </div>
+<input type="hidden" id="sal-cliente" value="walmart-gt">
+</div>
+<div class="fg"><label>NIT Walmart</label><input id="sal-nit" value="1926272" readonly style="color:var(--muted2);cursor:default;"></div>
+<div class="fg"><label>Fecha</label><input type="date" id="sal-fecha"></div>
+</div>
+<div class="fgrid g3" style="margin-top:8px;">
+<div class="fg"><label>Orden de Compra (OC)</label><input id="sal-oc" placeholder="Auto desde Ediwin"></div>
+<div class="fg"><label>No. Entrega / Albarán</label><input id="sal-docmat" placeholder="Auto desde Ediwin"></div>
+<div class="fg"><label>No. Autorización SAT</label><input id="sal-factura" placeholder="Auto desde Ediwin"></div>
+</div>
+<div class="fgrid g3" style="margin-top:8px;">
+<div class="fg"><label>Serie FEL</label><input id="sal-serie" placeholder="Auto"></div>
+<div class="fg"><label>Número DTE</label><input id="sal-dte" placeholder="Auto"></div>
+<div class="fg"><label>Planta / Almacén</label><input id="sal-almacen" placeholder="Auto"></div>
+</div>
+</div>
+<div style="background:var(--s2);border:1px solid var(--br);border-radius:4px;padding:14px;margin-bottom:14px;">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+<div>
+<div style="font-size:.6rem;color:var(--info);font-weight:700;letter-spacing:.08em;">③ PRODUCTOS</div>
+<div style="font-size:.62rem;color:var(--muted2);margin-top:2px;">Precio <strong style="color:var(--warn);">con IVA incluido</strong> (tal como aparece en el Ediwin) — el sistema extrae IVA y calcula retención 80%</div>
+</div>
+<button class="btn bo bsm" onclick="salAddLinea()">+ Línea</button>
+</div>
+<div id="sal-lineas"></div>
+<div id="sal-totales" style="display:none;background:var(--s1);border:1px solid var(--br);border-radius:4px;padding:10px;margin-top:8px;">
+<div style="font-size:.58rem;color:var(--muted2);font-weight:700;margin-bottom:8px;">DESGLOSE FISCAL</div>
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">
+<div style="background:var(--s2);border-radius:3px;padding:8px;text-align:center;">
+<div style="font-size:.56rem;color:var(--muted2);">Cajas</div>
+<strong id="sal-tot-bultos" style="font-size:.78rem;">0</strong>
+</div>
+<div style="background:var(--s2);border-radius:3px;padding:8px;text-align:center;">
+<div style="font-size:.56rem;color:var(--muted2);">Neto extraído</div>
+<strong id="sal-tot-neto" style="font-size:.78rem;color:var(--txt);">Q 0</strong>
+</div>
+<div style="background:var(--s2);border-radius:3px;padding:8px;text-align:center;">
+<div style="font-size:.56rem;color:var(--muted2);">IVA 12%</div>
+<strong id="sal-tot-iva" style="font-size:.78rem;color:var(--muted2);">Q 0</strong>
+</div>
+<div style="background:rgba(255,56,88,.08);border:1px solid rgba(255,56,88,.2);border-radius:3px;padding:8px;text-align:center;">
+<div style="font-size:.56rem;color:var(--danger);">− Retención Walmart 80% IVA</div>
+<strong id="sal-tot-ret" style="font-size:.78rem;color:var(--danger);">−Q 0</strong>
+</div>
+<div style="background:rgba(74,158,255,.1);border:2px solid rgba(74,158,255,.4);border-radius:3px;padding:8px;text-align:center;">
+<div style="font-size:.56rem;color:var(--info);font-weight:700;">✅ A COBRAR</div>
+<strong id="sal-tot-acobrar" style="font-size:.86rem;color:var(--info);">Q 0</strong>
+</div>
+</div>
+<input id="sal-tot-lbs"    style="display:none;">
+<input id="sal-tot-coniva" style="display:none;">
+<input id="sal-tot-q"      style="display:none;">
+</div>
+</div>
+<div class="fg" style="margin-bottom:10px;"><label>Observaciones</label><textarea id="sal-obs" rows="2" placeholder="Condiciones de entrega, temperatura..."></textarea></div>
+<div class="fa">
+<button class="btn bp" onclick="saveSal()">✅ Registrar Venta</button>
+<button class="btn bo" onclick="printSec('sec-inv-salida')">🖨</button>
+</div>
+</div>
+<div class="tw" style="margin-top:14px;">
+<div class="twh">
+<span class="twt">Historial Ventas Walmart</span>
+<button class="btn bo bsm" onclick="invExportSalidas()">↓ Excel</button>
+</div>
+<div style="overflow-x:auto;">
+<table>
+<thead><tr><th>Fecha</th><th>Cliente</th><th>Productos</th><th>LBS</th><th>Neto Q</th><th>IVA Q</th><th>Con IVA</th><th>Ret. Q</th><th>A cobrar Q</th><th>OC</th><th>Auth SAT</th><th></th></tr></thead>
+<tbody id="sal-tbody"></tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="sec" id="sec-ventas-gt">
+<span id="vgt-precio-lbl" style="display:none;"></span><span id="vgt-cant-lbl" style="display:none;"></span><div class="ph"><h1>Despachos — Locales Guatemala</h1><p>Mercado mayorista · distribuidores · restaurantes · contenedor completo o parcial — sin FEL requerida</p></div>
+<div class="card">
+<div class="ct">Registrar Despacho Local</div>
+<div style="background:rgba(0,217,139,.06);border:1px solid rgba(0,217,139,.25);border-radius:4px;padding:12px;margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+<span style="font-size:.7rem;color:var(--acc);font-weight:600;white-space:nowrap;">📋 ¿Tienes cotización aceptada?</span>
+<select id="vgt-cot-sel" onchange="if(this.value)cargarCotEnLocal(this.value)" style="flex:1;min-width:200px;background:var(--s1);border:1px solid rgba(0,217,139,.4);color:var(--txt);padding:6px 8px;border-radius:4px;font-size:.72rem;">
+<option value="">— Cargar desde cotización aceptada —</option>
+</select>
+</div>
+<div id="vgt-cot-badge" style="display:none;background:rgba(0,217,139,.08);border:1px solid rgba(0,217,139,.3);border-radius:4px;padding:8px 12px;margin-bottom:12px;font-size:.72rem;color:var(--acc);"></div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">
+<label style="cursor:pointer;"><input type="radio" name="vgt-tipo" value="mercado"      id="vgt-tipo-mercado"      onchange="vgtTipo('mercado')"      checked style="display:none;">
+<div id="vgt-card-mercado"      style="background:rgba(0,217,139,.08);border:2px solid var(--acc);border-radius:4px;padding:10px;text-align:center;"><div style="font-size:.9rem;">🏪</div><div style="font-size:.72rem;font-weight:700;margin-top:3px;">Mercado / Mayorista</div><div style="font-size:.6rem;color:var(--muted2);">Por quintal o libra</div></div>
+</label>
+<label style="cursor:pointer;"><input type="radio" name="vgt-tipo" value="distribuidor" id="vgt-tipo-distribuidor" onchange="vgtTipo('distribuidor')"             style="display:none;">
+<div id="vgt-card-distribuidor" style="background:var(--s2);border:2px solid var(--br);border-radius:4px;padding:10px;text-align:center;"><div style="font-size:.9rem;">🚚</div><div style="font-size:.72rem;font-weight:700;margin-top:3px;">Distribuidor / Lote</div><div style="font-size:.6rem;color:var(--muted2);">Carga completa o parcial</div></div>
+</label>
+<label style="cursor:pointer;"><input type="radio" name="vgt-tipo" value="restaurante"  id="vgt-tipo-restaurante"  onchange="vgtTipo('restaurante')"              style="display:none;">
+<div id="vgt-card-restaurante"  style="background:var(--s2);border:2px solid var(--br);border-radius:4px;padding:10px;text-align:center;"><div style="font-size:.9rem;">🍽️</div><div style="font-size:.72rem;font-weight:700;margin-top:3px;">Restaurante / Negocio</div><div style="font-size:.6rem;color:var(--muted2);">Varias unidades</div></div>
+</label>
+</div>
+<div class="fgrid g3">
+<div class="fg"><label>Fecha</label><input type="date" id="vgt-fecha"></div>
+<div class="fg"><label>Comprador / Negocio</label><input id="vgt-comprador" placeholder="Nombre o mercado"></div>
+<div class="fg"><label>Teléfono / Referencia</label><input id="vgt-tel" placeholder="Tel. o referencia"></div>
+</div>
+<div style="background:rgba(74,158,255,.04);border:1px solid rgba(74,158,255,.2);border-radius:4px;padding:12px;margin-top:10px;margin-bottom:10px;">
+<div style="font-size:.6rem;color:var(--info);font-weight:700;letter-spacing:.08em;margin-bottom:8px;">📄 DOCUMENTO DE VENTA (opcional pero recomendado)</div>
+<div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+<button id="vgt-doc-tab-xml"    class="btn bp bsm" onclick="vgtDocTab('xml')"    style="font-size:.68rem;">📋 XML FEL</button>
+<button id="vgt-doc-tab-manual" class="btn bo bsm" onclick="vgtDocTab('manual')" style="font-size:.68rem;">✏️ Manual / Sin factura</button>
+</div>
+<div id="vgt-doc-panel-xml">
+<div style="font-size:.68rem;color:var(--muted2);margin-bottom:8px;">Carga el XML FEL — la IA extrae productos, cantidades y precios automáticamente.<br>💡 Precio ya incluye IVA. Retención 15% si total supera Q2,500.</div>
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+<label class="btn bp" style="cursor:pointer;font-size:.72rem;">
+            📋 Cargar XML FEL<input type="file" accept=".xml" id="vgt-xml-input" style="display:none;" onchange="vgtLoadXML(this)">
+</label>
+<label class="btn bo bsm" style="cursor:pointer;font-size:.68rem;">
+            📷 Foto factura<input type="file" accept="image/*" id="vgt-foto-input" style="display:none;" onchange="vgtLoadFoto(this)">
+</label>
+<div id="vgt-xml-badge"  style="display:none;" class="chip ck">✓ XML</div>
+<div id="vgt-foto-badge" style="display:none;" class="chip ck">✓ Foto</div>
+</div>
+<div id="vgt-xml-loading" style="display:none;font-size:.72rem;color:var(--muted2);margin-top:6px;">✨ Leyendo XML...</div>
+<div id="vgt-xml-result"  style="display:none;margin-top:8px;background:var(--s3);border:1px solid rgba(74,158,255,.25);border-radius:4px;padding:10px;font-size:.74rem;line-height:1.8;"></div>
+</div>
+<div id="vgt-doc-panel-manual" style="display:none;">
+<div class="fgrid g3">
+<div class="fg"><label>No. Factura / Recibo</label><input id="vgt-num-factura" placeholder="Serie-No."></div>
+<div class="fg"><label>Fecha factura</label><input type="date" id="vgt-fecha-factura"></div>
+<div class="fg"><label>NIT comprador</label><input id="vgt-nit-comprador" placeholder="NIT o CF"></div>
+</div>
+</div>
+</div>
+<div id="vgt-iva-info" style="display:none;background:rgba(245,197,24,.06);border:1px solid rgba(245,197,24,.2);border-radius:4px;padding:8px 12px;margin-bottom:8px;font-size:.7rem;">
+<strong style="color:var(--warn);">⚠ Retención ISR:</strong> El total supera Q2,500 — se retendrá 15% del IVA al cliente.
+      <span id="vgt-iva-retencion" style="color:var(--danger);font-weight:700;margin-left:8px;"></span>
+</div>
+<div style="background:var(--s2);border:1px solid var(--br);border-radius:4px;padding:12px;margin-top:0px;margin-bottom:10px;">
+<div style="font-size:.6rem;color:var(--warn);font-weight:700;letter-spacing:.08em;margin-bottom:8px;">PRODUCTOS Y PRECIOS</div>
+<div class="fgrid g2" style="margin-bottom:8px;">
+<div class="fg"><label>Unidad de venta</label>
+<select id="vgt-unidad" onchange="vgtCalc()">
+<option value="lb">Libra (lb)</option><option value="quintal">Quintal (100 lbs)</option>
+<option value="arroba">Arroba (25 lbs)</option><option value="caja">Caja / Presentación</option>
+<option value="bulto">Bulto / Costal</option>
+<option value="unidad">Unidad (pieza)</option><option value="kg">Kilogramo</option>
+<option value="lote">Lote completo</option>
+</select>
+</div>
+<div style="align-self:end;">
+<button class="btn bo bsm" onclick="vgtAddLinea()">+ Producto</button>
+</div>
+</div>
+<div id="vgt-lineas"></div>
+<div id="vgt-totales" style="display:none;background:var(--s3);border-radius:4px;padding:8px;margin-top:6px;font-size:.76rem;">
+<div style="display:flex;gap:16px;flex-wrap:wrap;">
+<span>Peso total: <strong id="vgt-tot-peso" style="color:var(--acc);">—</strong></span>
+<span>Total Q: <strong id="vgt-tot-q" style="color:var(--acc);">Q 0</strong></span>
+</div>
+</div>
+</div>
+<div class="fgrid g3">
+<div class="fg"><label>Forma de pago</label>
+<select id="vgt-pago"><option value="efectivo">Efectivo</option><option value="transferencia">Transferencia</option><option value="cheque">Cheque</option><option value="credito">Crédito</option></select>
+</div>
+<div class="fg"><label>Días de crédito</label><input type="number" id="vgt-dias-credito" placeholder="0 (contado)" min="0"></div>
+<div class="fg"><label>No. recibo / comprobante</label><input id="vgt-recibo" placeholder="Recibo, transferencia #"></div>
+</div>
+<div style="margin-top:10px;">
+<video id="vgt-cam-video" autoplay playsinline muted style="display:none;width:100%;max-width:300px;border-radius:4px;border:2px solid var(--acc);margin-bottom:6px;background:#000;"></video>
+<canvas id="vgt-cam-canvas" style="display:none;"></canvas>
+<div id="vgt-doc-preview" style="display:none;margin-bottom:6px;">
+<img id="vgt-doc-img" style="max-height:140px;border-radius:4px;border:1px solid var(--br);">
+<button class="btn bo bsm" style="margin-top:4px;border-color:var(--danger);color:var(--danger);" onclick="vgtDelDoc()">✕ Quitar</button>
+</div>
+<div id="vgt-cam-btns" style="display:flex;gap:6px;">
+<button class="btn bo bsm" onclick="vgtOpenCam()">📷 Foto recibo</button>
+<label class="btn bo bsm" style="cursor:pointer;">🖼 Cargar<input type="file" accept="image/*" id="vgt-img-input" style="display:none;" onchange="vgtLoadImg(this)"></label>
+</div>
+<div id="vgt-cam-active" style="display:none;" class="fa">
+<button class="btn bp bsm" onclick="vgtCapture()">⬤ Capturar</button>
+<button class="btn bo bsm" onclick="vgtCloseCam()">✕</button>
+</div>
+</div>
+<div class="fg" style="margin-top:8px;"><label>Observaciones</label><textarea id="vgt-obs" rows="2" placeholder="Notas de la venta..."></textarea></div>
+<div class="fa" style="margin-top:10px;">
+<button class="btn bp" onclick="saveVgtVenta()">📤 Registrar Despacho</button>
+<button class="btn bo" onclick="printSec('sec-ventas-gt')">🖨</button>
+</div>
+</div>
+<div class="tw" style="margin-top:14px;">
+<div class="twh">
+<span class="twt">Historial Despachos Locales</span>
+<div style="display:flex;gap:6px;">
+<button class="btn bo bsm" onclick="vgtFiltrar()">🔍 Filtrar</button>
+<button class="btn bo bsm" onclick="vgtExport()">↓ Excel</button>
+</div>
+</div>
+<div id="vgt-filtros" style="display:none;padding:8px 14px;border-bottom:1px solid var(--br);display:flex;gap:8px;flex-wrap:wrap;align-items:end;">
+<div class="fg"><label>Producto</label><select id="vgt-fil-prod" onchange="renderVgtVentas()"><option value="">Todos</option></select></div>
+<div class="fg"><label>Desde</label><input type="date" id="vgt-fil-desde" onchange="renderVgtVentas()"></div>
+<div class="fg"><label>Hasta</label><input type="date" id="vgt-fil-hasta" onchange="renderVgtVentas()"></div>
+<div class="fg"><label>Tipo</label>
+<select id="vgt-fil-tipo" onchange="renderVgtVentas()">
+<option value="">Todos</option><option value="mercado">Mercado</option><option value="distribuidor">Distribuidor</option><option value="restaurante">Restaurante</option>
+</select>
+</div>
+</div>
+<div style="overflow-x:auto;">
+<table>
+<thead><tr><th>Fecha</th><th>Tipo</th><th>Comprador</th><th>Productos</th><th>Peso</th><th>Total Q</th><th>Pago</th><th>Doc.</th><th></th></tr></thead>
+<tbody id="vgt-tbody"></tbody>
+</table>
+</div>
+<div id="vgt-resumen" style="padding:8px 14px;border-top:1px solid var(--br);font-size:.76rem;display:flex;gap:16px;flex-wrap:wrap;"></div>
+</div>
+</div>
+<div class="sec" id="sec-ventas-int">
+<div class="ph"><h1>Despachos — Exportación</h1><p>Centroamérica y México sin factura FEL · GTQ o MXN · contenedor completo o parcial</p></div>
+<div class="card">
+<div class="ct">Registrar Despacho de Exportación</div>
+<div style="background:rgba(0,217,139,.06);border:1px solid rgba(0,217,139,.25);border-radius:4px;padding:12px;margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+<span style="font-size:.7rem;color:var(--acc);font-weight:600;white-space:nowrap;">📋 ¿Tienes cotización aceptada?</span>
+<select id="vint-cot-sel" onchange="if(this.value)cargarCotEnExport(this.value)" style="flex:1;min-width:200px;background:var(--s1);border:1px solid rgba(0,217,139,.4);color:var(--txt);padding:6px 8px;border-radius:4px;font-size:.72rem;">
+<option value="">— Cargar desde cotización aceptada —</option>
+</select>
+</div>
+<div id="vint-cot-badge" style="display:none;background:rgba(0,217,139,.08);border:1px solid rgba(0,217,139,.3);border-radius:4px;padding:8px 12px;margin-bottom:12px;font-size:.72rem;color:var(--acc);"></div>
+<div class="fgrid g3">
+<div class="fg"><label>Fecha</label><input type="date" id="vint-fecha"></div>
+<div class="fg"><label>País destino</label>
+<select id="vint-pais">
+<option value="MX">🇲🇽 México</option><option value="SV">🇸🇻 El Salvador</option>
+<option value="HN">🇭🇳 Honduras</option><option value="CR">🇨🇷 Costa Rica</option>
+<option value="NI">🇳🇮 Nicaragua</option><option value="BZ">🇧🇿 Belice</option>
+<option value="otro">🌍 Otro</option>
+</select>
+</div>
+<div class="fg"><label>Comprador / Empresa</label><input id="vint-comprador" placeholder="Nombre del comprador"></div>
+</div>
+<div style="background:var(--s2);border:1px solid var(--br);border-radius:4px;padding:12px;margin-top:10px;margin-bottom:10px;">
+<div style="font-size:.6rem;color:var(--info);font-weight:700;letter-spacing:.08em;margin-bottom:8px;">TIPO DE OPERACIÓN</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;">
+<label style="cursor:pointer;"><input type="radio" name="vint-op" value="contenedor_completo" id="vint-op-cc" onchange="vintOp('contenedor_completo')" checked style="display:none;">
+<div id="vint-opcard-contenedor_completo" style="background:rgba(74,158,255,.1);border:2px solid var(--info);border-radius:4px;padding:8px;text-align:center;"><div style="font-size:.85rem;">🚛</div><div style="font-size:.68rem;font-weight:700;margin-top:2px;">Contenedor completo</div></div>
+</label>
+<label style="cursor:pointer;"><input type="radio" name="vint-op" value="parcial_transporte" id="vint-op-pt" onchange="vintOp('parcial_transporte')" style="display:none;">
+<div id="vint-opcard-parcial_transporte" style="background:var(--s3);border:2px solid var(--br);border-radius:4px;padding:8px;text-align:center;"><div style="font-size:.85rem;">📦</div><div style="font-size:.68rem;font-weight:700;margin-top:2px;">Parcial + transporte</div></div>
+</label>
+<label style="cursor:pointer;"><input type="radio" name="vint-op" value="solo_producto" id="vint-op-sp" onchange="vintOp('solo_producto')" style="display:none;">
+<div id="vint-opcard-solo_producto" style="background:var(--s3);border:2px solid var(--br);border-radius:4px;padding:8px;text-align:center;"><div style="font-size:.85rem;">🥬</div><div style="font-size:.68rem;font-weight:700;margin-top:2px;">Solo producto</div></div>
+</label>
+<label style="cursor:pointer;"><input type="radio" name="vint-op" value="frontera_mx" id="vint-op-fm" onchange="vintOp('frontera_mx')" style="display:none;">
+<div id="vint-opcard-frontera_mx" style="background:var(--s3);border:2px solid var(--br);border-radius:4px;padding:8px;text-align:center;"><div style="font-size:.85rem;">🇲🇽</div><div style="font-size:.68rem;font-weight:700;margin-top:2px;">Hasta frontera MX</div></div>
+</label>
+</div>
+<div style="margin-top:8px;font-size:.62rem;color:var(--muted2);font-weight:600;margin-bottom:4px;">INCLUYE:</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap;font-size:.7rem;">
+<label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="vint-inc-producto"   checked onchange="vintCalc()"> Producto</label>
+<label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="vint-inc-transporte"        onchange="vintCalc()"> Transporte</label>
+<label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="vint-inc-papeleria"          onchange="vintCalc()"> Papelería</label>
+<label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="vint-inc-aduana"             onchange="vintCalc()"> Aduana</label>
+</div>
+</div>
+<div style="background:rgba(245,197,24,.04);border:1px solid rgba(245,197,24,.2);border-radius:4px;padding:12px;margin-bottom:10px;">
+<div style="font-size:.6rem;color:var(--warn);font-weight:700;letter-spacing:.08em;margin-bottom:8px;">💰 PRECIO PACTADO</div>
+<div class="fgrid g3">
+<div class="fg"><label>Moneda</label>
+<select id="vint-moneda" onchange="vintMonedaChange()">
+<option value="gtq">GTQ — Quetzales</option><option value="mxn">MXN — Pesos mexicanos</option>
+</select>
+</div>
+<div class="fg"><label>Precio por</label>
+<select id="vint-precio-base" onchange="vintCalc()">
+<option value="lb">Por libra</option><option value="kg">Por kilogramo</option>
+<option value="quintal">Por quintal (100 lbs)</option><option value="bulto">Por bulto</option>
+<option value="contenedor">Por contenedor (precio único)</option>
+</select>
+</div>
+<div class="fg"><label id="vint-precio-lbl">Precio unitario</label>
+<input type="number" id="vint-precio" step="0.01" placeholder="0" oninput="vintCalc()">
+</div>
+</div>
+<div id="vint-tc-row" style="display:none;margin-top:8px;">
+<div class="fgrid g3">
+<div class="fg"><label>TC MXN → GTQ</label>
+<div style="display:flex;gap:6px;"><input type="number" id="vint-tc" step="0.0001" placeholder="Ej. 0.7428" oninput="vintCalc()" style="flex:1;"><button class="btn bo bsm" onclick="vintFetchTC()" style="font-size:.65rem;padding:7px 6px;">🔄</button></div>
+</div>
+<div class="fg"><label>Equiv. GTQ</label><input id="vint-total-gtq-eq" readonly style="color:var(--acc);cursor:default;" placeholder="Auto"></div>
+</div>
+</div>
+</div>
+<div style="background:var(--s2);border:1px solid var(--br);border-radius:4px;padding:12px;margin-bottom:10px;">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+<div style="font-size:.6rem;color:var(--acc);font-weight:700;letter-spacing:.08em;">PRODUCTOS EXPORTADOS</div>
+<button class="btn bo bsm" onclick="vintAddLinea()">+ Producto</button>
+</div>
+<div id="vint-lineas"></div>
+<div id="vint-totales" style="display:none;background:var(--s3);border-radius:4px;padding:8px;margin-top:6px;font-size:.76rem;">
+<div style="display:flex;gap:14px;flex-wrap:wrap;">
+<span>Bultos: <strong id="vint-tot-bultos" style="color:var(--acc);">0</strong></span>
+<span>LBS: <strong id="vint-tot-peso" style="color:var(--acc);">0</strong></span>
+<span id="vint-tot-mon-span">Total: <strong id="vint-tot-total" style="color:var(--acc);">0</strong></span>
+<span id="vint-tot-gtq-span" style="display:none;">≈ GTQ: <strong id="vint-tot-gtq" style="color:var(--muted2);">Q 0</strong></span>
+</div>
+</div>
+</div>
+<div class="fgrid g3">
+<div class="fg"><label>Flete / Transporte</label><input type="number" id="vint-flete" step="0.01" placeholder="0" oninput="vintCalc()"></div>
+<div class="fg"><label>Papelería / Docs</label><input type="number" id="vint-pap" step="0.01" placeholder="0" oninput="vintCalc()"></div>
+<div class="fg"><label>Otros cargos</label><input type="number" id="vint-otros" step="0.01" placeholder="0" oninput="vintCalc()"></div>
+</div>
+<div class="fgrid g2" style="margin-top:8px;">
+<div class="fg"><label>Carta de porte / No. embarque</label><input id="vint-porte" placeholder="No. carta de porte"></div>
+<div class="fg"><label>Placa / Transportista</label><input id="vint-placa" placeholder="Placa o transportista"></div>
+</div>
+<div id="vint-resumen-total" style="display:none;background:var(--s1);border:2px solid rgba(0,217,139,.3);border-radius:4px;padding:10px;margin-top:10px;">
+<div id="vint-resumen-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px;"></div>
+</div>
+<div style="margin-top:10px;">
+<video id="vint-cam-video" autoplay playsinline muted style="display:none;width:100%;max-width:280px;border-radius:4px;border:2px solid var(--acc);margin-bottom:6px;background:#000;"></video>
+<canvas id="vint-cam-canvas" style="display:none;"></canvas>
+<div id="vint-doc-preview" style="display:none;margin-bottom:6px;">
+<img id="vint-doc-img" style="max-height:120px;border-radius:4px;border:1px solid var(--br);">
+<button class="btn bo bsm" style="margin-left:6px;border-color:var(--danger);color:var(--danger);" onclick="vintDelDoc()">✕</button>
+</div>
+<div id="vint-cam-btns" style="display:flex;gap:6px;">
+<button class="btn bo bsm" onclick="vintOpenCam()">📷 Fotografiar doc</button>
+<label class="btn bo bsm" style="cursor:pointer;">🖼 Cargar<input type="file" accept="image/*" id="vint-img-input" style="display:none;" onchange="vintLoadImg(this)"></label>
+</div>
+<div id="vint-cam-active" style="display:none;" class="fa">
+<button class="btn bp bsm" onclick="vintCapture()">⬤ Capturar</button>
+<button class="btn bo bsm" onclick="vintCloseCam()">✕</button>
+</div>
+</div>
+<div class="fg" style="margin-top:8px;"><label>Observaciones</label><input id="vint-obs" placeholder="Acuerdos, condiciones, crédito..."></div>
+<div class="fa" style="margin-top:10px;">
+<button class="btn bp" onclick="saveVintVenta()">📤 Registrar Exportación</button>
+<button class="btn bo" onclick="printSec('sec-ventas-int')">🖨</button>
+</div>
+</div>
+<div class="tw" style="margin-top:14px;">
+<div class="twh"><span class="twt">Historial Exportaciones</span><button class="btn bo bsm" onclick="vintExport()">↓ Excel</button></div>
+<div style="overflow-x:auto;">
+<table>
+<thead><tr><th>Fecha</th><th>País</th><th>Comprador</th><th>Operación</th><th>Productos</th><th>LBS</th><th>Total</th><th>Moneda</th><th>≈ GTQ</th><th>Doc.</th><th></th></tr></thead>
+<tbody id="vint-tbody"></tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="sec" id="sec-reporte">
+<div class="ph"><h1>Reporte General</h1><p>Ingresos · costos · ventas · maquila · utilidad — por producto y por canal de venta</p></div>
+<div class="card" style="margin-bottom:14px;">
+<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;">
+<div class="fg"><label>Desde</label><input type="date" id="rep-desde"></div>
+<div class="fg"><label>Hasta</label><input type="date" id="rep-hasta"></div>
+<div class="fg"><label>Producto</label>
+<select id="rep-prod"><option value="">Todos los productos</option></select>
+</div>
+<button class="btn bp" onclick="generarReporte()" style="align-self:end;">📊 Generar Reporte</button>
+<button class="btn bo bsm" onclick="repExport()"   style="align-self:end;">↓ Excel completo</button>
+</div>
+</div>
+<div id="rep-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-bottom:16px;"></div>
+<div class="tabs" style="margin-bottom:0;">
+<div class="tab active" id="rep-tab-resumen"  onclick="repTab('resumen',this)">📊 Resumen</div>
+<div class="tab"        id="rep-tab-producto" onclick="repTab('producto',this)">🥬 Por Producto</div>
+<div class="tab"        id="rep-tab-canal"    onclick="repTab('canal',this)">📤 Por Canal</div>
+<div class="tab"        id="rep-tab-consolidado" onclick="repTab('consolidado',this)">📋 Consolidado Ventas</div>
+<div class="tab"        id="rep-tab-detalle"  onclick="repTab('detalle',this)">📑 Detalle completo</div>
+</div>
+<div id="rep-panel-resumen" class="card" style="border-top:none;border-radius:0 0 4px 4px;">
+<div id="rep-resumen-html"><div class="empty">Selecciona un período y genera el reporte</div></div>
+</div>
+<div id="rep-panel-producto" class="card" style="display:none;border-top:none;border-radius:0 0 4px 4px;">
+<div style="overflow-x:auto;"><table id="rep-tabla-producto">
+<thead><tr><th>Producto</th><th>LBS importadas</th><th>Costo importación Q</th><th>Costo maquila Q</th><th>Costo/lb total Q</th><th>LBS vendidas</th><th>Ingresos Q</th><th>Utilidad bruta Q</th><th>Margen %</th></tr></thead>
+<tbody id="rep-tbody-producto"></tbody>
+</table></div>
+</div>
+<div id="rep-panel-canal" class="card" style="display:none;border-top:none;border-radius:0 0 4px 4px;">
+<div style="overflow-x:auto;"><table id="rep-tabla-canal">
+<thead><tr><th>Canal de venta</th><th>Despachos</th><th>LBS vendidas</th><th>Ingresos Q</th><th>% del total</th></tr></thead>
+<tbody id="rep-tbody-canal"></tbody>
+</table></div>
+</div>
+<div id="rep-panel-consolidado" class="card" style="display:none;border-top:none;border-radius:0 0 4px 4px;">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+<div style="font-size:.62rem;color:var(--muted2);">Todas las ventas y despachos del período — Walmart + Locales + Exportación</div>
+<button class="btn bo bsm" onclick="repExportConsolidado()">↓ Excel</button>
+</div>
+<div style="overflow-x:auto;">
+<table id="rep-tabla-consolidado">
+<thead><tr><th>Fecha</th><th>Canal</th><th>Cliente / Comprador</th><th>Productos</th><th>LBS</th><th>Neto Q</th><th>IVA Q</th><th>Total Q</th><th>Retención Q</th><th>A cobrar Q</th><th>Ref. doc</th></tr></thead>
+<tbody id="rep-tbody-consolidado"></tbody>
+<tfoot id="rep-tfoot-consolidado"></tfoot>
+</table>
+</div>
+</div>
+<div id="rep-panel-detalle" class="card" style="display:none;border-top:none;border-radius:0 0 4px 4px;">
+<div id="rep-detalle-html"></div>
+</div>
+</div>
+<div class="sec" id="sec-inv-trazabilidad">
+<div class="ph"><h1>Trazabilidad Completa</h1><p>Rastreo de cada lote desde el productor hasta el cliente final — incluyendo mermas y pérdidas</p></div>
+<div class="card">
+<div class="ct">Buscar Trazabilidad</div>
+<div class="fgrid g3">
+<div class="fg"><label>Producto</label>
+<select id="traz-producto"><option value="">— Todos los productos —</option></select>
+</div>
+<div class="fg"><label>Desde</label><input type="date" id="traz-desde"></div>
+<div class="fg"><label>Hasta</label><input type="date" id="traz-hasta"></div>
+</div>
+<div class="fa"><button class="btn bp" onclick="buscarTraz()">🔍 Buscar</button></div>
+</div>
+<div id="traz-result" style="margin-top:16px;"></div>
+</div>
+<div class="sec" id="sec-inv-config">
+<div class="ph"><h1>Productos, Presentaciones y Clientes</h1><p>Bases de datos maestras — Walmart siempre en cajas; clientes locales, exportación e individuales en cualquier formato</p></div>
+<div class="card" style="margin-bottom:14px;">
+  <div class="ct">☁️ Base de Datos y Respaldos</div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
+    <div id="fb-status-full" style="font-size:.82rem;font-family:var(--fn);padding:8px 14px;background:var(--green-pale);border-radius:var(--r);border:1.5px solid var(--br);min-width:200px;"></div>
+    <button class="btn bo bsm" onclick="document.getElementById('fb-config-modal').style.display='flex'">⚙ Cambiar configuración Firebase</button>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    <button class="btn bsm" style="background:var(--green-deep);color:var(--cream);font-weight:700;" onclick="fbExportBackup()">⬇ Descargar respaldo JSON</button>
+    <label class="btn bsm bo" style="cursor:pointer;">⬆ Restaurar respaldo <input type="file" accept=".json" style="display:none;" onchange="fbImportBackup(this)"></label>
+  </div>
+  <div style="margin-top:12px;font-size:.75rem;color:var(--muted);">Los respaldos incluyen todos los datos: cotizaciones, ventas, inventario, pedidos, usuarios y configuración.</div>
+</div>
+
+<div class="tabs">
+<div class="tab active" onclick="invConfigTab('productos',this)">🥬 Productos</div>
+<div class="tab" onclick="invConfigTab('presentaciones',this)">📐 Presentaciones</div>
+<div class="tab" onclick="invConfigTab('clientes',this)">🏢 Clientes</div>
+</div>
+<div id="inv-config-tab-productos">
+<div class="card">
+<div class="ct">Agregar Producto</div>
+<div class="fgrid g3">
+<div class="fg"><label>Nombre del Producto</label><input id="iprod-nombre" placeholder="Ej. CEBOLLA BLANCA, PAPA SUPER, REPOLLO"></div>
+<div class="fg"><label>Código interno / SAP</label><input id="iprod-codigo" placeholder="Ej. 80000507"></div>
+<div class="fg"><label>Categoría</label>
+<select id="iprod-categoria">
+<option>Cebolla</option><option>Papa</option><option>Zanahoria</option><option>Repollo</option>
+<option>Tomate</option><option>Ajo</option><option>Otros Tubérculos</option><option>Hortalizas</option><option>Frutas</option>
+</select>
+</div>
+</div>
+<div style="background:var(--s2);border:1px solid rgba(74,158,255,.2);border-radius:4px;padding:12px;margin:8px 0;">
+<div style="font-size:.6rem;color:var(--info);font-weight:600;letter-spacing:.08em;margin-bottom:8px;">📦 CÓMO SE COMPRA (para cálculos de entrada)</div>
+<div class="fgrid g3">
+<div class="fg"><label>Unidad de compra</label>
+<select id="iprod-unidad-compra">
+<option value="kg">KG (se pesa todo)</option>
+<option value="bulto">Bulto / Costal (peso estimado)</option>
+<option value="caja">Caja (peso estimado)</option>
+<option value="red">Red / Malla (peso estimado)</option>
+<option value="unidad">Unidad suelta (ej. repollo)</option>
+</select>
+</div>
+<div class="fg"><label>Peso estimado / bulto o unidad (kg)</label>
+<input type="number" id="iprod-kg-bulto" step="0.01" placeholder="Ej. 25">
+<div style="font-size:.6rem;color:var(--muted2);margin-top:2px;">Estimado — el peso real siempre varía</div>
+</div>
+<div class="fg"><label>Empaque de importación</label>
+<select id="iprod-empaque-compra">
+<option value="costal">Costal / Bulto</option><option value="caja">Caja de cartón</option>
+<option value="red">Red / Malla</option><option value="bolsa">Bolsa plástica</option>
+<option value="granel">A granel</option><option value="unidad">Unidad suelta</option>
+</select>
+</div>
+</div>
+</div>
+<div class="fgrid g3">
+<div class="fg"><label>% Pérdida natural esperada (por semana en bodega)</label>
+<input type="number" id="iprod-pct-merma" step="0.1" placeholder="Ej. 2.5" min="0" max="100">
+</div>
+<div class="fg"><label>Días máx. en bodega</label><input type="number" id="iprod-dias-max" placeholder="Ej. 21"></div>
+<div class="fg"><label>Alerta stock mínimo (lbs)</label><input type="number" id="iprod-min-stock" placeholder="Ej. 500"></div>
+</div>
+<div class="fa"><button class="btn bp" onclick="saveIprod()">+ Agregar Producto</button></div>
+</div>
+<div id="iprod-lista" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;"></div>
+</div>
+<div id="inv-config-tab-presentaciones" style="display:none;">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+<div style="background:rgba(0,217,139,.05);border:1px solid rgba(0,217,139,.25);border-radius:4px;padding:12px;">
+<div style="font-size:.62rem;color:var(--acc);font-weight:700;letter-spacing:.06em;margin-bottom:6px;">🏪 WALMART — SIEMPRE CAJA DE CARTÓN</div>
+<div style="font-size:.7rem;color:var(--muted2);line-height:1.8;">
+          El exterior es siempre una <b style="color:var(--txt);">caja</b>. Lo que varía es el contenido:<br>
+          • <b style="color:var(--txt);">Granel:</b> producto suelto en la caja (ej. 30 lbs)<br>
+          • <b style="color:var(--txt);">Redes:</b> 8 redes de 3 lbs = caja 24 lbs<br>
+          • <b style="color:var(--txt);">Bolsas:</b> X bolsas de Y lbs por caja<br>
+          • <b style="color:var(--txt);">Unidades:</b> 4 repollos por caja
+        </div>
+</div>
+<div style="background:rgba(74,158,255,.05);border:1px solid rgba(74,158,255,.2);border-radius:4px;padding:12px;">
+<div style="font-size:.62rem;color:var(--info);font-weight:700;letter-spacing:.06em;margin-bottom:6px;">🏢 OTROS CLIENTES — CUALQUIER FORMATO</div>
+<div style="font-size:.7rem;color:var(--muted2);line-height:1.8;">
+          Caja, bolsa, red, quintal, unidad suelta o granel.<br>
+          Clientes locales GT, exportación a otros países<br>
+          o clientes individuales. La descarga se hace<br>
+          cargando el XML de nuestra factura FEL.
+        </div>
+</div>
+</div>
+<div class="card">
+<div class="ct">Agregar Presentación de Venta</div>
+<div class="fgrid g2" style="margin-bottom:10px;">
+<div class="fg"><label>Producto</label>
+<select id="ipres-producto"><option value="">— Seleccionar producto —</option></select>
+</div>
+<div class="fg"><label>Canal de venta</label>
+<select id="ipres-canal" onchange="ipresToggleCanal(this.value)">
+<option value="walmart">🏪 Walmart Guatemala</option>
+<option value="walmart_mx">🏪 Walmart México</option>
+<option value="exportacion">✈️ Exportación internacional</option>
+<option value="local">🏢 Cliente local Guatemala</option>
+<option value="mercado">🏪 Mercado / Distribuidor</option>
+<option value="individual">👤 Cliente individual</option>
+</select>
+</div>
+</div>
+<div class="fgrid g3">
+<div class="fg">
+<label>Nombre exacto de la presentación</label>
+<input id="ipres-nombre" placeholder="Ej. CEBOLLA BLANCA UXC_30">
+<div style="font-size:.6rem;color:var(--muted2);margin-top:2px;">Nombre que aparece en el sistema del cliente (SAP Walmart)</div>
+</div>
+<div class="fg"><label>Código SAP / Material (Walmart)</label>
+<input id="ipres-codigo" placeholder="Ej. 80000611">
+</div>
+</div>
+<div id="ipres-wal-section" style="background:rgba(0,217,139,.04);border:1px solid rgba(0,217,139,.2);border-radius:4px;padding:12px;margin:10px 0;">
+<div style="font-size:.6rem;color:var(--acc);font-weight:600;letter-spacing:.08em;margin-bottom:10px;">
+          📦 CONTENIDO DE LA CAJA (empaque exterior siempre = Caja de cartón)
+        </div>
+<div class="fgrid g3">
+<div class="fg"><label>Tipo de contenido</label>
+<select id="ipres-tipo-contenido" onchange="ipresCalcWal()">
+<option value="granel">A granel — producto suelto en la caja</option>
+<option value="redes">Redes dentro de la caja</option>
+<option value="bolsas">Bolsas dentro de la caja</option>
+<option value="unidades">Unidades dentro de la caja (ej. repollos)</option>
+</select>
+</div>
+<div class="fg" id="ipres-qty-row">
+<label id="ipres-qty-label">Cantidad dentro de la caja</label>
+<input type="number" id="ipres-qty" step="1" min="1" placeholder="Ej. 8 redes, 4 unidades" oninput="ipresCalcWal()">
+</div>
+<div class="fg" id="ipres-lbsud-row">
+<label id="ipres-lbsud-label">LBS por red / bolsa / unidad</label>
+<input type="number" id="ipres-lbs-ud" step="0.01" placeholder="Ej. 3 lbs" oninput="ipresCalcWal()">
+</div>
+</div>
+<div class="fgrid g2" style="margin-top:8px;">
+<div class="fg"><label>⟹ Total LBS por CAJA</label>
+<input id="ipres-lbs-caja" readonly style="color:var(--acc);font-weight:700;font-size:.9rem;cursor:default;" placeholder="Auto">
+</div>
+<div class="fg"><label>⟹ Total KG por CAJA</label>
+<input id="ipres-kg-caja" readonly style="color:var(--muted2);cursor:default;" placeholder="Auto">
+</div>
+</div>
+<div id="ipres-wal-ejemplo" style="margin-top:8px;font-size:.7rem;color:var(--muted2);padding:6px 10px;background:var(--s3);border-radius:3px;"></div>
+</div>
+<div id="ipres-otro-section" style="display:none;background:rgba(74,158,255,.04);border:1px solid rgba(74,158,255,.2);border-radius:4px;padding:12px;margin:10px 0;">
+<div style="font-size:.6rem;color:var(--info);font-weight:600;letter-spacing:.08em;margin-bottom:10px;">📦 CONFIGURACIÓN DE EMPAQUE</div>
+<div class="fgrid g3">
+<div class="fg"><label>Tipo de empaque</label>
+<select id="ipres-tipo-otro" onchange="ipresCalcOtro()">
+<option value="caja">Caja</option><option value="bolsa">Bolsa</option>
+<option value="red">Red / Malla</option><option value="quintal">Quintal (100 lbs)</option>
+<option value="unidad">Unidad suelta</option><option value="granel">Granel (por peso)</option>
+</select>
+</div>
+<div class="fg"><label>LBS por unidad de venta</label>
+<input type="number" id="ipres-lbs-otro" step="0.01" placeholder="Ej. 100 lbs quintal" oninput="ipresCalcOtro()">
+</div>
+<div class="fg"><label>KG por unidad de venta</label>
+<input id="ipres-kg-otro" readonly style="color:var(--muted2);cursor:default;" placeholder="Auto">
+</div>
+</div>
+</div>
+<div id="ipres-resumen" style="display:none;background:rgba(0,217,139,.06);border:1px solid rgba(0,217,139,.2);border-radius:4px;padding:10px;margin-bottom:10px;font-size:.74rem;line-height:1.9;"></div>
+<div class="fa"><button class="btn bp" onclick="saveIpres()">+ Agregar Presentación</button></div>
+</div>
+<div id="ipres-lista" style="margin-top:4px;"></div>
+</div>
+<div id="inv-config-tab-clientes" style="display:none;">
+<div class="card">
+<div class="ct">Agregar Cliente</div>
+<div class="fgrid g3">
+<div class="fg"><label>Nombre / Razón Social</label><input id="icli-nombre" placeholder="Nombre del cliente"></div>
+<div class="fg"><label>NIT / RFC / ID fiscal</label><input id="icli-nit" placeholder="NIT Guatemala · RFC México · otro"></div>
+<div class="fg"><label>Tipo de cliente</label>
+<select id="icli-tipo">
+<option value="walmart">🏪 Walmart Guatemala (requiere albarán)</option>
+<option value="walmart_mx">🏪 Walmart México</option>
+<option value="supermercado">🛒 Supermercado local</option>
+<option value="exportacion">✈️ Exportación a otro país</option>
+<option value="mercado">🏪 Mercado / Distribuidor</option>
+<option value="individual">👤 Cliente individual</option>
+<option value="otro">🏢 Otro</option>
+</select>
+</div>
+</div>
+<div class="fgrid g3">
+<div class="fg"><label>País</label>
+<select id="icli-pais">
+<option value="GT">🇬🇹 Guatemala</option><option value="MX">🇲🇽 México</option>
+<option value="US">🇺🇸 Estados Unidos</option><option value="SV">🇸🇻 El Salvador</option>
+<option value="HN">🇭🇳 Honduras</option><option value="CR">🇨🇷 Costa Rica</option>
+<option value="otro">🌍 Otro</option>
+</select>
+</div>
+<div class="fg"><label>Persona de contacto</label><input id="icli-contacto" placeholder="Nombre del contacto"></div>
+<div class="fg"><label>Teléfono / WhatsApp</label><input id="icli-tel" placeholder="+502 / +52 ..."></div>
+</div>
+<div class="fg" style="margin-bottom:10px;"><label>Dirección de entrega</label><input id="icli-dir" placeholder="Dirección"></div>
+<div class="fa"><button class="btn bp" onclick="saveIcli()">+ Agregar Cliente</button></div>
+</div>
+<div id="icli-lista" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;"></div>
+</div>
+</div>
+<div class="sec" id="sec-inv-cotizador">
+<div class="ph"><h1>Cotizador de Contenedor</h1><p>Interno (importación propia) · Terceros (venta de contenedor a cliente) — seguimiento de anticipos y pagos</p></div>
+<div class="tabs" style="margin-bottom:14px;">
+<div class="tab active" id="cot-tab-interno"  onclick="cotMainTab('interno',this)">🏭 Cotizador Interno</div>
+<div class="tab"        id="cot-tab-terceros" onclick="cotMainTab('terceros',this)">🤝 Cotizador Terceros</div>
+<div class="tab"        id="cot-tab-lista"    onclick="cotMainTab('lista',this)">📋 Todas las cotizaciones</div>
+</div>
+<div id="cot-panel-form">
+<div class="card">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+<div>
+<div class="ct" style="margin:0;" id="cot-form-title">Nueva Cotización Interna</div>
+<div id="cot-tipo-badge" style="margin-top:4px;"></div>
+</div>
+<button class="btn bo bsm" onclick="cotNueva()">+ Nueva cotización</button>
+</div>
+<div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;margin-bottom:14px;align-items:end;">
+<div class="fg"><label>Nombre / Referencia</label>
+<input id="cot-nombre" placeholder="Ej. Zanahoria + Repollo — Mar 2026">
+</div>
+<div class="fg"><label>Fecha</label><input type="date" id="cot-fecha"></div>
+<div class="fg"><label>No. DUCA (si ya tienes)</label><input id="cot-duca" placeholder="Se puede agregar después"></div>
+</div>
+<div id="cot-terceros-cliente" style="display:none;background:rgba(74,158,255,.05);border:1px solid rgba(74,158,255,.2);border-radius:4px;padding:12px;margin-bottom:12px;">
+<div style="font-size:.6rem;color:var(--info);font-weight:700;letter-spacing:.08em;margin-bottom:8px;">🤝 DATOS DEL CLIENTE</div>
+<div class="fgrid g3">
+<div class="fg"><label>Cliente / Empresa</label><input id="cot-ter-cliente" placeholder="Nombre del cliente"></div>
+<div class="fg"><label>País destino</label>
+<select id="cot-ter-pais">
+<option value="GT">🇬🇹 Guatemala</option><option value="MX">🇲🇽 México</option>
+<option value="SV">🇸🇻 El Salvador</option><option value="HN">🇭🇳 Honduras</option>
+<option value="CR">🇨🇷 Costa Rica</option><option value="otro">🌍 Otro</option>
+</select>
+</div>
+<div class="fg"><label>Moneda de pago del cliente</label>
+<select id="cot-ter-moneda">
+<option value="gtq">GTQ — Quetzales</option>
+<option value="mxn">MXN — Pesos mexicanos</option>
+</select>
+</div>
+</div>
+</div>
+<div style="background:rgba(245,197,24,.04);border:1px solid rgba(245,197,24,.2);border-radius:4px;padding:12px;margin-bottom:14px;">
+<div style="font-size:.6rem;color:var(--warn);font-weight:700;letter-spacing:.08em;margin-bottom:8px;">💱 TIPO DE CAMBIO GTQ → MXN</div>
+<div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;">
+<div class="fg"><label>1 GTQ = ? MXN (TC del día)</label>
+<input type="number" id="cot-tc" step="0.0001" placeholder="Ej. 1.346" oninput="cotCalc()">
+<div id="cot-tc-info" style="font-size:.6rem;color:var(--muted2);margin-top:2px;">Para convertir costos en pesos a quetzales: GTQ × TC = MXN</div>
+</div>
+<div class="fg"><label>Inverso — 1 MXN = ? GTQ (para referencia)</label>
+<input id="cot-tc-inv" readonly style="color:var(--muted2);cursor:default;" placeholder="Auto">
+</div>
+<button class="btn bo bsm" onclick="cotFetchTC()" style="font-size:.7rem;height:34px;">🔄 TC actual</button>
+</div>
+</div>
+<div style="background:var(--s2);border:1px solid rgba(0,217,139,.2);border-radius:4px;padding:14px;margin-bottom:14px;">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+<div>
+<div style="font-size:.62rem;color:var(--acc);font-weight:700;letter-spacing:.08em;">🥬 PRODUCTOS EN ESTE CONTENEDOR</div>
+<div style="font-size:.62rem;color:var(--muted2);margin-top:2px;">Precio en MXN · conversión automática a GTQ · % de gastos editable</div>
+</div>
+<button class="btn bp bsm" onclick="cotAddProducto()">+ Producto</button>
+</div>
+<div id="cot-prod-list"></div>
+<div id="cot-totales-row" style="display:none;margin-top:8px;padding:8px;background:var(--s3);border-radius:4px;font-size:.76rem;">
+<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;">
+<span>Total bultos: <strong id="cot-tot-bultos" style="color:var(--acc);">0</strong></span>
+<span>Total kg: <strong id="cot-tot-kg" style="color:var(--acc);">0</strong></span>
+<span>Total lbs: <strong id="cot-tot-lbs" style="color:var(--acc);">0</strong></span>
+<span>Compra total MXN: <strong id="cot-tot-mxn" style="color:var(--warn);">$ 0</strong></span>
+<span>Compra total GTQ: <strong id="cot-tot-gtq" style="color:var(--acc);">Q 0</strong></span>
+</div>
+<div id="cot-pct-bar" style="margin-top:8px;height:18px;border-radius:3px;overflow:hidden;display:flex;"></div>
+<div id="cot-pct-warn" style="display:none;font-size:.64rem;color:var(--danger);margin-top:4px;">⚠ Los % de gastos no suman 100%</div>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+<div style="background:rgba(245,197,24,.04);border:1px solid rgba(245,197,24,.2);border-radius:4px;padding:14px;">
+<div style="font-size:.62rem;color:var(--warn);font-weight:700;letter-spacing:.08em;margin-bottom:10px;">🇲🇽 GASTOS MÉXICO</div>
+<div id="cot-mx-items"></div>
+<button class="btn bo bsm" style="margin-top:6px;font-size:.62rem;" onclick="cotAddGasto('mx')">+ Agregar gasto MX</button>
+<div style="background:rgba(245,197,24,.08);border-radius:3px;padding:8px;font-size:.76rem;margin-top:8px;display:flex;justify-content:space-between;">
+<span>Subtotal MX:</span>
+<span><strong id="cot-sub-mx-mxn" style="color:var(--warn);">$ 0</strong> · <strong id="cot-sub-mx-gtq" style="color:var(--acc);">Q 0</strong></span>
+</div>
+</div>
+<div style="background:rgba(74,158,255,.04);border:1px solid rgba(74,158,255,.2);border-radius:4px;padding:14px;">
+<div style="font-size:.62rem;color:var(--info);font-weight:700;letter-spacing:.08em;margin-bottom:10px;">🇬🇹 GASTOS GUATEMALA</div>
+<div id="cot-gt-items"></div>
+<button class="btn bo bsm" style="margin-top:6px;font-size:.62rem;" onclick="cotAddGasto('gt')">+ Agregar gasto GT</button>
+<div style="background:rgba(74,158,255,.08);border-radius:3px;padding:8px;font-size:.76rem;margin-top:8px;display:flex;justify-content:space-between;">
+<span>Subtotal GT:</span>
+<strong id="cot-sub-gt-gtq" style="color:var(--info);">Q 0</strong>
+</div>
+</div>
+</div>
+<div style="background:var(--s2);border:1px solid var(--br);border-radius:4px;padding:10px 14px;margin-bottom:14px;display:flex;gap:16px;flex-wrap:wrap;font-size:.78rem;align-items:center;">
+<span>Gastos logística: <strong id="cot-total-gastos" style="color:var(--warn);">Q 0</strong></span>
+<span>+</span>
+<span>Compra: <strong id="cot-total-compra" style="color:var(--muted2);">Q 0</strong></span>
+<span>=</span>
+<span>COSTO TOTAL: <strong id="cot-total-total" style="color:var(--acc);font-size:.88rem;">Q 0</strong></span>
+</div>
+<div id="cot-venta-section" style="display:none;background:rgba(0,217,139,.05);border:1px solid rgba(0,217,139,.3);border-radius:4px;padding:14px;margin-bottom:14px;">
+<div style="font-size:.62rem;color:var(--acc);font-weight:700;letter-spacing:.08em;margin-bottom:10px;">💰 PRECIO DE VENTA AL CLIENTE</div>
+<div id="cot-venta-lineas"></div>
+<div id="cot-venta-resumen" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,217,139,.2);">
+<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:.78rem;">
+<span>Total venta: <strong id="cot-vent-total" style="color:var(--acc);">Q 0</strong></span>
+<span>Ganancia bruta: <strong id="cot-vent-ganancia" style="color:var(--acc);">Q 0</strong></span>
+<span>Margen: <strong id="cot-vent-margen" style="color:var(--acc);">0%</strong></span>
+</div>
+</div>
+</div>
+<div id="cot-resultados" style="display:none;margin-bottom:14px;">
+<div style="font-size:.62rem;color:var(--acc);font-weight:700;letter-spacing:.08em;margin-bottom:10px;">📊 COSTO DESGLOSADO POR PRODUCTO</div>
+<div id="cot-res-tabla" style="overflow-x:auto;"></div>
+</div>
+<div class="fg" style="margin-bottom:12px;"><label>Observaciones</label><input id="cot-obs" placeholder="Notas de la cotización"></div>
+<div class="fa">
+<button class="btn bp" onclick="saveCot()">💾 Guardar Cotización</button>
+<button class="btn bo" onclick="cotCalc()">🔄 Recalcular</button>
+<button class="btn bo" onclick="cotExport()">↓ Excel</button>
+</div>
+</div>
+</div>
+<div id="cot-panel-detalle" style="display:none;">
+<div style="background:var(--s2);border:1px solid var(--br);border-radius:4px;padding:14px;margin-bottom:14px;">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+<div>
+<div style="font-family:var(--fh);font-size:.9rem;font-weight:700;" id="det-nombre">—</div>
+<div style="font-size:.7rem;color:var(--muted2);margin-top:3px;" id="det-meta">—</div>
+</div>
+<div style="display:flex;gap:6px;flex-wrap:wrap;">
+<span id="det-estado-badge"></span>
+<button class="btn bo bsm" onclick="cotEditarDesde()">✏️ Editar</button>
+<button id="det-btn-aceptar"   class="btn bp bsm"  onclick="cotMarcarAceptada()"    style="display:none;">🤝 Cliente acepta</button>
+<button id="det-btn-entrega"   class="btn bo bsm"  onclick="cotProcederEntrega()"   style="display:none;border-color:var(--warn);color:var(--warn);">🚛 Proceder a entrega</button>
+<button id="det-btn-entregado" class="btn bp bsm"  onclick="cotConfirmarEntrega()"  style="display:none;background:linear-gradient(135deg,#00d98b,#00a86b);">📦 Confirmar Entrega</button>
+<button id="det-btn-despachar" class="btn bo bsm"  onclick="cotIrADespacho()"       style="display:none;border-color:#00d98b;color:#00d98b;">📦 Crear Despacho</button>
+<button class="btn bo bsm" onclick="cotMainTab('lista',null)">← Lista</button>
+</div>
+</div>
+<div id="det-pipeline" style="margin-top:14px;display:flex;gap:0;overflow-x:auto;"></div>
+</div>
+<div class="tabs" style="margin-bottom:10px;">
+<div class="tab active" id="det-tab-resumen"   onclick="detTab('resumen',this)">📊 Resumen</div>
+<div class="tab"        id="det-tab-anticipos"  onclick="detTab('anticipos',this)">💸 Anticipos MX</div>
+<div class="tab"        id="det-tab-duca"       onclick="detTab('duca',this)">📋 DUCA + Bodega</div>
+<div class="tab"        id="det-tab-entrega"    onclick="detTab('entrega',this)" style="display:none;">🚛 Entrega</div>
+<div class="tab"        id="det-tab-pagos"      onclick="detTab('pagos',this)" style="display:none;">💳 Pagos Cliente</div>
+</div>
+<div id="det-panel-resumen">
+<div id="det-resumen-html"></div>
+</div>
+<div id="det-panel-anticipos" style="display:none;">
+<div class="card">
+<div class="ct">Anticipos enviados a México</div>
+<div style="font-size:.7rem;color:var(--muted2);margin-bottom:12px;">
+          Registra cada transferencia: banco, OSMO o cambista. Ingresa el TC real de ese día para la conversión correcta.
+        </div>
+<div style="background:var(--s2);border:1px solid var(--br);border-radius:4px;padding:12px;margin-bottom:12px;">
+<div style="font-size:.62rem;color:var(--warn);font-weight:700;letter-spacing:.08em;margin-bottom:10px;">+ NUEVO ANTICIPO</div>
+<div class="fgrid g3">
+<div class="fg"><label>Fecha del envío</label><input type="date" id="ant-fecha"></div>
+<div class="fg"><label>Método de envío</label>
+<select id="ant-metodo">
+<option value="banco">🏦 Banco (compra USD → llegan MXN)</option>
+<option value="osmo">📱 OSMO (GTQ → MXN)</option>
+<option value="cambista">💵 Cambista (GTQ → MXN)</option>
+</select>
+</div>
+<div class="fg"><label>Referencia / Comprobante</label><input id="ant-ref" placeholder="No. de transferencia, comprobante..."></div>
+</div>
+<div class="fgrid g3" style="margin-top:8px;">
+<div class="fg"><label>Monto enviado (GTQ Q)</label>
+<input type="number" id="ant-gtq" step="0.01" placeholder="0" oninput="antCalc()">
+</div>
+<div class="fg">
+<label>TC del día (1 GTQ = ? MXN)</label>
+<div style="display:flex;gap:6px;">
+<input type="number" id="ant-tc" step="0.0001" placeholder="Ej. 1.346" oninput="antCalc()" style="flex:1;">
+<button class="btn bo bsm" onclick="antFetchTC()" style="font-size:.7rem;padding:7px 8px;">🔄</button>
+</div>
+<div style="font-size:.6rem;color:var(--muted2);margin-top:2px;" id="ant-tc-note">OSMO y cambista: tc varía cada vez</div>
+</div>
+<div class="fg"><label>Monto que llega (MXN $) — calculado</label>
+<input id="ant-mxn-result" readonly style="color:var(--acc);cursor:default;font-weight:700;" placeholder="Auto con TC">
+</div>
+</div>
+<div class="fg" style="margin-top:8px;"><label>Notas</label><input id="ant-obs" placeholder="Banco utilizado, receptor, notas..."></div>
+<div class="fa" style="margin-top:10px;">
+<button class="btn bp bsm" onclick="saveAnticipo()">+ Registrar Anticipo</button>
+</div>
+</div>
+<div id="ant-resumen" style="background:var(--s3);border:1px solid var(--br);border-radius:4px;padding:12px;margin-bottom:10px;font-size:.76rem;display:none;">
+<div style="margin-bottom:10px;">
+<div style="display:flex;justify-content:space-between;font-size:.68rem;margin-bottom:4px;">
+<span style="color:var(--muted2);">Anticipo cubierto</span>
+<strong id="ant-pct-lbl" style="color:var(--acc);">0%</strong>
+</div>
+<div style="background:var(--s2);border-radius:3px;height:12px;overflow:hidden;border:1px solid var(--br);">
+<div id="ant-progress-bar" style="height:100%;background:linear-gradient(90deg,var(--acc),#00a86b);border-radius:3px;width:0%;transition:width .4s;"></div>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;">
+<div style="background:var(--s2);border-radius:4px;padding:8px;text-align:center;">
+<div style="font-size:.58rem;color:var(--muted2);">Costo total cotización</div>
+<strong id="ant-cot-total" style="color:var(--muted2);font-size:.82rem;">Q 0</strong>
+</div>
+<div style="background:var(--s2);border-radius:4px;padding:8px;text-align:center;">
+<div style="font-size:.58rem;color:var(--muted2);">Total enviado GTQ</div>
+<strong id="ant-tot-gtq" style="color:var(--warn);font-size:.82rem;">Q 0</strong>
+</div>
+<div style="background:var(--s2);border-radius:4px;padding:8px;text-align:center;">
+<div style="font-size:.58rem;color:var(--muted2);">Total recibido MXN</div>
+<strong id="ant-tot-mxn" style="color:var(--acc);font-size:.82rem;">$ 0</strong>
+</div>
+<div id="ant-saldo-card" style="background:rgba(255,56,88,.08);border:1px solid rgba(255,56,88,.3);border-radius:4px;padding:8px;text-align:center;">
+<div style="font-size:.58rem;color:var(--muted2);">Saldo pendiente</div>
+<strong id="ant-saldo" style="color:var(--danger);font-size:.82rem;">Q 0</strong>
+</div>
+</div>
+</div>
+<div style="overflow-x:auto;">
+<table>
+<thead><tr><th>Fecha</th><th>Método</th><th>Enviado GTQ</th><th>TC GTQ/MXN</th><th>Recibido MXN</th><th>Referencia</th><th>Notas</th><th></th></tr></thead>
+<tbody id="ant-tbody"></tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="det-panel-duca" style="display:none;">
+<div class="card">
+<div class="ct">DUCA y Recepción en Bodega</div>
+<div style="background:rgba(160,120,255,.05);border:1px solid rgba(160,120,255,.25);border-radius:4px;padding:14px;margin-bottom:14px;">
+<div style="font-size:.62rem;color:#a078ff;font-weight:700;letter-spacing:.08em;margin-bottom:10px;">📋 DATOS DE LA DUCA</div>
+<div class="fgrid g3">
+<div class="fg"><label>Número de DUCA</label>
+<input id="duca-numero" placeholder="No. de DUCA">
+</div>
+<div class="fg"><label>Fecha de la DUCA (cruce frontera)</label>
+<input type="date" id="duca-fecha">
+</div>
+<div class="fg"><label>Agente Aduanal</label>
+<input id="duca-agente" placeholder="Nombre del agente">
+</div>
+</div>
+<div class="fgrid g3" style="margin-top:8px;">
+<div class="fg"><label>Aranceles pagados (GTQ)</label>
+<input type="number" id="duca-aranceles" step="0.01" placeholder="0">
+</div>
+<div class="fg"><label>Otros gastos DUCA (GTQ)</label>
+<input type="number" id="duca-otros" step="0.01" placeholder="0">
+</div>
+<div class="fg"><label>Documento DUCA (foto/scan)</label>
+<label class="btn bo bsm" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+                📎 Cargar<input type="file" accept="image/*,.pdf" id="duca-doc-input" style="display:none;" onchange="ducaLoadDoc(this)">
+</label>
+<span id="duca-doc-badge" style="display:none;" class="chip ck" style="font-size:.6rem;">✓ Doc. cargado</span>
+</div>
+</div>
+<div class="fa" style="margin-top:10px;">
+<button class="btn bp bsm" onclick="saveDuca()">💾 Guardar datos DUCA</button>
+</div>
+</div>
+<div id="duca-bodega-section" style="background:rgba(0,217,139,.05);border:1px solid rgba(0,217,139,.3);border-radius:4px;padding:14px;">
+<div style="font-size:.62rem;color:var(--acc);font-weight:700;letter-spacing:.08em;margin-bottom:10px;">🏭 RECEPCIÓN EN BODEGA</div>
+<div style="font-size:.7rem;color:var(--muted2);margin-bottom:10px;">
+            Al confirmar la recepción, el sistema cargará el inventario automáticamente con los productos de esta cotización.
+          </div>
+<div style="background:rgba(255,56,88,.05);border:1px solid rgba(255,56,88,.3);border-radius:4px;padding:12px;margin-bottom:12px;">
+<div style="font-size:.62rem;color:var(--danger);font-weight:700;letter-spacing:.08em;margin-bottom:8px;">🔒 TRAZABILIDAD OBLIGATORIA — sin estos datos no se puede subir a bodega</div>
+<div class="fgrid g3">
+<div class="fg"><label>📋 Número de DUCA *</label>
+<input id="duca-numero-bodega" placeholder="No. DUCA (requerido)" oninput="document.getElementById('duca-numero').value=this.value" style="border-color:rgba(255,56,88,.4);">
+</div>
+<div class="fg"><label>🧾 No. Factura Proveedor MX *</label>
+<input id="bodega-fact-proveedor" placeholder="Ej. FAC-2026-001" style="border-color:rgba(255,56,88,.4);">
+</div>
+<div class="fg"><label>🌱 No. Factura Productor MX *</label>
+<input id="bodega-fact-productor" placeholder="Ej. FAC-PROD-001" style="border-color:rgba(255,56,88,.4);">
+</div>
+</div>
+<div class="fgrid g2" style="margin-top:8px;">
+<div class="fg"><label>🏭 Productor (origen)</label>
+<select id="bodega-productor-sel" style="background:var(--s1);border:1px solid var(--br);color:var(--txt);padding:6px;border-radius:4px;width:100%;font-size:.72rem;">
+<option value="">— Seleccionar Productor —</option>
+</select>
+</div>
+<div class="fg"><label>🤝 Proveedor MX (intermediario)</label>
+<select id="bodega-proveedor-sel" style="background:var(--s1);border:1px solid var(--br);color:var(--txt);padding:6px;border-radius:4px;width:100%;font-size:.72rem;">
+<option value="">— Seleccionar Proveedor MX —</option>
+</select>
+</div>
+</div>
+</div>
+<div class="fgrid g3">
+<div class="fg"><label>Fecha de llegada a bodega</label>
+<input type="date" id="bodega-fecha">
+</div>
+<div class="fg"><label>Responsable de recepción</label>
+<input id="bodega-responsable" placeholder="Nombre del encargado">
+</div>
+<div class="fg"><label>Observaciones de recepción</label>
+<input id="bodega-obs" placeholder="Estado del producto, observaciones...">
+</div>
+</div>
+<div style="margin-top:10px;">
+<div style="font-size:.64rem;color:var(--muted2);margin-bottom:6px;font-weight:600;">VERIFICAR CANTIDADES RECIBIDAS (ajusta si hay diferencias)</div>
+<div id="bodega-productos"></div>
+</div>
+<div class="fa" style="margin-top:12px;">
+<button class="btn bp" style="background:linear-gradient(135deg,var(--acc),#00a86b);" onclick="confirmarRecepcion()">
+              ✅ Confirmar Recepción en Bodega — Cargar Inventario
+            </button>
+</div>
+<div id="bodega-recibido-badge" style="display:none;margin-top:8px;"></div>
+</div>
+</div>
+</div>
+
+<div id="det-panel-entrega" style="display:none;">
+<div class="card">
+<div class="ct">🚛 Datos de la Entrega al Cliente</div>
+<div style="font-size:.7rem;color:var(--muted2);margin-bottom:14px;">
+  Registra la información de importación (DUCA), quien recibió el producto y foto de confirmación.
+</div>
+
+<div style="background:rgba(160,120,255,.05);border:1px solid rgba(160,120,255,.25);border-radius:4px;padding:14px;margin-bottom:14px;">
+<div style="font-size:.62rem;color:#a078ff;font-weight:700;letter-spacing:.08em;margin-bottom:10px;">📋 DATOS DE IMPORTACIÓN</div>
+<div class="fgrid g3">
+<div class="fg"><label>Número de DUCA</label><input id="ent-duca" placeholder="No. de DUCA"></div>
+<div class="fg"><label>Fecha cruce frontera</label><input type="date" id="ent-duca-fecha"></div>
+<div class="fg"><label>Agente Aduanal</label><input id="ent-agente" placeholder="Nombre del agente"></div>
+</div>
+<div class="fgrid g3" style="margin-top:8px;">
+<div class="fg"><label>No. Factura Proveedor MX</label><input id="ent-fact-prov" placeholder="FAC-2026-001"></div>
+<div class="fg"><label>No. Factura Productor MX</label><input id="ent-fact-prod" placeholder="FAC-PROD-001"></div>
+<div class="fg"><label>Aranceles pagados (GTQ)</label><input type="number" id="ent-aranceles" step="0.01" placeholder="0"></div>
+</div>
+<div class="fa" style="margin-top:10px;">
+<button class="btn bo bsm" style="border-color:#a078ff;color:#a078ff;" onclick="saveEntregaDuca()">💾 Guardar datos DUCA</button>
+</div>
+</div>
+
+<div style="background:rgba(0,217,139,.05);border:1px solid rgba(0,217,139,.3);border-radius:4px;padding:14px;">
+<div style="font-size:.62rem;color:var(--acc);font-weight:700;letter-spacing:.08em;margin-bottom:10px;">📦 CONFIRMACIÓN DE ENTREGA</div>
+<div class="fgrid g3">
+<div class="fg"><label>Fecha de entrega</label><input type="date" id="ent-fecha"></div>
+<div class="fg"><label>Quién recibió *</label><input id="ent-receptor" placeholder="Nombre del receptor en destino"></div>
+<div class="fg"><label>Observaciones</label><input id="ent-obs" placeholder="Estado del producto, notas..."></div>
+</div>
+<div style="margin-top:12px;">
+<label style="font-size:.7rem;color:var(--muted2);display:block;margin-bottom:6px;">📷 Foto de entrega / comprobante</label>
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+<label class="btn bo bsm" style="cursor:pointer;">
+  📷 Cargar foto<input type="file" accept="image/*" style="display:none;" onchange="entLoadFoto(this)">
+</label>
+<span id="ent-foto-badge" style="display:none;" class="chip ck" style="font-size:.6rem;">✓ Foto cargada</span>
+</div>
+<img id="ent-foto-preview" style="display:none;margin-top:8px;max-height:180px;border-radius:4px;border:1px solid var(--br);">
+</div>
+<div id="ent-entregado-badge" style="display:none;margin-top:12px;"></div>
+</div>
+</div>
+</div>
+<div id="det-panel-pagos" style="display:none;">
+<div class="card">
+<div class="ct">Pagos del Cliente</div>
+<div id="pagos-resumen-header" style="background:var(--s3);border-radius:4px;padding:12px;margin-bottom:14px;display:flex;gap:16px;flex-wrap:wrap;font-size:.78rem;"></div>
+<div style="background:var(--s2);border:1px solid var(--br);border-radius:4px;padding:12px;margin-bottom:12px;">
+<div style="font-size:.62rem;color:var(--acc);font-weight:700;letter-spacing:.08em;margin-bottom:10px;">+ REGISTRAR PAGO RECIBIDO</div>
+<div class="fgrid g3">
+<div class="fg"><label>Fecha del pago</label><input type="date" id="pago-fecha"></div>
+<div class="fg"><label>Canal de pago</label>
+<select id="pago-canal" onchange="pagoToggleCanal(this.value)">
+<option value="banco_gt">🏦 Depósito bancario Guatemala (GTQ)</option>
+<option value="banco_mx">🏦 Depósito bancario México (MXN)</option>
+</select>
+</div>
+<div class="fg"><label>No. de referencia / comprobante</label>
+<input id="pago-ref" placeholder="No. transferencia, depósito...">
+</div>
+</div>
+<div id="pago-gt-section" style="margin-top:10px;">
+<div class="fgrid g3">
+<div class="fg"><label>Monto recibido (GTQ Q)</label>
+<input type="number" id="pago-gtq" step="0.01" placeholder="0" oninput="pagoCalc()">
+</div>
+<div class="fg"><label>¿Mandas parte de esto a México?</label>
+<select id="pago-manda-mx" onchange="pagoToggleMX(this.value)">
+<option value="no">No — queda en Guatemala</option>
+<option value="si">Sí — transfiero a México</option>
+</select>
+</div>
+<div class="fg"><label>Observaciones</label><input id="pago-obs-gt" placeholder="Banco, cuenta, notas..."></div>
+</div>
+<div id="pago-mx-transfer" style="display:none;margin-top:10px;background:var(--s3);border:1px dashed var(--warn);border-radius:4px;padding:10px;">
+<div style="font-size:.62rem;color:var(--warn);font-weight:600;margin-bottom:8px;">↗ TRANSFERENCIA A MÉXICO (de este pago GT)</div>
+<div class="fgrid g3">
+<div class="fg"><label>Monto enviado a MX (GTQ Q)</label>
+<input type="number" id="pago-envia-gtq" step="0.01" placeholder="0" oninput="pagoCalcMX()">
+</div>
+<div class="fg">
+<label>TC del día (1 GTQ = ? MXN)</label>
+<div style="display:flex;gap:6px;">
+<input type="number" id="pago-mx-tc" step="0.0001" placeholder="TC hoy" oninput="pagoCalcMX()" style="flex:1;">
+<button class="btn bo bsm" onclick="pagoFetchTC()" style="font-size:.65rem;padding:7px 6px;">🔄</button>
+</div>
+</div>
+<div class="fg"><label>Llegan a MX (MXN $) — calculado</label>
+<input id="pago-mxn-result" readonly style="color:var(--acc);cursor:default;font-weight:700;" placeholder="Auto">
+</div>
+</div>
+<div class="fg" style="margin-top:8px;"><label>Método / Referencia MX</label>
+<input id="pago-mx-ref" placeholder="Banco, OSMO, cambista, comprobante...">
+</div>
+</div>
+</div>
+<div id="pago-mx-section" style="display:none;margin-top:10px;">
+<div class="fgrid g3">
+<div class="fg"><label>Monto recibido (MXN $)</label>
+<input type="number" id="pago-mxn" step="0.01" placeholder="0" oninput="pagoCalc()">
+</div>
+<div class="fg">
+<label>TC referencia (1 MXN = ? GTQ)</label>
+<input type="number" id="pago-mxn-tc" step="0.0001" placeholder="Para equivalencia GTQ" oninput="pagoCalc()">
+</div>
+<div class="fg"><label>Equivalente en GTQ</label>
+<input id="pago-mxn-gtq-eq" readonly style="color:var(--muted2);cursor:default;" placeholder="Auto">
+</div>
+</div>
+<div class="fg" style="margin-top:8px;"><label>Observaciones</label><input id="pago-obs-mx" placeholder="Banco MX, cuenta, notas..."></div>
+</div>
+<div class="fa" style="margin-top:10px;">
+<button class="btn bp bsm" onclick="savePago()">+ Registrar Pago</button>
+</div>
+</div>
+<div style="overflow-x:auto;">
+<table>
+<thead><tr><th>Fecha</th><th>Canal</th><th>Monto GTQ</th><th>Monto MXN</th><th>Mandado a MX (GTQ)</th><th>Llega MX (MXN)</th><th>TC</th><th>Referencia</th><th></th></tr></thead>
+<tbody id="pagos-tbody"></tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div id="cot-panel-lista" style="display:none;">
+<div class="tw">
+<div class="twh">
+<span class="twt">Todas las Cotizaciones</span>
+<div style="display:flex;gap:6px;flex-wrap:wrap;">
+<button class="btn bo bsm" onclick="cotMainTab('interno',null)">+ Interna</button>
+<button class="btn bo bsm" onclick="cotMainTab('terceros',null)">+ Terceros</button>
+</div>
+</div>
+<div style="padding:8px 14px;border-bottom:1px solid var(--br);display:flex;gap:10px;flex-wrap:wrap;align-items:end;">
+<div class="fg" style="min-width:120px;"><label>Tipo</label>
+<select id="cot-fil-tipo" onchange="renderCotList()">
+<option value="">Todas</option><option value="interno">Internas</option><option value="terceros">Terceros</option>
+</select>
+</div>
+<div class="fg" style="min-width:120px;"><label>Estado</label>
+<select id="cot-fil-estado" onchange="renderCotList()">
+<option value="">Todos</option><option value="borrador">Borrador</option>
+<option value="anticipos">Con anticipos</option>
+<option value="aceptada">🤝 Aceptada</option><option value="duca">DUCA recibida</option>
+<option value="bodega">En bodega</option><option value="pagado">Pagado</option>
+</select>
+</div>
+</div>
+<div style="overflow-x:auto;">
+<table>
+<thead><tr><th>Tipo</th><th>Fecha</th><th>Referencia</th><th>Productos</th><th>Costo GTQ</th><th>Estado</th><th>Anticipos</th><th>DUCA</th><th></th></tr></thead>
+<tbody id="cot-tbody"></tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sec" id="sec-empleados-db">
+<div class="ph"><h1>Base de Empleados</h1><p>Registro global — los responsables disponibles en todos los módulos se gestionan aquí</p></div>
+<div class="card">
+<div class="ct">Agregar Empleado</div>
+<div class="fgrid g3">
+<div class="fg"><label>Nombre Completo</label><input id="emp-nombre" placeholder="Nombre y Apellidos"></div>
+<div class="fg"><label>DPI</label><input id="emp-dpi" placeholder="No. de DPI"></div>
+<div class="fg"><label>Teléfono</label><input id="emp-tel" placeholder="+502 0000-0000"></div>
+</div>
+<div class="fgrid g3">
+<div class="fg"><label>Puesto / Cargo (texto libre)</label>
+<input id="emp-cargo" placeholder="Ej. Operario de Bodega">
+</div>
+<div class="fg"><label>Estado</label>
+<select id="emp-estado">
+<option value="activo">✓ Activo</option>
+<option value="inactivo">✗ Inactivo</option>
+</select>
+</div>
+</div>
+<div style="margin-bottom:14px;">
+<div style="font-size:.62rem;color:var(--acc);font-weight:700;letter-spacing:.08em;margin-bottom:8px;">ROLES DEL EMPLEADO (seleccionar todos los que aplican)</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;">
+<label style="display:flex;align-items:center;gap:7px;background:var(--s2);border:1px solid var(--br);border-radius:4px;padding:8px 10px;cursor:pointer;font-size:.72rem;">
+<input type="checkbox" id="rol-piloto" style="accent-color:var(--acc);"> 🚛 Piloto / Conductor
+        </label>
+<label style="display:flex;align-items:center;gap:7px;background:var(--s2);border:1px solid var(--br);border-radius:4px;padding:8px 10px;cursor:pointer;font-size:.72rem;">
+<input type="checkbox" id="rol-operaciones" style="accent-color:var(--acc);"> 📦 Operaciones / Bodega
+        </label>
+<label style="display:flex;align-items:center;gap:7px;background:var(--s2);border:1px solid var(--br);border-radius:4px;padding:8px 10px;cursor:pointer;font-size:.72rem;">
+<input type="checkbox" id="rol-maquila" style="accent-color:var(--acc);"> ⚙️ Maquila
+        </label>
+<label style="display:flex;align-items:center;gap:7px;background:var(--s2);border:1px solid var(--br);border-radius:4px;padding:8px 10px;cursor:pointer;font-size:.72rem;">
+<input type="checkbox" id="rol-resp-limpieza" style="accent-color:var(--acc);"> 🧹 Responsable Limpieza
+        </label>
+<label style="display:flex;align-items:center;gap:7px;background:var(--s2);border:1px solid var(--br);border-radius:4px;padding:8px 10px;cursor:pointer;font-size:.72rem;">
+<input type="checkbox" id="rol-calidad" style="accent-color:var(--acc);"> 🔍 Calidad / Inspección
+        </label>
+<label style="display:flex;align-items:center;gap:7px;background:var(--s2);border:1px solid var(--br);border-radius:4px;padding:8px 10px;cursor:pointer;font-size:.72rem;">
+<input type="checkbox" id="rol-supervisor" style="accent-color:var(--acc);"> 👷 Supervisor / Encargado
+        </label>
+<label style="display:flex;align-items:center;gap:7px;background:var(--s2);border:1px solid var(--br);border-radius:4px;padding:8px 10px;cursor:pointer;font-size:.72rem;">
+<input type="checkbox" id="rol-admin" style="accent-color:var(--acc);"> 🏢 Administración
+        </label>
+<label style="display:flex;align-items:center;gap:7px;background:var(--s2);border:1px solid var(--br);border-radius:4px;padding:8px 10px;cursor:pointer;font-size:.72rem;">
+<input type="checkbox" id="rol-ventas" style="accent-color:var(--acc);"> 💰 Ventas / Despacho
+        </label>
+</div>
+</div>
+<div class="fa"><button class="btn bp" onclick="saveEmpleado()">+ Agregar Empleado</button></div>
+</div>
+<div class="tw">
+<div class="twh">
+<span class="twt">Empleados Registrados</span>
+<span id="emp-count" style="font-size:.7rem;color:var(--muted2);"></span>
+</div>
+<div style="overflow-x:auto;">
+<table>
+<thead><tr><th>Nombre</th><th>DPI · Teléfono</th><th>Roles</th><th>Estado</th><th></th></tr></thead>
+<tbody id="emp-tbody"></tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="sec" id="sec-proveedores">
+<div class="ph"><h1>Proveedores y Productores</h1><p>Base de datos de toda la cadena de suministro — Productores MX · Proveedores Producto · Servicios · Transporte</p></div>
+<div class="tabs" style="margin-bottom:14px;">
+<div class="tab active" id="prov-tab-producto" onclick="provTab('producto',this)">🌱 Productores</div>
+<div class="tab" id="prov-tab-proveedor" onclick="provTab('proveedor',this)">🤝 Proveedores Producto</div>
+<div class="tab" id="prov-tab-servicio" onclick="provTab('servicio',this)">🔧 Servicios</div>
+<div class="tab" id="prov-tab-transporte" onclick="provTab('transporte',this)">🚛 Transporte</div>
+</div>
+<div class="card" id="prov-form-card">
+<div class="ct" id="prov-form-title">Nuevo Productor</div>
+<div id="prov-tipo-badge" style="margin-bottom:10px;"></div>
+<div class="fgrid g3">
+<div class="fg"><label>Nombre / Razón Social *</label>
+<input id="prov-nombre" placeholder="Nombre completo de la empresa o persona">
+</div>
+<div class="fg"><label>País</label>
+<select id="prov-pais">
+<option value="MX">🇲🇽 México</option>
+<option value="GT">🇬🇹 Guatemala</option>
+<option value="SV">🇸🇻 El Salvador</option>
+<option value="HN">🇭🇳 Honduras</option>
+<option value="US">🇺🇸 Estados Unidos</option>
+<option value="otro">Otro</option>
+</select>
+</div>
+<div class="fg"><label>Estado / Región</label>
+<input id="prov-region" placeholder="Ej. Sonora, Jalisco...">
+</div>
+</div>
+<div class="fgrid g3">
+<div class="fg"><label>RFC / NIT / ID Fiscal</label>
+<input id="prov-rfc" placeholder="Número de identificación fiscal">
+</div>
+<div class="fg"><label>Contacto Principal</label>
+<input id="prov-contacto" placeholder="Nombre del contacto">
+</div>
+<div class="fg"><label>Teléfono / WhatsApp</label>
+<input id="prov-tel" placeholder="+52 000 000 0000">
+</div>
+</div>
+<div class="fgrid g3">
+<div class="fg"><label>Email</label>
+<input id="prov-email" type="email" placeholder="correo@empresa.com">
+</div>
+<div class="fg"><label>Banco / Cuenta para pagos</label>
+<input id="prov-banco" placeholder="Banco y No. cuenta">
+</div>
+<div class="fg"><label>Días de crédito</label>
+<input id="prov-credito" type="number" placeholder="0 = contado">
+</div>
+</div>
+<div id="prov-campos-producto" style="display:none;">
+<div style="font-size:.62rem;color:var(--acc);font-weight:700;letter-spacing:.08em;margin:12px 0 8px;">🌱 DATOS DEL PRODUCTOR</div>
+<div class="fgrid g3">
+<div class="fg"><label>Cultivos / Productos que produce</label>
+<input id="prov-cultivos" placeholder="Ej. Zanahoria, Repollo, Brócoli">
+</div>
+<div class="fg"><label>Certificaciones</label>
+<input id="prov-certs" placeholder="GlobalGAP, Orgánico, SENASICA...">
+</div>
+<div class="fg"><label>Proveedor habitual (quien le compra al productor)</label>
+<select id="prov-proveedor-link" style="background:var(--s1);border:1px solid var(--br);color:var(--txt);padding:6px;border-radius:4px;width:100%;font-size:.72rem;">
+<option value="">— Asignar proveedor MX intermediario —</option>
+</select>
+</div>
+</div>
+</div>
+<div id="prov-campos-transporte" style="display:none;">
+<div style="font-size:.62rem;color:var(--warn);font-weight:700;letter-spacing:.08em;margin:12px 0 8px;">🚛 DATOS TRANSPORTE</div>
+<div class="fgrid g3">
+<div class="fg"><label>Tipo de servicio</label>
+<select id="prov-transp-tipo" style="background:var(--s1);border:1px solid var(--br);color:var(--txt);padding:6px;border-radius:4px;width:100%;font-size:.72rem;">
+<option value="flete">Flete internacional MX→GT</option>
+<option value="local">Distribución local GT</option>
+<option value="refrigerado">Furgón refrigerado</option>
+<option value="ambos">Ambos</option>
+</select>
+</div>
+<div class="fg"><label>No. de unidades disponibles</label>
+<input id="prov-unidades" type="number" placeholder="0">
+</div>
+<div class="fg"><label>Capacidad por viaje (kg)</label>
+<input id="prov-capacidad" type="number" placeholder="0">
+</div>
+</div>
+</div>
+<div id="prov-campos-servicio" style="display:none;">
+<div style="font-size:.62rem;color:'#a078ff';font-weight:700;letter-spacing:.08em;margin:12px 0 8px;">🔧 DATOS DEL SERVICIO</div>
+<div class="fgrid g2">
+<div class="fg"><label>Tipo de servicio que presta</label>
+<select id="prov-serv-tipo" style="background:var(--s1);border:1px solid var(--br);color:var(--txt);padding:6px;border-radius:4px;width:100%;font-size:.72rem;">
+<option value="agente_aduanal">Agente Aduanal</option>
+<option value="maquila">Maquila / Procesamiento</option>
+<option value="bodega">Renta de Bodega</option>
+<option value="empaque">Material de Empaque</option>
+<option value="fumigacion">Fumigación / Sanitización</option>
+<option value="mantenimiento">Mantenimiento</option>
+<option value="financiero">Servicios Financieros (cambista, banco)</option>
+<option value="legal">Legal / Contabilidad</option>
+<option value="otro">Otro</option>
+</select>
+</div>
+<div class="fg"><label>Tarifa habitual</label>
+<input id="prov-tarifa" placeholder="Ej. Q 0.50/lb, Q 5,000/mes">
+</div>
+</div>
+</div>
+<div class="fg" style="margin-top:10px;">
+<label>Observaciones / Notas</label>
+<input id="prov-obs" placeholder="Historial, condiciones especiales, notas...">
+</div>
+<div class="fa">
+<button class="btn bp" onclick="saveProv()">+ Guardar Proveedor</button>
+<button id="prov-btn-cancel" class="btn bo" onclick="cancelEditProv()" style="display:none;">Cancelar</button>
+</div>
+</div>
+<div class="card" style="margin-top:14px;">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+<div class="ct" style="margin:0;" id="prov-lista-title">Proveedores Registrados</div>
+<span id="prov-count" style="font-size:.7rem;color:var(--muted2);"></span>
+</div>
+<div style="overflow-x:auto;">
+<table style="font-size:.72rem;">
+<thead><tr>
+<th>Tipo</th><th>Nombre</th><th>País / Región</th>
+<th>Contacto</th><th>Teléfono</th><th>RFC / NIT</th>
+<th>Cultivos / Servicio</th><th>Crédito</th><th></th>
+</tr></thead>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="sec" id="sec-usuarios">
+<div class="ph"><h1>Usuarios y Accesos</h1><p>Crea empleados como usuarios, asigna roles y controla qué módulos puede ver cada uno</p></div>
+<div style="background:rgba(255,56,88,.06);border:1px solid rgba(255,56,88,.25);border-radius:6px;padding:16px;margin-bottom:16px;">
+<div style="font-size:.62rem;color:var(--danger);font-weight:700;letter-spacing:.08em;margin-bottom:8px;">⚠ ZONA DE MANTENIMIENTO</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+<div style="flex:1;font-size:.72rem;color:var(--muted2);">
+        Limpia todos los registros operativos para empezar de cero. Los usuarios y configuración de productos se conservan.
+        <strong style="color:var(--danger);">Esta acción no se puede deshacer.</strong>
+</div>
+<button class="btn bo" onclick="limpiarBaseOperativa()" style="border-color:var(--danger);color:var(--danger);white-space:nowrap;">
+        🗑 Limpiar datos operativos
+      </button>
+<button class="btn bo" onclick="limpiarTodo()" style="border-color:var(--danger);color:var(--danger);white-space:nowrap;">
+        💣 Limpiar TODO (incluye config)
+      </button>
+</div>
+</div>
+<div class="card" id="usuarios-form-card">
+<div class="ct" id="usuarios-form-title">Nuevo Usuario</div>
+<input type="hidden" id="usr-edit-id">
+<div class="fgrid g3" style="margin-bottom:12px;">
+<div class="fg"><label>Nombre del usuario</label>
+<input id="usr-nombre" placeholder="Ej. María García" autocomplete="off">
+</div>
+<div class="fg"><label>Clave de acceso</label>
+<input id="usr-clave" type="password" placeholder="Mínimo 4 caracteres" autocomplete="new-password">
+</div>
+<div class="fg"><label>Rol</label>
+<select id="usr-rol" onchange="usrRolChange()">
+<option value="operador">Operador — acceso limitado por módulos</option>
+<option value="supervisor">Supervisor — acceso limitado + reportes</option>
+<option value="admin">Administrador — todos los módulos</option>
+<option value="superadmin">Super Administrador — todo + gestión de usuarios</option>
+</select>
+</div>
+</div>
+<div id="usr-modulos-section">
+<div style="font-size:.62rem;color:var(--warn);font-weight:700;letter-spacing:.08em;margin-bottom:10px;">MÓDULOS PERMITIDOS</div>
+<div id="usr-modulos-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px;"></div>
+<div style="margin-top:8px;display:flex;gap:8px;">
+<button class="btn bo bsm" onclick="usrSelectAll(true)" style="font-size:.68rem;">✓ Todos</button>
+<button class="btn bo bsm" onclick="usrSelectAll(false)" style="font-size:.68rem;">✗ Ninguno</button>
+</div>
+</div>
+<div class="fa" style="margin-top:14px;">
+<button class="btn bp" onclick="saveUsuario()">💾 Guardar Usuario</button>
+<button class="btn bo" onclick="cancelEditUsuario()" id="usr-cancel-btn" style="display:none;">Cancelar</button>
+</div>
+</div>
+<div class="tw" style="margin-top:14px;">
+<div class="twh"><span class="twt">Usuarios registrados</span></div>
+<div id="usuarios-lista" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;padding:14px;"></div>
+</div>
+</div>
+</main>
+</div>
+<div id="toast"></div>
+
+<!-- Firebase Config Modal (shown on first run) -->
+<div id="fb-config-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:var(--s1);border-radius:14px;padding:28px;max-width:480px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.4);">
+    <div style="font-family:var(--fh);font-size:1.2rem;font-weight:800;color:var(--green-deep);margin-bottom:6px;">☁️ Conectar a Firebase</div>
+    <div style="font-size:.8rem;color:var(--muted);margin-bottom:18px;">Pega aquí tu configuración de Firebase para activar la base de datos en la nube. Los datos existentes se subirán automáticamente.</div>
+    <div class="fg"><label>API Key</label><input id="fb-api-key" placeholder="AIzaSy..."></div>
+    <div class="fg" style="margin-top:8px;"><label>Auth Domain</label><input id="fb-auth-domain" placeholder="tu-proyecto.firebaseapp.com"></div>
+    <div class="fg" style="margin-top:8px;"><label>Project ID</label><input id="fb-project-id" placeholder="tu-proyecto"></div>
+    <div class="fg" style="margin-top:8px;"><label>App ID</label><input id="fb-app-id" placeholder="1:123:web:abc..."></div>
+    <div style="margin-top:16px;display:flex;gap:10px;">
+      <button class="btn bp" onclick="fbSaveConfig()" style="flex:1;">✅ Conectar</button>
+      <button class="btn bo bsm" onclick="fbSkipConfig()">Usar sin nube →</button>
+    </div>
+    <div style="margin-top:12px;font-size:.7rem;color:var(--muted);text-align:center;">
+      ¿No tienes Firebase? <a href="https://console.firebase.google.com" target="_blank" style="color:var(--orange);">Créalo gratis aquí</a> · tarda 3 minutos
+    </div>
+  </div>
+</div>
+<script<div class="sec" id="sec-dashboard">
+<div class="ph">
+  <h1>Dashboard BPM</h1>
+  <p id="fecha-hoy">—</p>
+</div>
+
+<!-- Alert banner (entrega hoy) -->
+<div id="dash-alerta" style="display:none;"></div>
+
+<!-- Stats cards -->
+<div class="stats">
+  <div class="scard g"><div class="slbl">BPM Completadas</div><div class="sval" id="ds-hoy">0</div><div class="ssub">Formularios del día</div></div>
+  <div class="scard o"><div class="slbl">Personal Activo</div><div class="sval" id="ds-personal">0</div><div class="ssub">Accesos registrados</div></div>
+  <div class="scard y"><div class="slbl">Capacitaciones</div><div class="sval" id="ds-cap">0</div><div class="ssub">Registradas hoy</div></div>
+  <div class="scard r"><div class="slbl">Empleados Enfermos</div><div class="sval" id="ds-enf">0</div><div class="ssub">Registros activos</div></div>
+</div>
+
+<!-- Calendario semanal -->
+<div class="card" style="margin-bottom:12px;">
+  <div class="ct">📅 Semana actual — clic en un día para ver su detalle</div>
+  <div id="dash-calendario"></div>
+</div>
+
+<!-- BPM Circle + List + Activity -->
+<div style="display:grid;grid-template-columns:180px 1fr 1fr;gap:12px;">
+
+  <!-- Circle -->
+  <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
+    <div class="ct" style="text-align:center;width:100%;">Estado BPM</div>
+    <div id="dash-bpm-circle"></div>
+  </div>
+
+  <!-- BPM checklist -->
+  <div class="card" style="overflow-y:auto;max-height:420px;">
+    <div class="ct">✅ Formularios del día</div>
+    <div id="dash-bpm-list"><div class="empty">Calculando...</div></div>
+  </div>
+
+  <!-- Activity timeline -->
+  <div class="card" style="overflow-y:auto;max-height:420px;">
+    <div class="ct">🕐 Actividad reciente</div>
+    <div id="dash-actividad"><div class="empty">Sin actividad aún</div></div>
+  </div>
+
 </div>
 </div>
 <div class="sec" id="sec-transporte-limpieza">
@@ -6200,43 +8759,390 @@ function renderLP() {
   }).join('');
 }
 
-function updateDash(){
-  const today=new Date().toLocaleDateString('es-GT');
-  const all=[...DB.tl,...DB.dt,...DB.bl,...DB.fum,...DB.rod,...DB.cap,...DB.ee,...DB.al,...DB.vis,...DB.vp,...DB.bas,...DB.lp];
-  const hoy=all.filter(r=>(r.fecha||r.ts||'').includes(today.split('/').reverse().join('/'))||r.fecha===today.split('/').reverse().join('-'));
-  const hoyTs=all.filter(r=>r.ts&&r.ts.includes(today));
-  document.getElementById('ds-hoy').textContent=hoyTs.length+hoy.length;
+// ══════════════════════════════════════════════════════════════════
+// DASHBOARD BPM — COMPLETO
+// ══════════════════════════════════════════════════════════════════
 
-  const alHoy=DB.al.filter(r=>r.fecha===today.split('/').reverse().join('-')||r.ts?.includes(today));
-  document.getElementById('ds-personal').textContent=alHoy.length;
-  document.getElementById('ds-cap').textContent=DB.cap.length;
-  document.getElementById('ds-enf').textContent=DB.ee.filter(r=>r.estado==='baja').length;
+// Definición de módulos BPM con sus reglas
+const BPM_MODULOS = [
+  // DIARIOS — activos solo si hay maquila ese día
+  { id:'al',  nombre:'Acceso y Lavado de Manos', icono:'🖐',  tipo:'diario',   seccion:'acceso-lavado',  color:'#00a86b' },
+  { id:'bl',  nombre:'Limpieza Bodega',           icono:'🏭',  tipo:'diario',   seccion:'limpbodega',     color:'#00a86b' },
+  { id:'rod', nombre:'Control Roedores',           icono:'🐭',  tipo:'diario',   seccion:'roedores',       color:'#00a86b' },
+  { id:'tl',  nombre:'Limpieza Transporte',        icono:'🚛',  tipo:'diario',   seccion:'limptrans',      color:'#00a86b' },
+  { id:'maq', nombre:'Gastos Generales (Maquila)', icono:'⚙️', tipo:'maestro',  seccion:'maquila',        color:'#4a9eff' },
+  // CON ENTREGA — solo si hay pedido Walmart hoy
+  { id:'dt',  nombre:'Despacho Transporte',        icono:'📦',  tipo:'entrega',  seccion:'desptrans',      color:'#f26822' },
+  { id:'vgt', nombre:'Ventas GT / Walmart',        icono:'🛒',  tipo:'entrega',  seccion:'ventas-gt',      color:'#f26822' },
+  // EVENTUALES — nunca generan alerta
+  { id:'ee',  nombre:'Empleados Enfermos',         icono:'🏥',  tipo:'eventual', seccion:'enfermos',       color:'#888' },
+  { id:'cap', nombre:'Registro Capacitación',      icono:'📚',  tipo:'eventual', seccion:'capacitacion',   color:'#888' },
+  { id:'vis', nombre:'Visitas',                    icono:'👤',  tipo:'eventual', seccion:'visitas',        color:'#888' },
+  // PERIÓDICOS — semanales/eventuales informativos
+  { id:'fum', nombre:'Control Fumigación',         icono:'💨',  tipo:'periodico', seccion:'fumigacion',    color:'#a078ff' },
+  { id:'vp',  nombre:'Vidrio y Plástico',          icono:'🔍',  tipo:'periodico', seccion:'vidrioplas',    color:'#a078ff' },
+  { id:'bas', nombre:'Básculas / Calibración',     icono:'⚖️',  tipo:'periodico', seccion:'basculas',      color:'#a078ff' },
+  { id:'lp',  nombre:'Lavado de Producto',         icono:'💧',  tipo:'periodico', seccion:'lavprod',       color:'#a078ff' },
+];
 
-  const recent=all.sort((a,b)=>(b.id||'').localeCompare(a.id||'')).slice(0,8);
-  const act=document.getElementById('dash-actividad');
-  if(act){
-    act.innerHTML=recent.length?recent.map(r=>`
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--br);font-size:.72rem">
-        <span>${r.nombre||r.resp||r.prof||r.prod||r.placa||'Registro'}</span>
-        <span style="color:var(--muted2);font-size:.65rem">${r.ts||r.fecha||'—'}</span>
-      </div>`).join(''):'<div class="empty">Sin actividad aún</div>';
+// Nombres legibles de tipo
+const TIPO_LABEL = {
+  maestro:  'Maestro del día',
+  diario:   'Diario (si hay operación)',
+  entrega:  'Requerido con entrega',
+  eventual: 'Eventual',
+  periodico:'Periódico / Semanal',
+};
+
+function dashFechaHoy() {
+  return new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+}
+
+function dashGetTodayRecords(fecha) {
+  // Returns map: moduleId -> array of records today
+  const result = {};
+  const today = fecha || dashFechaHoy();
+
+  // Helper: check if record belongs to today
+  const isToday = (r) => {
+    const f = r.fecha || (r.ts ? r.ts.split('T')[0] : '');
+    return f === today;
+  };
+
+  // Map DB keys to module ids
+  const dbMap = {
+    al: DB.al, bl: DB.bl, rod: DB.rod, tl: DB.tl, fum: DB.fum,
+    dt: DB.dt, ee: DB.ee, cap: DB.cap, vis: DB.vis, vp: DB.vp,
+    bas: DB.bas, lp: DB.lp,
+  };
+
+  // Maquila/Gastos — check gastosSemanales for week containing today
+  const maqHoy = (DB.gastosSemanales||[]).filter(s =>
+    s.semanaInicio <= today && (s.semanaFin||'9999') >= today
+  );
+  result['maq'] = maqHoy;
+
+  // Ventas GT/Walmart
+  const ventasHoy = [
+    ...(DB.vgtVentas||[]).filter(isToday),
+    ...(DB.vintVentas||[]).filter(isToday),
+    ...(DB.pedidosWalmart||[]).filter(p => {
+      const f = p.fechaEntrega || p.fecha || '';
+      return f === today && (p.estado === 'cerrado' || p.estado === 'en_curso');
+    }),
+  ];
+  result['vgt'] = ventasHoy;
+
+  Object.entries(dbMap).forEach(([key, arr]) => {
+    result[key] = (arr||[]).filter(isToday);
+  });
+
+  return result;
+}
+
+function dashHayEntregaHoy(fecha) {
+  const today = fecha || dashFechaHoy();
+  return (DB.pedidosWalmart||[]).some(p => {
+    const f = p.fechaEntrega || p.fecha || '';
+    return f === today && p.estado !== 'cancelado';
+  });
+}
+
+function dashHayMaquilaHoy(fecha) {
+  const today = fecha || dashFechaHoy();
+  const records = dashGetTodayRecords(today);
+  return records['maq'] && records['maq'].length > 0;
+}
+
+// ── BPM Status for a given date ───────────────────────────────────
+function dashGetBpmStatus(fecha) {
+  const today = fecha || dashFechaHoy();
+  const records = dashGetTodayRecords(today);
+  const hayMaquila = records['maq'] && records['maq'].length > 0;
+  const hayEntrega = dashHayEntregaHoy(today);
+
+  const statuses = BPM_MODULOS.map(mod => {
+    const recs = records[mod.id] || [];
+    const hecho = recs.length > 0;
+
+    let aplica = false;
+    let requerido = false;
+
+    if (mod.tipo === 'maestro') {
+      aplica = true;
+      requerido = true; // always show maquila status
+    } else if (mod.tipo === 'diario') {
+      aplica = hayMaquila;
+      requerido = hayMaquila;
+    } else if (mod.tipo === 'entrega') {
+      aplica = hayEntrega || hecho;
+      requerido = hayEntrega;
+    } else if (mod.tipo === 'eventual') {
+      aplica = hecho; // only show if filled
+      requerido = false;
+    } else if (mod.tipo === 'periodico') {
+      aplica = true; // always show but not required daily
+      requerido = false;
+    }
+
+    return { ...mod, hecho, aplica, requerido, recs };
+  });
+
+  // Compute % completion (only required modules)
+  const required = statuses.filter(s => s.requerido);
+  const done     = required.filter(s => s.hecho);
+  const pct = required.length ? Math.round(done.length / required.length * 100) : 100;
+
+  return { statuses, pct, hayMaquila, hayEntrega, required, done };
+}
+
+// ── Render Activity Timeline ──────────────────────────────────────
+function dashRenderActividad(fecha) {
+  const today = fecha || dashFechaHoy();
+  const events = [];
+
+  // Collect all records today with timestamp and user
+  const sources = [
+    { arr: DB.al,  nombre: 'Acceso y Lavado de Manos', icono: '🖐' },
+    { arr: DB.bl,  nombre: 'Limpieza Bodega',           icono: '🏭' },
+    { arr: DB.rod, nombre: 'Control Roedores',           icono: '🐭' },
+    { arr: DB.tl,  nombre: 'Limpieza Transporte',        icono: '🚛' },
+    { arr: DB.fum, nombre: 'Control Fumigación',         icono: '💨' },
+    { arr: DB.dt,  nombre: 'Despacho Transporte',        icono: '📦' },
+    { arr: DB.ee,  nombre: 'Empleado Enfermo',           icono: '🏥' },
+    { arr: DB.cap, nombre: 'Capacitación',               icono: '📚' },
+    { arr: DB.vis, nombre: 'Visita',                     icono: '👤' },
+    { arr: DB.vp,  nombre: 'Vidrio/Plástico',            icono: '🔍' },
+    { arr: DB.bas, nombre: 'Báscula',                    icono: '⚖️' },
+    { arr: DB.lp,  nombre: 'Lavado Producto',            icono: '💧' },
+    { arr: DB.vgtVentas, nombre: 'Venta GT',             icono: '🛒' },
+    { arr: DB.vintVentas, nombre: 'Venta Internacional', icono: '🌎' },
+  ];
+
+  sources.forEach(src => {
+    (src.arr||[]).forEach(r => {
+      const f = r.fecha || (r.ts ? r.ts.split('T')[0] : '');
+      if (f !== today) return;
+
+      const ts = r.ts || '';
+      const hora = ts.includes('T') ?
+        new Date(ts).toLocaleTimeString('es-GT',{hour:'2-digit',minute:'2-digit'}) :
+        (r.hora || r.hi || '—');
+
+      // Encargado: user who saved + field encargado if exists
+      const usuario = r.usuario || r.user || '';
+      const encargado = r.encargado || r.resp || r.responsable || '';
+      const quienLabel = [usuario, encargado].filter(Boolean).join(' / ') || 'Sistema';
+
+      events.push({ hora, nombre: src.nombre, icono: src.icono, quien: quienLabel, ts });
+    });
+  });
+
+  // Also add maquila week saves
+  (DB.gastosSemanales||[]).forEach(s => {
+    if (s.semanaInicio <= today && (s.semanaFin||'9999') >= today) {
+      const ts = s.ts || '';
+      const hora = ts.includes('T') ?
+        new Date(ts).toLocaleTimeString('es-GT',{hour:'2-digit',minute:'2-digit'}) : '—';
+      events.push({ hora, nombre: 'Gastos Generales (semana)', icono: '⚙️', quien: 'Sistema', ts });
+    }
+  });
+
+  // Sort by timestamp desc
+  events.sort((a,b) => (b.ts||'').localeCompare(a.ts||''));
+
+  return events;
+}
+
+// ── Render weekly mini calendar ───────────────────────────────────
+function dashRenderCalendario() {
+  const today = dashFechaHoy();
+  const d = new Date(today + 'T12:00:00');
+  const dow = d.getDay(); // 0=sun
+  const diff = dow === 0 ? -6 : 1 - dow;
+  const lunes = new Date(d); lunes.setDate(d.getDate() + diff);
+
+  const days = ['Lun','Mar','Mié','Jue','Vie','Sáb'];
+  let html = '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:8px;">';
+
+  for (let i = 0; i < 6; i++) {
+    const day = new Date(lunes); day.setDate(lunes.getDate() + i);
+    const fecha = day.toISOString().split('T')[0];
+    const isToday = fecha === today;
+    const { pct, hayMaquila, hayEntrega, required, done } = dashGetBpmStatus(fecha);
+
+    // Color logic
+    let bg = '#f5f5f5', color = '#999', border = '#ddd';
+    if (!hayMaquila && fecha <= today) {
+      bg = '#f9f9f9'; color = '#bbb'; border = '#e0e0e0'; // no op day
+    } else if (hayMaquila) {
+      if (pct === 100)       { bg = '#e8f5ef'; color = '#00412d'; border = '#00412d'; }
+      else if (pct >= 60)    { bg = '#fff8e6'; color = '#b45309'; border = '#f5c518'; }
+      else                   { bg = '#fff0f0'; color = '#cc3300'; border = '#ff6b6b'; }
+    }
+    if (hayEntrega) border = '#f26822';
+    if (isToday) border = '#00412d';
+
+    const dayNum = day.getDate();
+    html += `<div onclick="dashSelectDay('${fecha}')" style="
+      background:${bg};color:${color};border:2px solid ${border};
+      border-radius:8px;padding:6px 4px;text-align:center;cursor:pointer;
+      transition:.15s;${isToday?'box-shadow:0 0 0 3px rgba(0,66,45,.3);':''}">
+      <div style="font-size:.65rem;font-weight:600;">${days[i]}</div>
+      <div style="font-size:1rem;font-weight:800;">${dayNum}</div>
+      <div style="font-size:.6rem;margin-top:2px;">${hayMaquila ? pct+'%' : '—'}</div>
+      ${hayEntrega ? '<div style="font-size:.6rem;color:#f26822;">🚚</div>' : ''}
+    </div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+// ── Main render ───────────────────────────────────────────────────
+let _dashSelectedDay = null;
+
+function dashSelectDay(fecha) {
+  _dashSelectedDay = fecha;
+  updateDash();
+}
+
+function updateDash() {
+  const today = dashFechaHoy();
+  const fecha = _dashSelectedDay || today;
+  const isToday = fecha === today;
+
+  // Update date display
+  const fechaEl = document.getElementById('fecha-hoy');
+  if (fechaEl) {
+    const d = new Date(fecha + 'T12:00:00');
+    const label = isToday ? 'hoy, ' : '';
+    fechaEl.textContent = label + d.toLocaleDateString('es-GT',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   }
 
-  const mods=[
-    {n:'Limpieza Transporte',k:'tl',c:'g'},{n:'Despacho',k:'dt',c:'g'},
-    {n:'Limpieza Bodega',k:'bl',c:'o'},{n:'Fumigación',k:'fum',c:'o'},
-    {n:'Roedores',k:'rod',c:'o'},{n:'Capacitación',k:'cap',c:'b'},
-    {n:'Emp. Enfermos',k:'ee',c:'r'},{n:'Acceso/Lavado',k:'al',c:'g'},
-    {n:'Visitas',k:'vis',c:'b'},{n:'Vidrio/Plástico',k:'vp',c:'y'},
-    {n:'Básculas',k:'bas',c:'g'},{n:'Lavado Prod.',k:'lp',c:'b'},
-  ];
-  const dm=document.getElementById('dash-modulos');
-  if(dm)dm.innerHTML=mods.map(m=>`
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--br);font-size:.72rem">
-      <span>${m.n}</span>
-      <span class="chip c${m.c}">${DB[m.k].length}</span>
-    </div>`).join('');
+  const { statuses, pct, hayMaquila, hayEntrega, required, done } = dashGetBpmStatus(fecha);
+
+  // ── Alert banner ──────────────────────────────────────────────
+  const alertEl = document.getElementById('dash-alerta');
+  if (alertEl) {
+    if (hayEntrega) {
+      const faltanEntrega = statuses.filter(s => s.tipo === 'entrega' && s.requerido && !s.hecho);
+      const faltanDiarios = statuses.filter(s => s.tipo === 'diario' && s.requerido && !s.hecho);
+      const faltan = [...faltanDiarios, ...faltanEntrega];
+      if (faltan.length > 0) {
+        alertEl.style.display = '';
+        alertEl.innerHTML = `<div style="background:#fff3e0;border:2px solid #f26822;border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;gap:10px;align-items:flex-start;">
+          <span style="font-size:1.3rem;">⚠️</span>
+          <div>
+            <div style="font-weight:800;color:#f26822;font-size:.85rem;">HAY ENTREGA HOY — Formularios pendientes:</div>
+            <div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:6px;">
+              ${faltan.map(m=>`<span onclick="show('${m.seccion}',null)" style="background:#f26822;color:#fff;border-radius:20px;padding:3px 10px;font-size:.72rem;cursor:pointer;font-weight:600;">${m.icono} ${m.nombre}</span>`).join('')}
+            </div>
+          </div>
+        </div>`;
+      } else {
+        alertEl.innerHTML = `<div style="background:#e8f5ef;border:2px solid #00412d;border-radius:8px;padding:8px 14px;margin-bottom:12px;font-size:.82rem;color:#00412d;font-weight:700;">
+          ✅ Entrega hoy — todos los formularios completados
+        </div>`;
+        alertEl.style.display = '';
+      }
+    } else {
+      alertEl.style.display = 'none';
+    }
+  }
+
+  // ── Stats cards ───────────────────────────────────────────────
+  const alHoy = (DB.al||[]).filter(r => (r.fecha||'') === fecha);
+  const personalHoy = alHoy.reduce((sum,r) => sum + (r.totalEmp||0), 0);
+  document.getElementById('ds-hoy').textContent   = done.length + '/' + required.length;
+  document.getElementById('ds-personal').textContent = personalHoy;
+  document.getElementById('ds-cap').textContent   = (DB.cap||[]).filter(r=>(r.fecha||r.ts||'').includes(fecha)).length;
+  document.getElementById('ds-enf').textContent   = (DB.ee||[]).filter(r=>(r.fecha||r.ts||'').includes(fecha)).length;
+
+  // ── BPM Circle ────────────────────────────────────────────────
+  const circleEl = document.getElementById('dash-bpm-circle');
+  if (circleEl) {
+    const radius = 52, circ = 2 * Math.PI * radius;
+    const dash = (pct / 100) * circ;
+    const color = pct === 100 ? '#00412d' : pct >= 60 ? '#f5c518' : '#ff4444';
+    circleEl.innerHTML = `
+      <div style="position:relative;display:inline-flex;align-items:center;justify-content:center;margin:8px auto;display:flex;">
+        <svg width="130" height="130" style="transform:rotate(-90deg)">
+          <circle cx="65" cy="65" r="${radius}" fill="none" stroke="#e0e0e0" stroke-width="10"/>
+          <circle cx="65" cy="65" r="${radius}" fill="none" stroke="${color}" stroke-width="10"
+            stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}"
+            stroke-linecap="round" style="transition:stroke-dasharray .4s ease;"/>
+        </svg>
+        <div style="position:absolute;text-align:center;">
+          <div style="font-size:1.6rem;font-weight:900;color:${color};">${pct}%</div>
+          <div style="font-size:.6rem;color:#999;margin-top:-2px;">BPM completadas</div>
+        </div>
+      </div>
+      <div style="text-align:center;font-size:.72rem;color:#666;margin-bottom:4px;">
+        ${done.length} de ${required.length} requeridos${hayMaquila?'':' <span style="color:#999">(sin operación)</span>'}
+      </div>`;
+  }
+
+  // ── BPM List ──────────────────────────────────────────────────
+  const listEl = document.getElementById('dash-bpm-list');
+  if (listEl) {
+    const groups = [
+      { tipo:'maestro',  label:'🔑 Maestro del día' },
+      { tipo:'diario',   label:'📋 Diarios (si hay operación)' },
+      { tipo:'entrega',  label:'🚚 Con entrega' },
+      { tipo:'periodico',label:'📅 Periódicos / Semanales' },
+      { tipo:'eventual', label:'⚡ Eventuales' },
+    ];
+
+    listEl.innerHTML = groups.map(grp => {
+      const mods = statuses.filter(s => s.tipo === grp.tipo && s.aplica);
+      if (!mods.length) return '';
+      return `<div style="margin-bottom:10px;">
+        <div style="font-size:.65rem;font-weight:700;color:#999;text-transform:uppercase;margin-bottom:4px;">${grp.label}</div>
+        ${mods.map(m => {
+          let icon, bg, color;
+          if (m.hecho)           { icon='✅'; bg='#e8f5ef'; color='#00412d'; }
+          else if (m.requerido)  { icon='🔴'; bg='#fff0f0'; color='#cc3300'; }
+          else                   { icon='⬜'; bg='#f9f9f9'; color='#666'; }
+          return `<div onclick="show('${m.seccion}',null)"
+            style="display:flex;align-items:center;gap:8px;padding:7px 10px;
+                   background:${bg};border-radius:6px;margin-bottom:4px;
+                   cursor:pointer;border:1px solid ${m.hecho?'#00a86b':m.requerido?'#ff6b6b':'#e0e0e0'};
+                   transition:.1s;" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
+            <span style="font-size:.85rem;">${icon}</span>
+            <span style="font-size:.72rem;">${m.icono}</span>
+            <span style="font-size:.75rem;font-weight:${m.requerido&&!m.hecho?'700':'500'};color:${color};flex:1;">${m.nombre}</span>
+            <span style="font-size:.6rem;color:#aaa;">${m.hecho ? m.recs.length+' reg.' : m.requerido?'PENDIENTE':'—'}</span>
+            <span style="font-size:.65rem;color:#aaa;">→</span>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }).join('');
+  }
+
+  // ── Activity Timeline ─────────────────────────────────────────
+  const actEl = document.getElementById('dash-actividad');
+  if (actEl) {
+    const events = dashRenderActividad(fecha);
+    if (!events.length) {
+      actEl.innerHTML = '<div class="empty">Sin actividad' + (isToday?' aún':' ese día') + '</div>';
+    } else {
+      actEl.innerHTML = events.map(e => `
+        <div style="display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--br);">
+          <div style="font-size:1rem;margin-top:1px;">${e.icono}</div>
+          <div style="flex:1;">
+            <div style="font-size:.78rem;font-weight:600;color:var(--green-deep);">${e.nombre}</div>
+            <div style="font-size:.68rem;color:var(--muted);">${e.quien}</div>
+          </div>
+          <div style="font-size:.68rem;color:var(--muted2);white-space:nowrap;">${e.hora}</div>
+        </div>`).join('');
+    }
+  }
+
+  // ── Weekly calendar ───────────────────────────────────────────
+  const calEl = document.getElementById('dash-calendario');
+  if (calEl) calEl.innerHTML = dashRenderCalendario();
 }
+
 
 let ineCamStream = null, ineAlbaranData = null;
 let ineDocData = { prod: null, mx: null, duca: null };
