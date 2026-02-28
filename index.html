@@ -6010,6 +6010,28 @@ function authLogin() {
     return;
   }
 
+  // If Firebase hasn't loaded users yet, wait up to 3 seconds
+  if ((DB.usuarios||[]).length === 0) {
+    const btn = document.querySelector('#login-screen button');
+    if (btn) { btn.textContent = '⏳ Cargando...'; btn.disabled = true; }
+    let attempts = 0;
+    const wait = setInterval(() => {
+      attempts++;
+      if ((DB.usuarios||[]).length > 0 || attempts > 15) {
+        clearInterval(wait);
+        if (btn) { btn.textContent = 'Ingresar →'; btn.disabled = false; }
+        authDoLogin(nombre, clave);
+      }
+    }, 200);
+    return;
+  }
+
+  authDoLogin(nombre, clave);
+}
+
+function authDoLogin(nombre, clave) {
+  const errEl = document.getElementById('login-err');
+
   const user = (DB.usuarios||[]).find(u =>
     u.nombre.toLowerCase() === nombre.toLowerCase() &&
     u.clave === clave &&
@@ -6018,7 +6040,6 @@ function authLogin() {
 
   if (!user) {
     if (errEl) { errEl.style.display='block'; errEl.style.background='rgba(255,56,88,.08)'; errEl.style.borderColor='rgba(255,56,88,.3)'; errEl.style.color='var(--danger)'; errEl.textContent='Usuario o clave incorrectos'; }
-    // Shake animation
     const card = document.getElementById('login-card');
     if (card) { card.style.animation='shake .3s'; setTimeout(()=>card.style.animation='',400); }
     return;
@@ -13413,13 +13434,7 @@ window.addEventListener('DOMContentLoaded', () => {
       hint.style.background = 'rgba(0,217,139,.08)';
       hint.style.borderColor = 'rgba(0,217,139,.3)';
       hint.style.color = 'var(--acc)';
-      hint.textContent = 'Usuario: Admin  |  Clave: admin123';
-      // Debug: show user count
-      setTimeout(() => {
-        const count = (DB.usuarios||[]).length;
-        const names = (DB.usuarios||[]).map(u=>u.nombre).join(', ');
-        hint.textContent = 'Admin / admin123 — Usuarios en DB: ' + count + (names ? ' ('+names+')' : '');
-      }, 1500);
+      hint.textContent = 'Contacta al administrador si no puedes ingresar';
     }
   }
 });
