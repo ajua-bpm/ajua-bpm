@@ -773,7 +773,7 @@ tr:hover td{background:var(--green-pale);}
 <div class="ns">📦 Inventario</div>
 <div class="ni" onclick="show('inv-stock',this)"><span class="ico">📊</span>Stock en Tiempo Real</div>
 <div class="ni" onclick="show('inv-entrada',this)"><span class="ico">📥</span>Ingresos a Bodega</div>
-<div class="ni" onclick="show('maquila',this)"><span class="ico">⚙️</span>Maquila Mensual</div>
+<div class="ni" onclick="show('maquila',this)"><span class="ico">⚙️</span>Gastos Generales</div>
 <div class="ni" onclick="show('pedidos-walmart',this)"><span class="ico">📋</span>Pedidos Walmart</div>
 <div class="ni" onclick="show('inv-salida',this)"><span class="ico">📦</span>Ventas Walmart</div>
 <div class="ni" onclick="show('ventas-gt',this)"><span class="ico">📤</span>Despachos — Locales GT</div>
@@ -1687,40 +1687,55 @@ tr:hover td{background:var(--green-pale);}
 </div>
 </div>
 <div class="sec" id="sec-maquila">
-<div class="ph"><h1>Maquila Mensual</h1><p>Costos globales del período — el sistema calcula Q/lb procesada para asignar costo real a cada venta</p></div>
-<div class="card" style="margin-bottom:14px;background:rgba(0,217,139,.03);border:1px solid rgba(0,217,139,.2);">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-<div class="ct" style="margin:0;">📋 Ingresos en Bodega — Período actual</div>
-<button class="btn bo bsm" onclick="maqAutoLbs()">🔄 Actualizar</button>
-</div>
-<div id="maq-bodega-list" style="font-size:.72rem;color:var(--muted2);">Selecciona el mes para ver ingresos y ventas del período</div>
-</div>
-<div class="card">
-<div class="ct">Costos de Maquila del Período</div>
-<div style="font-size:.72rem;color:var(--muted2);margin-bottom:10px;">Registra <strong>todos los gastos globales del mes</strong>. El sistema divide el total entre las lbs vendidas para obtener el costo de maquila por libra de cada venta.</div>
-<div style="font-size:.72rem;color:var(--muted2);margin-bottom:12px;">
-      Registra todos los costos del mes. El sistema calcula automáticamente el <strong>costo de maquila por libra</strong> dividiendo el total entre las lbs procesadas en el período.
+<div class="ph"><h1>Gastos Generales</h1><p>Control semanal de gastos — los reportes mensuales se generan sumando semanas</p></div>
+
+<!-- Week selector -->
+<div class="card" style="margin-bottom:14px;">
+  <div class="ct">📅 Semana de Gastos</div>
+  <div class="fgrid g3" style="margin-bottom:12px;">
+    <div class="fg">
+      <label>Semana del</label>
+      <input type="date" id="maq-semana-inicio" onchange="maqOnWeekChange()">
     </div>
-<div class="fgrid g3">
-<div class="fg"><label>Mes y año</label><input type="month" id="maq-mes" placeholder="2026-02" onchange="maqAutoLbs()"></div>
-<div class="fg"><label>Producto procesado</label>
-<select id="maq-prod" onchange="maqAutoLbs()">
-<option value="">— Todos / General —</option>
-</select>
+    <div class="fg">
+      <label>Al (sábado)</label>
+      <input type="date" id="maq-semana-fin" readonly style="background:var(--s2);">
+    </div>
+    <div class="fg">
+      <label>Lbs procesadas semana</label>
+      <input type="number" id="maq-lbs-proc" placeholder="0" oninput="maqCalc()">
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+    <button class="btn bp bsm" onclick="maqNuevaSemana()">➕ Nueva semana</button>
+    <button class="btn bsm" style="background:var(--green-deep);color:var(--cream);" onclick="maqGuardarSemana()">💾 Guardar semana</button>
+    <button class="btn bo bsm" onclick="maqVerHistorial()">📋 Ver historial</button>
+    <button class="btn bo bsm" onclick="maqExportExcel()">⬇ Excel</button>
+  </div>
+  <div id="maq-semana-status" style="margin-top:8px;font-size:.75rem;color:var(--muted);"></div>
 </div>
-<div class="fg"><label>Referencia del lote (opcional)</label><input id="maq-ref" placeholder="Ej. Contenedor Zanahorias Feb"></div>
+
+<!-- Saved weeks list -->
+<div id="maq-historial-panel" style="display:none;margin-bottom:14px;">
+  <div class="card">
+    <div class="ct">📋 Historial de Semanas</div>
+    <div id="maq-historial-lista"></div>
+  </div>
 </div>
-<div style="margin-top:12px;margin-bottom:12px;">
-<div style="font-size:.62rem;color:var(--acc);font-weight:700;letter-spacing:.08em;margin-bottom:10px;">
-        📊 PLAN DE CUENTAS — ingresa todos los costos del período por categoría
-      </div>
-<div style="font-size:.7rem;color:var(--muted2);margin-bottom:12px;">
-        Cada fila puede tener un <strong>proveedor asignado</strong> para trazabilidad de costos.
-        Los grupos son colapsables — click en el encabezado para ocultar/mostrar.
-      </div>
-<div id="maq-materiales"></div>
+
+<!-- Plan de cuentas -->
+<div id="maq-cuentas-container"></div>
+
+<!-- Totals -->
+<div class="card" style="margin-top:14px;">
+  <div class="ct">💰 Resumen de la Semana</div>
+  <div id="maq-resumen-semanal"></div>
+  <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;border-top:2px solid var(--green-deep);padding-top:10px;">
+    <span style="font-weight:800;font-size:1rem;color:var(--green-deep);">TOTAL SEMANA</span>
+    <span id="maq-grand-total" style="font-weight:800;font-size:1.1rem;color:var(--green-deep);">Q 0.00</span>
+  </div>
 </div>
-</div>
+
 </div>
 <div class="sec" id="sec-pedidos-walmart">
 <div class="ph">
@@ -4302,7 +4317,8 @@ const DB_KEY = 'ajua_bpm_v2';
 const DB_DEFAULT = {tl:[],dt:[],bl:[],fum:[],rod:[],cap:[],ee:[],al:[],vis:[],vp:[],bas:[],lp:[],
   iproductos:[],ipresentaciones:[],iclientes:[],ientradas:[],isalidas:[],cotizaciones:[],
   proveedores:[],vgtVentas:[],vintVentas:[],maquila:[],usuarios:[],
-  pedidosWalmart:[],clientes:[],conductores:[],empleados:[]};
+  pedidosWalmart:[],clientes:[],conductores:[],empleados:[],
+  gastosSemanales:[]};  // weekly expense records
 
 let DB = JSON.parse(JSON.stringify(DB_DEFAULT));
 
@@ -9484,1936 +9500,550 @@ function invViewImg(id, tipo) {
   w.document.write('<html><body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh;"><img src="' + src + '" style="max-width:100%;max-height:100vh;"><\/body><\/html>');
 }
 
-function maqAutoLbs() {
-  invEnsureDB();
-  const mes = v('maq-mes'); if (!mes) return;
-  const [yr, mo] = mes.split('-');
-  const desde = mes + '-01';
-  const hasta  = yr + '-' + mo + '-' + new Date(parseInt(yr), parseInt(mo), 0).getDate();
-  const prodFil = v('maq-prod');
 
-  const entradas = (DB.ientradas || []).filter(e =>
-    e.fecha >= desde && e.fecha <= hasta &&
-    (!prodFil || e.productoId === prodFil || e.productoNombre === prodFil)
-  );
-  const lbsImp = entradas.reduce((s, e) => s + (parseFloat(e.lbsBruto) || 0), 0);
 
-  const lbsVend = maqGetLbsVendidas(desde, hasta, prodFil);
 
-  set('maq-lbs-imp',  lbsImp  > 0 ? lbsImp.toFixed(1)  : '0');
-  set('maq-lbs-vend', lbsVend > 0 ? lbsVend.toFixed(1) : '0');
-
-  const procEl = document.getElementById('maq-lbs-proc');
-  if (procEl && (!procEl.value || procEl._autoSet)) {
-    procEl.value = lbsVend > 0 ? lbsVend.toFixed(1) : (lbsImp > 0 ? lbsImp.toFixed(1) : '');
-    procEl._autoSet = true;
-  }
-
-  const bl = document.getElementById('maq-bodega-list');
-  if (bl) {
-    if (!entradas.length && lbsVend === 0) {
-      bl.innerHTML = '<div class="empty" style="padding:8px;">Sin movimientos en ' + mes + '</div>';
-    } else {
-      const ventas_wal  = (DB.isalidas  ||[]).filter(r=>r.fecha>=desde&&r.fecha<=hasta).length;
-      const ventas_loc  = (DB.vgtVentas ||[]).filter(r=>r.fecha>=desde&&r.fecha<=hasta).length;
-      const ventas_exp  = (DB.vintVentas||[]).filter(r=>r.fecha>=desde&&r.fecha<=hasta).length;
-      bl.innerHTML =
-        '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;">' +
-        '<div style="background:var(--s2);border-radius:4px;padding:8px;text-align:center;">' +
-          '<div style="font-size:.58rem;color:var(--muted2);">📥 Ingresos (' + entradas.length + ' registros)</div>' +
-          '<strong style="color:var(--acc);">' + lbsImp.toFixed(0) + ' lbs</strong>' +
-        '</div>' +
-        '<div style="background:var(--s2);border-radius:4px;padding:8px;text-align:center;">' +
-          '<div style="font-size:.58rem;color:var(--muted2);">📤 Despachos (' + (ventas_wal+ventas_loc+ventas_exp) + ')</div>' +
-          '<strong style="color:var(--warn);">' + lbsVend.toFixed(0) + ' lbs</strong>' +
-        '</div>' +
-        '<div style="background:var(--s2);border-radius:4px;padding:8px;text-align:center;">' +
-          '<div style="font-size:.58rem;color:var(--muted2);">Walmart · Local · Export</div>' +
-          '<strong style="color:var(--muted2);font-size:.7rem;">' + ventas_wal + ' · ' + ventas_loc + ' · ' + ventas_exp + '</strong>' +
-        '</div>' +
-        (lbsImp-lbsVend !== 0 ? '<div style="background:var(--s2);border-radius:4px;padding:8px;text-align:center;">' +
-          '<div style="font-size:.58rem;color:var(--muted2);">Stock período</div>' +
-          '<strong style="color:var(--info);">' + (lbsImp-lbsVend).toFixed(0) + ' lbs</strong>' +
-        '</div>' : '') +
-        '</div>';
-    }
-  }
-
-  maqCalc();
-}
-
-function maqGetLbsVendidas(desde, hasta, prodFil) {
-  invEnsureDB();
-  let lbs = 0;
-  (DB.isalidas || []).filter(r => r.fecha >= desde && r.fecha <= hasta).forEach(r => {
-    (r.lineas || []).forEach(l => {
-      if (!prodFil || l.productoNombre === prodFil || l.productoId === prodFil)
-        lbs += parseFloat(l.totalLbs) || 0;
-    });
-  });
-  (DB.vgtVentas || []).filter(r => r.fecha >= desde && r.fecha <= hasta).forEach(r => {
-    (r.lineas || []).forEach(l => {
-      if (!prodFil || l.productoNombre === prodFil || l.productoId === prodFil)
-        lbs += parseFloat(l.totalLbs) || 0;
-    });
-  });
-  (DB.vintVentas || []).filter(r => r.fecha >= desde && r.fecha <= hasta).forEach(r => {
-    (r.lineas || []).forEach(l => {
-      if (!prodFil || l.productoNombre === prodFil || l.productoId === prodFil)
-        lbs += parseFloat(l.lbs) || 0;
-    });
-  });
-  return lbs;
-}
-
-function renderMaquila() {
-  invEnsureDB();
-  if (!DB.maquila) DB.maquila = [];
-  const tb = document.getElementById('maq-tbody'); if (!tb) return;
-  if (!DB.maquila.length) { tb.innerHTML = '<tr><td colspan="9"><div class="empty">Sin registros de maquila</div></td></tr>'; return; }
-  tb.innerHTML = [...DB.maquila].sort((a, b) => b.mes.localeCompare(a.mes)).map(m =>
-    '<tr>' +
-    '<td style="font-weight:700;">' + m.mes + '</td>' +
-    '<td style="font-size:.7rem;">' + (m.productoId ? (DB.iproductos?.find(p => p.id === m.productoId)?.nombre || m.productoId) : 'General') + '</td>' +
-    '<td>' + (m.lbsProc?.toFixed(0) || '—') + ' lbs</td>' +
-    '<td style="color:var(--muted2);">Q ' + (m.totalMat?.toFixed(2) || '0') + '</td>' +
-    '<td style="color:var(--muted2);">Q ' + (m.totalProc?.toFixed(2) || '0') + '</td>' +
-    '<td style="color:var(--warn);font-weight:700;">Q ' + (m.totalMaq?.toFixed(2) || '0') + '</td>' +
-    '<td style="color:var(--acc);font-weight:700;">Q ' + (m.cxlb?.toFixed(4) || '—') + '</td>' +
-    '<td style="font-size:.7rem;">' + (m.ref || '—') + '</td>' +
-    '<td><button class="btn bo bsm" style="border-color:var(--danger);color:var(--danger);" onclick="delMaquila(\'' + m.id + '\')">✕</button></td>' +
-    '</tr>'
-  ).join('');
-}
-
-function delMaquila(id) {
-  DB.maquila = (DB.maquila || []).filter(m => m.id !== id);
-  save(); renderMaquila(); toast('Registro eliminado');
-}
-
-function maqExport() {
-  invEnsureDB();
-  if (!DB.maquila?.length) { toast('Sin datos', true); return; }
-  const rows = [['AJÚA — MAQUILA MENSUAL'], ['Mes','Producto','LBS proc.','Materiales Q','Procesos Q','Total Q','Q/lb maquila','Ref.']];
-  DB.maquila.forEach(m => {
-    rows.push([m.mes, m.productoId || 'General', m.lbsProc?.toFixed(1) || 0,
-      m.totalMat?.toFixed(2) || 0, m.totalProc?.toFixed(2) || 0,
-      m.totalMaq?.toFixed(2) || 0, m.cxlb?.toFixed(4) || 0, m.ref || '']);
-    if (m.materiales?.length) {
-      rows.push(['', '-- MATERIALES --']);
-      m.materiales.forEach(g => rows.push(['', '', g.label, g.monto?.toFixed(2) || 0]));
-    }
-    if (m.procesos?.length) {
-      rows.push(['', '-- PROCESOS --']);
-      m.procesos.forEach(g => rows.push(['', '', g.label, '', g.qxlb?.toFixed(4) || 0, '', g.qxlb * m.lbsProc]));
-    }
-  });
-  invDownloadCSV(rows, 'Maquila_' + new Date().toISOString().split('T')[0]);
-}
-
-function repTab(tab, el) {
-  ['resumen','producto','canal','consolidado','detalle'].forEach(t => {
-    const btn = document.getElementById('rep-tab-' + t); if (btn) btn.classList.remove('active');
-    const pan = document.getElementById('rep-panel-' + t); if (pan) pan.style.display = 'none';
-  });
-  if (el) el.classList.add('active');
-  else { const b = document.getElementById('rep-tab-' + tab); if (b) b.classList.add('active'); }
-  const pan = document.getElementById('rep-panel-' + tab); if (pan) pan.style.display = 'block';
-}
-
-function generarReporte() {
-  invEnsureDB();
-  const desde  = v('rep-desde');
-  const hasta  = v('rep-hasta');
-  const prodFil = v('rep-prod');
-  if (!desde || !hasta) { toast('⚠ Selecciona el período', true); return; }
-  if (desde > hasta)    { toast('⚠ Fecha inicio mayor que fin', true); return; }
-
-  const entradas = (DB.ientradas || []).filter(e =>
-    e.fecha >= desde && e.fecha <= hasta && (!prodFil || e.productoId === prodFil || e.productoNombre === prodFil)
-  );
-  const totalLbsImp   = entradas.reduce((s, e) => s + (parseFloat(e.lbsBruto) || 0), 0);
-  const totalCostoImp = entradas.reduce((s, e) => s + (parseFloat(e.lbsBruto) * parseFloat(e.cxlb || 0)), 0);
-
-  const mesDesde = desde.substring(0, 7);
-  const mesHasta = hasta.substring(0, 7);
-  const maquilas = (DB.maquila || []).filter(m =>
-    m.mes >= mesDesde && m.mes <= mesHasta &&
-    (!prodFil || !m.productoId || m.productoId === prodFil)
-  );
-  const totalCostoMaq = maquilas.reduce((s, m) => s + (m.totalMaq || 0), 0);
-  const totalLbsMaq   = maquilas.reduce((s, m) => s + (m.lbsProc  || 0), 0);
-  const cxlbMaq       = totalLbsMaq > 0 ? totalCostoMaq / totalLbsMaq : 0;
-
-  const cotsCosto = (DB.cotizaciones || []).filter(c =>
-    c.tipo === 'interno' && c.bodegaInfo && c.bodegaInfo.fecha >= desde && c.bodegaInfo.fecha <= hasta
-  ).reduce((s, c) => s + (c.totalCosto || 0), 0);
-
-  const canales = {
-    walmart: { nombre: 'Despachos Walmart', lbs: 0, ingresos: 0, registros: 0 },
-    local:   { nombre: 'Despachos Locales GT', lbs: 0, ingresos: 0, registros: 0 },
-    export:  { nombre: 'Exportación', lbs: 0, ingresos: 0, registros: 0 },
-  };
-
-  (DB.isalidas || []).filter(r => r.fecha >= desde && r.fecha <= hasta).forEach(r => {
-    canales.walmart.registros++;
-    (r.lineas || []).forEach(l => {
-      if (!prodFil || l.productoNombre === prodFil || l.productoId === prodFil) {
-        canales.walmart.lbs      += parseFloat(l.totalLbs) || 0;
-        canales.walmart.ingresos += parseFloat(l.totalQ)   || 0;
-      }
-    });
-  });
-
-  (DB.vgtVentas || []).filter(r => r.fecha >= desde && r.fecha <= hasta).forEach(r => {
-    canales.local.registros++;
-    (r.lineas || []).forEach(l => {
-      if (!prodFil || l.productoNombre === prodFil || l.productoId === prodFil) {
-        canales.local.lbs      += parseFloat(l.totalLbs || l.lbs) || 0;
-        canales.local.ingresos += parseFloat(l.sub)    || 0;
-      }
-    });
-  });
-
-  (DB.vintVentas || []).filter(r => r.fecha >= desde && r.fecha <= hasta).forEach(r => {
-    canales.export.registros++;
-    const tc = r.tc || 0;
-    (r.lineas || []).forEach(l => {
-      if (!prodFil || l.productoNombre === prodFil || l.productoId === prodFil) {
-        canales.export.lbs += parseFloat(l.lbs) || 0;
-        const ingGtq = r.moneda === 'mxn' ? (l.sub * tc) : l.sub;
-        canales.export.ingresos += ingGtq || 0;
-      }
-    });
-  });
-
-  const totalLbsVend = canales.walmart.lbs + canales.local.lbs + canales.export.lbs;
-  const totalIngresos = canales.walmart.ingresos + canales.local.ingresos + canales.export.ingresos;
-  const totalCostos  = totalCostoImp + totalCostoMaq + cotsCosto;
-  const utilidadBruta = totalIngresos - totalCostos;
-  const margen        = totalIngresos > 0 ? utilidadBruta / totalIngresos * 100 : 0;
-
-  const kpis = [
-    { l: 'LBS importadas',    v: totalLbsImp.toFixed(0) + ' lbs',    c: 'var(--info)'   },
-    { l: 'LBS vendidas',      v: totalLbsVend.toFixed(0) + ' lbs',   c: 'var(--acc)'    },
-    { l: 'Ingresos totales',  v: 'Q ' + totalIngresos.toFixed(2),    c: 'var(--acc)'    },
-    { l: 'Costo importación', v: 'Q ' + totalCostoImp.toFixed(2),    c: 'var(--muted2)' },
-    { l: 'Costo maquila',     v: 'Q ' + totalCostoMaq.toFixed(2),    c: 'var(--warn)'   },
-    { l: 'Utilidad bruta',    v: 'Q ' + utilidadBruta.toFixed(2),    c: utilidadBruta >= 0 ? 'var(--acc)' : 'var(--danger)', big: true },
-    { l: 'Margen bruto',      v: margen.toFixed(1) + '%',            c: margen >= 0 ? 'var(--acc)' : 'var(--danger)', big: true },
-    { l: 'Q/lb maquila',      v: cxlbMaq > 0 ? 'Q ' + cxlbMaq.toFixed(4) : '—', c: 'var(--warn)' },
-  ];
-  document.getElementById('rep-kpis').innerHTML = kpis.map(k =>
-    '<div style="background:var(--s2);border:1.5px solid ' + (k.big ? k.c : 'var(--br)') + ';border-radius:4px;padding:12px;text-align:center;">' +
-      '<div style="font-size:.6rem;color:var(--muted2);margin-bottom:3px;">' + k.l + '</div>' +
-      '<div style="font-family:var(--fh);font-size:' + (k.big ? '.92rem' : '.82rem') + ';font-weight:700;color:' + k.c + ';">' + k.v + '</div>' +
-    '</div>'
-  ).join('');
-
-  const resHtml =
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">' +
-    '<div style="background:var(--s2);border:1.5px solid var(--br);border-radius:4px;padding:14px;">' +
-      '<div style="font-size:.62rem;color:var(--acc);font-weight:700;margin-bottom:10px;">💰 INGRESOS POR CANAL</div>' +
-      Object.values(canales).map(c =>
-        '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--br);font-size:.76rem;">' +
-          '<span>' + c.nombre + ' <span style="color:var(--muted2);font-size:.65rem;">(' + c.registros + ' despachos · ' + c.lbs.toFixed(0) + ' lbs)</span></span>' +
-          '<strong style="color:var(--acc);">Q ' + c.ingresos.toFixed(2) + '</strong>' +
-        '</div>'
-      ).join('') +
-      '<div style="display:flex;justify-content:space-between;padding:8px 0;font-size:.8rem;font-weight:700;">' +
-        '<span>TOTAL INGRESOS</span><span style="color:var(--acc);">Q ' + totalIngresos.toFixed(2) + '</span>' +
-      '</div>' +
-    '</div>' +
-    '<div style="background:var(--s2);border:1.5px solid var(--br);border-radius:4px;padding:14px;">' +
-      '<div style="font-size:.62rem;color:var(--warn);font-weight:700;margin-bottom:10px;">📦 COSTOS</div>' +
-      '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--br);font-size:.76rem;"><span>Importación (producto + logística)</span><strong style="color:var(--muted2);">Q ' + totalCostoImp.toFixed(2) + '</strong></div>' +
-      (cotsCosto > 0 ? '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--br);font-size:.76rem;"><span>Cotizaciones importadas</span><strong style="color:var(--muted2);">Q ' + cotsCosto.toFixed(2) + '</strong></div>' : '') +
-      '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--br);font-size:.76rem;"><span>Maquila (' + (totalLbsMaq.toFixed(0)) + ' lbs @ Q' + cxlbMaq.toFixed(4) + '/lb)</span><strong style="color:var(--warn);">Q ' + totalCostoMaq.toFixed(2) + '</strong></div>' +
-      '<div style="display:flex;justify-content:space-between;padding:8px 0;font-size:.8rem;font-weight:700;"><span>TOTAL COSTOS</span><span style="color:var(--warn);">Q ' + totalCostos.toFixed(2) + '</span></div>' +
-    '</div>' +
-    '</div>' +
-    '<div style="background:' + (utilidadBruta >= 0 ? 'rgba(0,217,139,.06)' : 'rgba(255,56,88,.06)') + ';border:2px solid ' + (utilidadBruta >= 0 ? 'rgba(0,217,139,.3)' : 'rgba(255,56,88,.3)') + ';border-radius:4px;padding:14px;margin-top:10px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;">' +
-      '<div><div style="font-size:.62rem;color:var(--muted2);">UTILIDAD BRUTA</div><div style="font-family:var(--fh);font-size:1.1rem;font-weight:700;color:' + (utilidadBruta >= 0 ? 'var(--acc)' : 'var(--danger)') + ';">Q ' + utilidadBruta.toFixed(2) + '</div></div>' +
-      '<div><div style="font-size:.62rem;color:var(--muted2);">MARGEN</div><div style="font-family:var(--fh);font-size:1.1rem;font-weight:700;color:' + (margen >= 0 ? 'var(--acc)' : 'var(--danger)') + ';">' + margen.toFixed(1) + '%</div></div>' +
-      '<div style="flex:1;font-size:.72rem;color:var(--muted2);">Período: ' + desde + ' al ' + hasta + (prodFil ? ' · Producto: ' + prodFil : '') + '</div>' +
-    '</div>';
-  document.getElementById('rep-resumen-html').innerHTML = resHtml;
-
-  const productosMap = {};
-  const allProds = DB.iproductos || [];
-
-  entradas.forEach(e => {
-    const key = e.productoNombre || e.productoId || '—';
-    if (!productosMap[key]) productosMap[key] = { nom: key, lbsImp: 0, costoImp: 0, lbsVend: 0, ingresos: 0 };
-    productosMap[key].lbsImp  += parseFloat(e.lbsBruto) || 0;
-    productosMap[key].costoImp += (parseFloat(e.lbsBruto) || 0) * (parseFloat(e.cxlb) || 0);
-  });
-  const addVenta = (nom, lbs, ing) => {
-    if (!nom) return;
-    if (!productosMap[nom]) productosMap[nom] = { nom, lbsImp: 0, costoImp: 0, lbsVend: 0, ingresos: 0 };
-    productosMap[nom].lbsVend  += lbs || 0;
-    productosMap[nom].ingresos += ing || 0;
-  };
-  (DB.isalidas || []).filter(r => r.fecha >= desde && r.fecha <= hasta).forEach(r =>
-    (r.lineas || []).forEach(l => addVenta(l.productoNombre, parseFloat(l.totalLbs) || 0, parseFloat(l.totalQ) || 0))
-  );
-  (DB.vgtVentas || []).filter(r => r.fecha >= desde && r.fecha <= hasta).forEach(r =>
-    (r.lineas || []).forEach(l => addVenta(l.productoNombre, parseFloat(l.totalLbs || l.lbs) || 0, parseFloat(l.sub) || 0))
-  );
-  (DB.vintVentas || []).filter(r => r.fecha >= desde && r.fecha <= hasta).forEach(r =>
-    (r.lineas || []).forEach(l => addVenta(l.productoNombre, parseFloat(l.lbs) || 0, (r.moneda === 'mxn' ? (l.sub * (r.tc || 0)) : l.sub) || 0))
-  );
-
-  const tbProd = document.getElementById('rep-tbody-producto'); if (tbProd) {
-    if (!Object.keys(productosMap).length) {
-      tbProd.innerHTML = '<tr><td colspan="9"><div class="empty">Sin datos en el período</div></td></tr>';
-    } else {
-      tbProd.innerHTML = Object.values(productosMap).map(p => {
-        const costoMaqP = totalLbsVend > 0 ? totalCostoMaq * (p.lbsVend / totalLbsVend) : 0;
-        const costoTotal = p.costoImp + costoMaqP;
-        const cxlbTot = p.lbsImp > 0 ? costoTotal / p.lbsImp : 0;
-        const util = p.ingresos - costoTotal;
-        const mg   = p.ingresos > 0 ? util / p.ingresos * 100 : 0;
-        return '<tr>' +
-          '<td style="font-weight:700;">' + p.nom + '</td>' +
-          '<td>' + p.lbsImp.toFixed(0) + '</td>' +
-          '<td>Q ' + p.costoImp.toFixed(2) + '</td>' +
-          '<td style="color:var(--warn);">Q ' + costoMaqP.toFixed(2) + '</td>' +
-          '<td style="color:var(--warn);">Q ' + cxlbTot.toFixed(4) + '</td>' +
-          '<td>' + p.lbsVend.toFixed(0) + '</td>' +
-          '<td style="color:var(--acc);">Q ' + p.ingresos.toFixed(2) + '</td>' +
-          '<td style="color:' + (util >= 0 ? 'var(--acc)' : 'var(--danger)') + ';font-weight:700;">Q ' + util.toFixed(2) + '</td>' +
-          '<td style="color:' + (mg >= 0 ? 'var(--acc)' : 'var(--danger)') + ';">' + mg.toFixed(1) + '%</td>' +
-          '</tr>';
-      }).join('');
-    }
-  }
-
-  const tbCanal = document.getElementById('rep-tbody-canal'); if (tbCanal) {
-    const totalLbsAll = totalLbsVend || 1;
-    const totalIngAll = totalIngresos || 1;
-    tbCanal.innerHTML = Object.values(canales).map(c =>
-      '<tr>' +
-      '<td style="font-weight:700;">' + c.nombre + '</td>' +
-      '<td>' + c.registros + '</td>' +
-      '<td>' + c.lbs.toFixed(0) + ' lbs</td>' +
-      '<td style="color:var(--acc);font-weight:700;">Q ' + c.ingresos.toFixed(2) + '</td>' +
-      '<td>' +
-        '<div style="display:flex;align-items:center;gap:6px;">' +
-          '<div style="flex:1;background:var(--s3);border-radius:2px;height:8px;overflow:hidden;">' +
-            '<div style="width:' + (c.ingresos / totalIngAll * 100).toFixed(0) + '%;background:var(--acc);height:100%;"></div>' +
-          '</div>' +
-          '<span style="font-size:.72rem;min-width:36px;">' + (c.ingresos / totalIngAll * 100).toFixed(1) + '%</span>' +
-        '</div>' +
-      '</td>' +
-      '</tr>'
-    ).join('');
-  }
-
-  const detDiv = document.getElementById('rep-detalle-html');
-  if (detDiv) {
-    let detHtml = '<div style="font-size:.62rem;color:var(--muted2);font-weight:600;margin-bottom:8px;">TODAS LAS TRANSACCIONES DEL PERÍODO</div>';
-    const allTx = [];
-    (DB.ientradas || []).filter(r => r.fecha >= desde && r.fecha <= hasta).forEach(r =>
-      allTx.push({ fecha: r.fecha, tipo: '📥 Ingreso', desc: r.productoNombre || '—', lbs: parseFloat(r.lbsBruto) || 0, q: -(parseFloat(r.lbsBruto) * parseFloat(r.cxlb || 0)), canal: 'Bodega' })
-    );
-    maquilas.forEach(m =>
-      allTx.push({ fecha: m.mes + '-01', tipo: '⚙️ Maquila', desc: m.ref || m.mes, lbs: m.lbsProc || 0, q: -(m.totalMaq || 0), canal: 'Maquila' })
-    );
-    (DB.isalidas || []).filter(r => r.fecha >= desde && r.fecha <= hasta).forEach(r =>
-      allTx.push({ fecha: r.fecha, tipo: '📤 Walmart', desc: r.clienteNombre || '—', lbs: r.totalLbs || 0, q: r.totalQ || 0, canal: 'Walmart' })
-    );
-    (DB.vgtVentas || []).filter(r => r.fecha >= desde && r.fecha <= hasta).forEach(r =>
-      allTx.push({ fecha: r.fecha, tipo: '📤 Local GT', desc: r.comprador || r.tipo || '—', lbs: r.totalLbs || 0, q: r.totalQ || 0, canal: 'Local' })
-    );
-    (DB.vintVentas || []).filter(r => r.fecha >= desde && r.fecha <= hasta).forEach(r =>
-      allTx.push({ fecha: r.fecha, tipo: '📤 Export', desc: r.comprador + ' (' + r.pais + ')', lbs: r.totalLbs || 0, q: r.totalVal || 0, canal: 'Export' })
-    );
-    allTx.sort((a, b) => a.fecha.localeCompare(b.fecha));
-    detHtml += '<div style="overflow-x:auto;"><table style="font-size:.72rem;"><thead><tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>LBS</th><th>Q (+ ingreso / - costo)</th><th>Canal</th></tr></thead><tbody>' +
-      allTx.map(tx =>
-        '<tr><td>' + tx.fecha + '</td><td>' + tx.tipo + '</td><td>' + tx.desc + '</td>' +
-        '<td>' + tx.lbs.toFixed(0) + '</td>' +
-        '<td style="color:' + (tx.q >= 0 ? 'var(--acc)' : 'var(--warn)') + ';font-weight:700;">' + (tx.q >= 0 ? '+' : '') + 'Q ' + tx.q.toFixed(2) + '</td>' +
-        '<td>' + tx.canal + '</td></tr>'
-      ).join('') +
-      '</tbody></table></div>';
-    detDiv.innerHTML = detHtml;
-  }
-
-  const tbConsol = document.getElementById('rep-tbody-consolidado');
-  if (tbConsol) {
-    const IVA_GT = 0.12, RET_WAL = 0.80, UMBRAL_RET = 2500;
-    const allVentas = [];
-
-    (DB.isalidas || []).filter(r => r.fecha >= desde && r.fecha <= hasta).forEach(r => {
-      const prods = (r.lineas||[]).map(l=>l.productoNombre||'—').join(', ');
-      const lbs   = (r.lineas||[]).reduce((s,l)=>s+(parseFloat(l.totalLbs)||0),0);
-      const neto  = r.totalNeto   || (r.lineas||[]).reduce((s,l)=>s+(parseFloat(l.totalNeto)||parseFloat(l.totalQ)||0),0);
-      const iva   = r.totalIVA    || neto * IVA_GT;
-      const conIva= r.totalConIVA || neto + iva;
-      const ret   = r.totalRetencion || iva * RET_WAL;
-      const acob  = r.totalACobrar   || conIva - ret;
-      allVentas.push({ fecha:r.fecha, canal:'🏪 Walmart', cliente:r.clienteNombre||'Walmart', prods, lbs, neto, iva, total:conIva, ret, acob, ref:r.oc||r.factura||'' });
-    });
-
-    (DB.vgtVentas || []).filter(r => r.fecha >= desde && r.fecha <= hasta).forEach(r => {
-      const prods = (r.lineas||[]).map(l=>l.productoNombre||'—').join(', ');
-      const lbs   = (r.lineas||[]).reduce((s,l)=>s+(parseFloat(l.totalLbs||l.lbs)||0),0);
-      const total = r.totalQ || (r.lineas||[]).reduce((s,l)=>s+(parseFloat(l.sub)||0),0);
-      const iva   = total - total/1.12;  // IVA incluido
-      const neto  = total - iva;
-      const ret   = total >= UMBRAL_RET ? iva * 0.15 : 0;
-      const acob  = total - ret;
-      allVentas.push({ fecha:r.fecha, canal:'🛒 Local GT', cliente:r.comprador||r.tipo||'—', prods, lbs, neto, iva, total, ret, acob, ref:r.numFactura||r.pago||'' });
-    });
-
-    (DB.vintVentas || []).filter(r => r.fecha >= desde && r.fecha <= hasta).forEach(r => {
-      const prods = (r.lineas||[]).map(l=>l.productoNombre||'—').join(', ');
-      const lbs   = (r.lineas||[]).reduce((s,l)=>s+(parseFloat(l.lbs)||0),0);
-      const tc    = r.tc || 0;
-      const total = r.moneda==='mxn' ? (r.totalVal||0)*tc : (r.totalVal||0);
-      allVentas.push({ fecha:r.fecha, canal:'✈️ Export ' + (r.pais||''), cliente:r.comprador||'—', prods, lbs, neto:total, iva:0, total, ret:0, acob:total, ref:r.porte||r.placa||'' });
-    });
-
-    allVentas.sort((a,b) => a.fecha.localeCompare(b.fecha));
-
-    if (!allVentas.length) {
-      tbConsol.innerHTML = '<tr><td colspan="11"><div class="empty">Sin ventas en el período seleccionado</div></td></tr>';
-    } else {
-      tbConsol.innerHTML = allVentas.map(r =>
-        '<tr>' +
-        '<td>' + r.fecha + '</td>' +
-        '<td style="font-size:.7rem;">' + r.canal + '</td>' +
-        '<td style="font-size:.7rem;">' + (r.cliente||'—') + '</td>' +
-        '<td style="font-size:.68rem;color:var(--muted2);">' + (r.prods||'—') + '</td>' +
-        '<td>' + (r.lbs>0 ? r.lbs.toFixed(0)+' lbs' : '—') + '</td>' +
-        '<td>Q ' + r.neto.toFixed(2) + '</td>' +
-        '<td style="color:var(--muted2);">Q ' + r.iva.toFixed(2) + '</td>' +
-        '<td style="color:var(--acc);font-weight:700;">Q ' + r.total.toFixed(2) + '</td>' +
-        '<td style="color:var(--danger);">Q ' + r.ret.toFixed(2) + '</td>' +
-        '<td style="color:var(--info);font-weight:700;">Q ' + r.acob.toFixed(2) + '</td>' +
-        '<td style="font-size:.68rem;color:var(--muted2);">' + (r.ref||'—') + '</td>' +
-        '</tr>'
-      ).join('');
-
-      const tfEl = document.getElementById('rep-tfoot-consolidado');
-      if (tfEl) {
-        const sumLbs   = allVentas.reduce((s,r)=>s+r.lbs,0);
-        const sumNeto  = allVentas.reduce((s,r)=>s+r.neto,0);
-        const sumIva   = allVentas.reduce((s,r)=>s+r.iva,0);
-        const sumTotal = allVentas.reduce((s,r)=>s+r.total,0);
-        const sumRet   = allVentas.reduce((s,r)=>s+r.ret,0);
-        const sumAcob  = allVentas.reduce((s,r)=>s+r.acob,0);
-        tfEl.innerHTML =
-          '<tr style="background:var(--s2);font-weight:700;">' +
-          '<td colspan="4" style="font-size:.72rem;">TOTAL ' + allVentas.length + ' ventas</td>' +
-          '<td>' + sumLbs.toFixed(0) + ' lbs</td>' +
-          '<td>Q ' + sumNeto.toFixed(2) + '</td>' +
-          '<td style="color:var(--muted2);">Q ' + sumIva.toFixed(2) + '</td>' +
-          '<td style="color:var(--acc);">Q ' + sumTotal.toFixed(2) + '</td>' +
-          '<td style="color:var(--danger);">Q ' + sumRet.toFixed(2) + '</td>' +
-          '<td style="color:var(--info);">Q ' + sumAcob.toFixed(2) + '</td>' +
-          '<td></td></tr>';
-      }
-    }
-  }
-
-  repTab('resumen', document.getElementById('rep-tab-resumen'));
-  toast('✓ Reporte generado · ' + (desde) + ' al ' + (hasta));
-}
-
-function repExportConsolidado() {
-  const tb = document.getElementById('rep-tbody-consolidado');
-  if (!tb || !tb.rows.length) { toast('⚠ Genera el reporte primero', true); return; }
-  const desde = v('rep-desde'), hasta = v('rep-hasta');
-  const rows = [
-    ['AJÚA — CONSOLIDADO DE VENTAS'],
-    ['Período: ' + (desde||'') + ' al ' + (hasta||'')],
-    [],
-    ['Fecha','Canal','Cliente','Productos','LBS','Neto Q','IVA Q','Total Q','Retención Q','A cobrar Q','Ref.'],
-  ];
-  Array.from(tb.rows).forEach(row => {
-    rows.push(Array.from(row.cells).map(c => c.textContent.trim()));
-  });
-  const tf = document.getElementById('rep-tfoot-consolidado');
-  if (tf?.rows.length) rows.push(Array.from(tf.rows[0].cells).map(c => c.textContent.trim()));
-  invDownloadCSV(rows, 'Consolidado_Ventas_' + (desde||'') + '_' + (hasta||''));
-}
-
-function repExport() {
-  invEnsureDB();
-  const desde = v('rep-desde'), hasta = v('rep-hasta');
-  if (!desde || !hasta) { toast('⚠ Genera el reporte primero', true); return; }
-
-  const rows = [
-    ['AJÚA — REPORTE GENERAL'],
-    ['Período: ' + desde + ' al ' + hasta],
-    [],
-    ['=== INGRESOS A BODEGA ==='],
-    ['Fecha','Producto','Bultos','LBS brutas','Costo/lb Q','DUCA'],
-    ...(DB.ientradas || []).filter(r => r.fecha >= desde && r.fecha <= hasta)
-      .map(r => [r.fecha, r.productoNombre || '—', r.bultos || 0, r.lbsBruto || 0, r.cxlb || 0, r.duca || '']),
-    [],
-    ['=== MAQUILA ==='],
-    ['Mes','Producto','LBS proc.','Total Q','Q/lb'],
-    ...(DB.maquila || []).filter(m => m.mes >= desde.substring(0,7) && m.mes <= hasta.substring(0,7))
-      .map(m => [m.mes, m.productoId || 'General', m.lbsProc || 0, m.totalMaq || 0, m.cxlb || 0]),
-    [],
-    ['=== DESPACHOS WALMART ==='],
-    ['Fecha','Cliente','LBS','Total Q','OC','Auth SAT'],
-    ...(DB.isalidas || []).filter(r => r.fecha >= desde && r.fecha <= hasta)
-      .map(r => [r.fecha, r.clienteNombre || '—', r.totalLbs || 0, r.totalQ || 0, r.oc || '', r.factura || '']),
-    [],
-    ['=== DESPACHOS LOCALES GT ==='],
-    ['Fecha','Tipo','Comprador','LBS','Total Q','Pago'],
-    ...(DB.vgtVentas || []).filter(r => r.fecha >= desde && r.fecha <= hasta)
-      .map(r => [r.fecha, r.tipo || '—', r.comprador || '—', r.totalLbs || 0, r.totalQ || 0, r.pago || '']),
-    [],
-    ['=== EXPORTACIONES ==='],
-    ['Fecha','País','Comprador','LBS','Total','Moneda'],
-    ...(DB.vintVentas || []).filter(r => r.fecha >= desde && r.fecha <= hasta)
-      .map(r => [r.fecha, r.pais || '—', r.comprador || '—', r.totalLbs || 0, r.totalVal || 0, r.moneda || 'gtq']),
-  ];
-  invDownloadCSV(rows, 'Reporte_AJUA_' + desde + '_' + hasta);
-}
-
-function renderInvAll() {
-  invEnsureDB();
-  const safe = (fn, name) => { try { fn(); } catch(e) { console.error('renderAll '+name+' error:', e); } };
-  safe(renderIprod,'Iprod'); safe(renderIpres,'Ipres'); safe(renderIcli,'Icli');
-  safe(renderIne,'Ine'); safe(renderSal,'Sal'); safe(renderInvStock,'InvStock'); safe(renderInvMovs,'InvMovs');
-  safe(renderMaquila,'Maquila'); safe(renderVgtVentas,'VgtVentas'); safe(renderVintVentas,'VintVentas');
-  invPopulateSelects();
-  const rp = document.getElementById('rep-prod');
-  if (rp && DB.iproductos) {
-    const cur = rp.value;
-    rp.innerHTML = '<option value="">Todos los productos</option>' +
-      DB.iproductos.map(p => '<option value="' + p.id + '">' + p.nombre + '</option>').join('');
-    rp.value = cur;
-  }
-  const mp = document.getElementById('maq-prod');
-  if (mp && DB.iproductos) {
-    mp.innerHTML = '<option value="">— Todos / General —</option>' +
-      DB.iproductos.map(p => '<option value="' + p.id + '">' + p.nombre + '</option>').join('');
-  }
-  maqInit();
-  populateCotSelects();
-  populateProvSelects();
-}
-
-function renderAll(){
-  if(!DB.conductores)DB.conductores=[];
-  if(!DB.clientes)DB.clientes=[];
-  if(!DB.empleados)DB.empleados=[];
-  if(!DB.calibraciones)DB.calibraciones=[];
-  invEnsureDB();
-  buildTLChecklist();buildDTChecklist();buildBLChecklist();buildVPChecklist();buildRodTrampas();buildBasList();buildLPTanques();
-  renderTL();renderDT();renderBL();renderFum();renderRod();
-  renderCap();renderEE();renderAL();renderVis();renderVP();renderBas();renderLP();
-  renderEmpleados();
-  dtPopulateConductorSelect();dtPopulateClienteSelect();
-  populateAllRespSelects();
-  capBuildAsistentesList();
-  eePopulateSelect();
-  alBuildEmpTable();
-  basShowCalStatus();
-  basRenderCalCards();
-  renderInvAll();
-  updateDash();
-}
-
-function exportCSV(key){
-  const MAP={
-    tl:{data:DB.tl,cols:['id','fecha','resp','hora','obs'],extra:r=>TL_ITEMS.map((x,i)=>`${x.item}:${r.checks[i]||''}`)},
-    dt:{data:DB.dt,cols:['fecha','placa','resp','ok','total']},
-    bl:{data:DB.bl,cols:['fecha','resp','hora','si','no','na','obs']},
-    fum:{data:DB.fum,cols:['inst','mes','sem','resp','fecha','tipo','res','obs']},
-    rod:{data:DB.rod,cols:['item','inst','mes','sem','resp','fecha','estado','res','obs']},
-    cap:{data:DB.cap,cols:['fecha','prof','cargo','lugar','tipo','temas','obs'],extra:r=>[r.asistentes?.map(a=>a.nombre).join('; ')||'']},
-    ee:{data:DB.ee,cols:['fecha','nombre','dpto','diag','ini','fin','dias','estado','obs']},
-    al:{data:DB.al,cols:['fecha','nombre','hi','hs','l1','l2','l3','l4']},
-    vis:{data:DB.vis,cols:['fecha','nombre','empresa','dpi','motivo','area','he','hs','aut']},
-    vp:{data:DB.vp,cols:['fecha','mes','resp','ok','nok']},
-    bas:{data:DB.bas,cols:['fecha','mes','b1','b2','b3','b4','resp']},
-    lp:{data:DB.lp,cols:['fecha','prod','tanque','cloro','perox','cera','resp','obs']},
-  };
-  const cfg=MAP[key];if(!cfg)return;
-  const rows=cfg.data.map(r=>[...cfg.cols.map(c=>r[c]||''),...(cfg.extra?cfg.extra(r):[])]);
-  const csv=[cfg.cols,...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a=document.createElement('a');
-  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
-  a.download=`ajua_${key}_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
-}
-
-function printSec(id){window.print();}
-
-function salTab(tab) {
-  ['ediwin','albaran','xml'].forEach(t => {
-    const p = document.getElementById('sal-panel-' + t);
-    const b = document.getElementById('sal-tab-'   + t);
-    if (p) p.style.display = t === tab ? 'block' : 'none';
-    if (b) b.className = t === tab ? 'btn bp bsm' : 'btn bo bsm';
-  });
-}
-function salWalTab(tab) { salTab(tab); }  // backwards compat
-
-function salClearForm() {
-  ['sal-oc','sal-docmat','sal-factura','sal-serie','sal-dte','sal-almacen','sal-obs'].forEach(id => set(id,''));
-  set('sal-fecha', today());
-  const ln = document.getElementById('sal-lineas');
-  if (ln) ln.innerHTML = '';
-  const tot = document.getElementById('sal-totales');
-  if (tot) tot.style.display = 'none';
-  salLineaCount = 0;
-  salEdiwinData = null;
-  const badge = document.getElementById('sal-ediwin-badge'); if (badge) badge.style.display = 'none';
-  const res   = document.getElementById('sal-ediwin-result'); if (res) { res.style.display = 'none'; res.innerHTML = ''; }
-  toast('Formulario limpiado');
-}
-
-function ineLoadDoc(type) {
-  ineCurrentDocType = type;
-  const inp = document.getElementById('ine-file-input');
-  if (inp) inp.click();
-}
-
-const AUTH_VERSION = 5; // bump this when adding new modules
-const AUTH_MODULES = [
-  { id:'dashboard',           label:'Dashboard',                grupo:'General'     },
-  { id:'transporte-limpieza', label:'Limpieza Transporte',      grupo:'Transporte'  },
-  { id:'despacho',            label:'Despacho Transporte',      grupo:'Transporte'  },
-  { id:'bodega-limpieza',     label:'Limpieza Bodega',          grupo:'Bodega'      },
-  { id:'fumigacion',          label:'Control Fumigación',       grupo:'Bodega'      },
-  { id:'roedores',            label:'Control Roedores',         grupo:'Bodega'      },
-  { id:'capacitacion',        label:'Registro Capacitación',    grupo:'RRHH'        },
-  { id:'empleados-enfermos',  label:'Empleados Enfermos',       grupo:'RRHH'        },
-  { id:'acceso-lavado',       label:'Acceso y Lavado de Manos', grupo:'RRHH'        },
-  { id:'visitas',             label:'Control de Visitas',       grupo:'RRHH'        },
-  { id:'vidrio',              label:'Vidrio y Plástico',        grupo:'Calidad'     },
-  { id:'basculas',            label:'Revisión Básculas',        grupo:'Calidad'     },
-  { id:'lavado-prod',         label:'Lavado y Desinfección',    grupo:'Calidad'     },
-  { id:'inv-stock',           label:'Stock en Tiempo Real',     grupo:'Inventario'  },
-  { id:'inv-entrada',         label:'Ingresos a Bodega',        grupo:'Inventario'  },
-  { id:'maquila',             label:'Maquila Mensual',          grupo:'Inventario'  },
-  { id:'inv-trazabilidad',    label:'Trazabilidad',             grupo:'Inventario'  },
-  { id:'pedidos-walmart',      label:'Pedidos Walmart',          grupo:'Inventario'  },
-  { id:'inv-salida',          label:'Ventas Walmart',           grupo:'Ventas'      },
-  { id:'ventas-gt',           label:'Despachos Locales GT',     grupo:'Ventas'      },
-  { id:'ventas-int',          label:'Despachos Exportación',    grupo:'Ventas'      },
-  { id:'reporte',             label:'Reporte General',          grupo:'Ventas'      },
-  { id:'inv-config',          label:'Productos y Presentaciones',grupo:'Config'     },
-  { id:'inv-cotizador',       label:'Cotizador',                grupo:'Config'      },
-  { id:'empleados-db',        label:'Base de Empleados',        grupo:'RRHH'        },
-  { id:'proveedores',           label:'Proveedores y Productores', grupo:'Config'      },
-];
-
-const ROLE_DEFAULTS = {
-  superadmin: AUTH_MODULES.map(m => m.id),
-  admin:      AUTH_MODULES.map(m => m.id),
-  supervisor: ['dashboard','inv-stock','reporte','inv-trazabilidad',
-               'inv-salida','ventas-gt','ventas-int','maquila'],
-  operador:   ['dashboard'],
-};
-
-let AUTH_SESSION = null;
-
-function authEnsureDB() {
-  if (!DB.usuarios) DB.usuarios = [];
-  const allIds = AUTH_MODULES.map(m => m.id);
-  const existing = DB.usuarios.find(u => u.id === 'sa-default');
-  if (!existing) {
-    DB.usuarios.push({
-      id: 'sa-default', nombre: 'Admin',
-      claveHash: authHash('admin123'),
-      rol: 'superadmin',
-      modulos: allIds,
-      activo: true, creadoTs: now(),
-    });
-    save();
-  } else {
-    let changed = false;
-    if (existing.claveHash !== authHash('admin123') && DB.usuarios.length === 1) {
-      existing.claveHash = authHash('admin123'); changed = true;
-    }
-    const missing = allIds.filter(id => !(existing.modulos||[]).includes(id));
-    if (missing.length) { existing.modulos = [...(existing.modulos||[]), ...missing]; changed = true; }
-    if (changed) save();
-  }
-  let changed2 = false;
-  DB.usuarios.forEach(u => {
-    if ((u.rol === 'superadmin' || u.rol === 'admin') && u.id !== 'sa-default') {
-      const missing = allIds.filter(id => !(u.modulos||[]).includes(id));
-      if (missing.length) { u.modulos = [...(u.modulos||[]), ...missing]; changed2 = true; }
-    }
-  });
-  if (changed2) save();
-}
-
-function authHash(str) {
-  let h = 0;
-  for (let i = 0; i < str.length; i++) h = Math.imul(31, h) + str.charCodeAt(i) | 0;
-  return 'h' + Math.abs(h).toString(36);
-}
-
-function authLogin() {
-  authEnsureDB();
-  const nombre = (document.getElementById('login-user')?.value || '').trim();
-  const clave  =  document.getElementById('login-pass')?.value || '';
-  if (!nombre || !clave) { authShowErr('Ingresa tu nombre y clave'); return; }
-
-  const user = DB.usuarios.find(u =>
-    u.nombre.toLowerCase() === nombre.toLowerCase() &&
-    u.claveHash === authHash(clave) && u.activo !== false
-  );
-  if (!user) {
-    authShowErr('Usuario o clave incorrectos');
-    document.getElementById('login-pass').value = ''; return;
-  }
-
-  AUTH_SESSION = { userId:user.id, authVersion:AUTH_VERSION, nombre:user.nombre, rol:user.rol,
-                   modulos: user.modulos || ROLE_DEFAULTS[user.rol] || ['dashboard'] };
-  try { sessionStorage.setItem('ajua_session', JSON.stringify(AUTH_SESSION)); } catch(e){}
-  document.getElementById('login-screen').style.display = 'none';
-  authApplySession();
-}
-
-function authLogout() {
-  AUTH_SESSION = null;
-  try { sessionStorage.removeItem('ajua_session'); } catch(e){}
-  const ls = document.getElementById('login-screen');
-  if (ls) ls.style.display = 'flex';
-  document.getElementById('login-user').value = '';
-  document.getElementById('login-pass').value = '';
-  document.getElementById('login-err').style.display = 'none';
-  const tb = document.getElementById('user-topbar');
-  if (tb) tb.style.display = 'none';
-  authApplyNav([]);
-}
-
-function authShowErr(msg) {
-  const el = document.getElementById('login-err');
-  if (el) { el.textContent = msg; el.style.display = 'block'; }
-}
-
-function authResumeSession() {
-  try {
-    const s = sessionStorage.getItem('ajua_session');
-    if (s) {
-      const parsed = JSON.parse(s);
-      if ((parsed.authVersion || 0) < AUTH_VERSION) {
-        sessionStorage.removeItem('ajua_session');
-        return false;
-      }
-      AUTH_SESSION = parsed;
-      const ls2 = document.getElementById('login-screen');
-      if (ls2) ls2.style.display = 'none';
-      authApplySession(); return true;
-    }
-  } catch(e){}
-  return false;
-}
-
-function authApplySession() {
-  if (!AUTH_SESSION) return;
-  const { nombre, rol, modulos } = AUTH_SESSION;
-  const isSuperAdmin = rol === 'superadmin';
-  const isAdmin      = rol === 'admin' || isSuperAdmin;
-
-  const tb = document.getElementById('user-topbar');
-  if (tb) tb.style.display = 'flex';
-  const av = document.getElementById('user-avatar');
-  if (av) av.textContent = nombre.charAt(0).toUpperCase();
-  const nc = document.getElementById('user-name-chip');
-  if (nc) nc.textContent = nombre;
-  const rc = document.getElementById('user-role-chip');
-  const RL = { superadmin:'Super Admin', admin:'Admin', supervisor:'Supervisor', operador:'Operador' };
-  if (rc) rc.textContent = RL[rol] || rol;
-
-  const navAdmin = document.getElementById('nav-ns-admin');
-  const navUsers = document.getElementById('nav-usuarios');
-  if (navAdmin) navAdmin.style.display = isSuperAdmin ? 'block' : 'none';
-  if (navUsers) navUsers.style.display = isSuperAdmin ? 'flex'  : 'none';
-
-  const allowed = isAdmin ? AUTH_MODULES.map(m => m.id) : (modulos || []);
-  authApplyNav(allowed);
-  show('dashboard');
-}
-
-function authApplyNav(allowed) {
-  document.querySelectorAll('.ni[onclick]').forEach(el => {
-    const m = (el.getAttribute('onclick') || '').match(/show\('([^']+)'/);
-    if (!m) return;
-    const mid = m[1];
-    if (mid === 'usuarios') return; // controlled separately
-    el.style.display = allowed.includes(mid) ? 'flex' : 'none';
-  });
-  document.querySelectorAll('.ns:not([id])').forEach(ns => {
-    let next = ns.nextElementSibling, any = false;
-    while (next && next.classList.contains('ni')) {
-      if (next.style.display !== 'none') any = true;
-      next = next.nextElementSibling;
-    }
-    ns.style.display = any ? 'block' : 'none';
-  });
-}
-
-function authCanAccess(modId) {
-  if (!AUTH_SESSION) return false;
-  const { rol, modulos } = AUTH_SESSION;
-  if (rol === 'superadmin' || rol === 'admin') return true;
-  return (modulos || []).includes(modId);
-}
-
-function renderModulosGrid(selectedIds) {
-  const grid = document.getElementById('usr-modulos-grid');
-  if (!grid) return;
-  const grupos = {};
-  AUTH_MODULES.forEach(m => { if (!grupos[m.grupo]) grupos[m.grupo]=[]; grupos[m.grupo].push(m); });
-  let html = '';
-  Object.entries(grupos).forEach(([grp, mods]) => {
-    html += '<div style="background:var(--s2);border:1.5px solid var(--br);border-radius:4px;padding:10px;">' +
-      '<div style="font-size:.58rem;color:var(--acc);font-weight:700;letter-spacing:.08em;margin-bottom:7px;">' + grp.toUpperCase() + '</div>';
-    mods.forEach(m => {
-      html += '<label style="display:flex;align-items:center;gap:6px;margin-bottom:4px;cursor:pointer;">' +
-        '<input type="checkbox" data-mod="' + m.id + '" ' + (selectedIds.includes(m.id)?'checked':'') +
-        ' style="accent-color:var(--acc);">' +
-        '<span style="font-size:.7rem;">' + m.label + '</span></label>';
-    });
-    html += '</div>';
-  });
-  grid.innerHTML = html;
-}
-
-function usrGetSelectedModulos() {
-  return Array.from(document.querySelectorAll('#usr-modulos-grid input[type=checkbox]'))
-    .filter(c => c.checked).map(c => c.dataset.mod);
-}
-
-function usrSelectAll(val) {
-  document.querySelectorAll('#usr-modulos-grid input[type=checkbox]').forEach(c => c.checked = val);
-}
-
-function usrRolChange() {
-  const rol = document.getElementById('usr-rol')?.value || 'operador';
-  const sec = document.getElementById('usr-modulos-section');
-  const isAdmin = rol === 'admin' || rol === 'superadmin';
-  if (sec) sec.style.display = isAdmin ? 'none' : 'block';
-  if (!isAdmin) renderModulosGrid(ROLE_DEFAULTS[rol] || ['dashboard']);
-}
-
-function saveUsuario() {
-  authEnsureDB();
-  const editId = document.getElementById('usr-edit-id')?.value || '';
-  const nombre = (document.getElementById('usr-nombre')?.value || '').trim();
-  const clave  =  document.getElementById('usr-clave')?.value  || '';
-  const rol    =  document.getElementById('usr-rol')?.value    || 'operador';
-  if (!nombre) { toast('Ingresa el nombre del usuario', true); return; }
-
-  const isAdmin = rol === 'admin' || rol === 'superadmin';
-  const modulos = isAdmin ? AUTH_MODULES.map(m => m.id) : usrGetSelectedModulos();
-  if (!isAdmin && !modulos.length) { toast('Selecciona al menos un módulo', true); return; }
-
-  const dup = DB.usuarios.find(u => u.nombre.toLowerCase()===nombre.toLowerCase() && u.id!==editId);
-  if (dup) { toast('Ya existe un usuario con ese nombre', true); return; }
-
-  if (editId) {
-    const usr = DB.usuarios.find(u => u.id === editId);
-    if (!usr) return;
-    usr.nombre = nombre; usr.rol = rol; usr.modulos = modulos;
-    if (clave.length >= 4) usr.claveHash = authHash(clave);
-    toast('✓ "' + nombre + '" actualizado');
-  } else {
-    if (clave.length < 4) { toast('La clave debe tener al menos 4 caracteres', true); return; }
-    DB.usuarios.push({ id:uid(), nombre, claveHash:authHash(clave),
-                       rol, modulos, activo:true, creadoTs:now() });
-    toast('✓ Usuario "' + nombre + '" creado');
-  }
-  save(); cancelEditUsuario(); renderUsuarios();
-}
-
-function editUsuario(id) {
-  authEnsureDB();
-  const usr = DB.usuarios.find(u => u.id === id); if (!usr) return;
-  document.getElementById('usr-edit-id').value  = usr.id;
-  document.getElementById('usr-nombre').value   = usr.nombre;
-  document.getElementById('usr-clave').value    = '';
-  document.getElementById('usr-rol').value      = usr.rol;
-  document.getElementById('usuarios-form-title').textContent = 'Editando: ' + usr.nombre;
-  document.getElementById('usr-cancel-btn').style.display = 'inline-flex';
-  const isAdmin = usr.rol === 'admin' || usr.rol === 'superadmin';
-  const sec = document.getElementById('usr-modulos-section');
-  if (sec) sec.style.display = isAdmin ? 'none' : 'block';
-  renderModulosGrid(usr.modulos || []);
-  document.getElementById('usuarios-form-card')?.scrollIntoView({ behavior:'smooth' });
-}
-
-function cancelEditUsuario() {
-  document.getElementById('usr-edit-id').value  = '';
-  document.getElementById('usr-nombre').value   = '';
-  document.getElementById('usr-clave').value    = '';
-  document.getElementById('usr-rol').value      = 'operador';
-  document.getElementById('usuarios-form-title').textContent = 'Nuevo Usuario';
-  document.getElementById('usr-cancel-btn').style.display = 'none';
-  const sec = document.getElementById('usr-modulos-section');
-  if (sec) sec.style.display = 'block';
-  renderModulosGrid(ROLE_DEFAULTS.operador);
-}
-
-function toggleUsuarioActivo(id) {
-  authEnsureDB();
-  const usr = DB.usuarios.find(u => u.id === id); if (!usr) return;
-  if (usr.rol==='superadmin' && DB.usuarios.filter(u=>u.rol==='superadmin'&&u.activo).length<=1) {
-    toast('Debe existir al menos un Super Admin activo', true); return;
-  }
-  usr.activo = !usr.activo;
-  save(); renderUsuarios();
-  toast((usr.activo ? '✓ Activado' : 'Pausado') + ': ' + usr.nombre);
-}
-
-function deleteUsuario(id) {
-  authEnsureDB();
-  const usr = DB.usuarios.find(u => u.id === id); if (!usr) return;
-  if (usr.rol === 'superadmin') { toast('No se puede eliminar al Super Admin', true); return; }
-  if (!confirm('¿Eliminar usuario "' + usr.nombre + '"?')) return;
-  DB.usuarios = DB.usuarios.filter(u => u.id !== id);
-  save(); renderUsuarios(); toast('Usuario eliminado');
-}
-
-function renderUsuarios() {
-  authEnsureDB();
-  const cont = document.getElementById('usuarios-lista'); if (!cont) return;
-  if (!DB.usuarios.length) {
-    cont.innerHTML = '<div class="empty" style="grid-column:1/-1;">Sin usuarios</div>'; return;
-  }
-  const RC = { superadmin:'var(--acc)', admin:'var(--info)', supervisor:'var(--warn)', operador:'var(--muted2)' };
-  const RL = { superadmin:'Super Admin', admin:'Admin', supervisor:'Supervisor', operador:'Operador' };
-  cont.innerHTML = DB.usuarios.map(u => {
-    const modCount = u.modulos?.length || 0;
-    const isAdm    = u.rol==='admin'||u.rol==='superadmin';
-    const modLabel = isAdm ? 'Todos los módulos' : modCount + ' módulo' + (modCount!==1?'s':'');
-    const isCurr   = AUTH_SESSION?.userId === u.id;
-    return '<div style="background:var(--s2);border:1.5px solid '+(u.activo===false?'var(--danger)':'var(--br)')+';border-radius:6px;padding:14px;opacity:'+(u.activo===false?'.55':'1')+';transition:.2s;">' +
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">' +
-        '<div style="display:flex;align-items:center;gap:10px;">' +
-          '<div style="width:38px;height:38px;border-radius:50%;background:'+RC[u.rol]+';color:var(--green-deep);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.95rem;font-family:var(--fh);">' +
-            u.nombre.charAt(0).toUpperCase() +
-          '</div>' +
-          '<div>' +
-            '<div style="font-weight:700;font-size:.84rem;">' + u.nombre +
-              (isCurr ? ' <span style="font-size:.6rem;color:var(--acc);">(tú)</span>' : '') +
-            '</div>' +
-            '<div style="font-size:.66rem;color:'+RC[u.rol]+';font-weight:600;margin-top:2px;">' + RL[u.rol] + '</div>' +
-          '</div>' +
-        '</div>' +
-        (!isCurr ? '<div style="display:flex;gap:5px;">' +
-          '<button class="btn bo bsm" onclick="editUsuario(\''+u.id+'\')" style="font-size:.65rem;" title="Editar">✏</button>' +
-          '<button class="btn bo bsm" onclick="toggleUsuarioActivo(\''+u.id+'\')" style="font-size:.65rem;border-color:'+(u.activo===false?'var(--acc)':'var(--warn)')+';color:'+(u.activo===false?'var(--acc)':'var(--warn)')+';">'+(u.activo===false?'Activar':'Pausar')+'</button>' +
-          (u.rol!=='superadmin' ? '<button class="btn bo bsm" onclick="deleteUsuario(\''+u.id+'\')" style="font-size:.65rem;border-color:var(--danger);color:var(--danger);">✕</button>' : '') +
-        '</div>' : '') +
-      '</div>' +
-      '<div style="font-size:.68rem;color:var(--muted2);padding-top:8px;border-top:1px solid var(--br);">📦 ' + modLabel +
-        (u.activo===false ? ' · <span style="color:var(--danger);">Inactivo</span>' : '') +
-      '</div>' +
-    '</div>';
-  }).join('');
-}
-
-
-// ── Terceros: marcar como aceptada (desde borrador) ────────────────
-
-function saveEntregaDuca() {
-  const rec = DB.cotizaciones.find(c => c.id === cotActivaId);
-  if (!rec) return;
-  const duca     = (document.getElementById('ent-duca')?.value||'').trim();
-  const fecha    = document.getElementById('ent-duca-fecha')?.value || '';
-  const agente   = (document.getElementById('ent-agente')?.value||'').trim();
-  const factProv = (document.getElementById('ent-fact-prov')?.value||'').trim();
-  const factProd = (document.getElementById('ent-fact-prod')?.value||'').trim();
-  const aranceles= parseFloat(document.getElementById('ent-aranceles')?.value)||0;
-  if (!rec.ducaInfo) rec.ducaInfo = {};
-  Object.assign(rec.ducaInfo, { numero:duca, fecha, agente, aranceles,
-    factProveedor:factProv, factProductor:factProd });
-  save(); toast('💾 Datos de importación guardados');
-}
-
-function renderEntregaPanel(rec) {
-  if (!rec) return;
-  // Populate fields if data exists
-  if (rec.ducaInfo) {
-    const d = rec.ducaInfo;
-    const setV = (id, v) => { const el = document.getElementById(id); if(el) el.value = v||''; };
-    setV('ent-duca',      d.numero||'');
-    setV('ent-duca-fecha',d.fecha||'');
-    setV('ent-agente',    d.agente||'');
-    setV('ent-fact-prov', d.factProveedor||'');
-    setV('ent-fact-prod', d.factProductor||'');
-    setV('ent-aranceles', d.aranceles||'');
-  }
-  if (rec.fechaEntrega) {
-    const setV = (id, v) => { const el = document.getElementById(id); if(el) el.value = v||''; };
-    setV('ent-fecha',    rec.fechaEntrega);
-    setV('ent-receptor', rec.entregaReceptor||'');
-    setV('ent-obs',      rec.entregaObs||'');
-    if (rec.entregaFoto) {
-      const prev = document.getElementById('ent-foto-preview');
-      if (prev) { prev.src = rec.entregaFoto; prev.style.display='block'; }
-      const badge = document.getElementById('ent-foto-badge');
-      if (badge) badge.style.display = 'inline-flex';
-      entFotoData = rec.entregaFoto;
-    }
-    const entBadge = document.getElementById('ent-entregado-badge');
-    if (entBadge && rec.estado === 'entregada') {
-      entBadge.style.display = 'block';
-      entBadge.innerHTML = '<span class="chip ck" style="font-size:.7rem;padding:6px 12px;">✅ Entregado el '+rec.fechaEntrega+' — Receptor: '+rec.entregaReceptor+'</span>';
-    }
-  }
-  if (rec.estado === 'entregada') {
-    // Disable all inputs
-    ['ent-duca','ent-duca-fecha','ent-agente','ent-fact-prov','ent-fact-prod',
-     'ent-aranceles','ent-fecha','ent-receptor','ent-obs'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) { el.disabled = true; el.style.opacity = '0.6'; }
-    });
-  }
-}
-function cotMarcarAceptadaTerceros() {
-  const rec = DB.cotizaciones.find(c => c.id === cotActivaId);
-  if (!rec) return;
-  if (!confirm('¿Confirmar que el cliente '+( rec.cliente||'')+ ' aceptó la cotización?\n\nEsto inicia el proceso de pago y anticipo a México.')) return;
-  rec.estado = 'aceptada';
-  rec.fechaAceptada = new Date().toISOString().split('T')[0];
-  save(); cotVerDetalle(cotActivaId); renderCotList();
-  toast('✅ Cotización aceptada — registra anticipos MX y pagos del cliente');
-}
-
-// ── Terceros: pasar a "en_entrega" ─────────────────────────────────
-function cotProcederEntrega() {
-  const rec = DB.cotizaciones.find(c => c.id === cotActivaId);
-  if (!rec) return;
-  if (!confirm('¿Proceder a la fase de entrega?\n\nEsto indica que el producto está en tránsito hacia el cliente.')) return;
-  rec.estado = 'en_entrega';
-  rec.fechaInicioEntrega = new Date().toISOString().split('T')[0];
-  save(); cotVerDetalle(cotActivaId); renderCotList();
-  toast('🚛 En trámite de entrega — registra DUCA y datos de importación');
-}
-
-// ── Terceros: confirmar entrega con foto y receptor ─────────────────
-function cotConfirmarEntrega() {
-  const rec = DB.cotizaciones.find(c => c.id === cotActivaId);
-  if (!rec) return;
-  const receptor = (document.getElementById('ent-receptor')?.value || '').trim();
-  const obs      = (document.getElementById('ent-obs')?.value || '').trim();
-  const fotoData = entFotoData || null;
-  if (!receptor) { toast('⚠ Ingresa quién recibió el producto', true); return; }
-  // Save DUCA data from entrega form
-  const entDuca = (document.getElementById('ent-duca')?.value||'').trim();
-  if (entDuca) {
-    if (!rec.ducaInfo) rec.ducaInfo = {};
-    rec.ducaInfo.numero        = entDuca;
-    rec.ducaInfo.fecha         = document.getElementById('ent-duca-fecha')?.value||'';
-    rec.ducaInfo.agente        = document.getElementById('ent-agente')?.value||'';
-    rec.ducaInfo.factProveedor = document.getElementById('ent-fact-prov')?.value||'';
-    rec.ducaInfo.factProductor = document.getElementById('ent-fact-prod')?.value||'';
-    rec.ducaInfo.aranceles     = parseFloat(document.getElementById('ent-aranceles')?.value)||0;
-  }
-  rec.estado = 'entregada';
-  rec.fechaEntrega    = document.getElementById('ent-fecha')?.value || new Date().toISOString().split('T')[0];
-  rec.entregaReceptor = receptor;
-  rec.entregaObs      = obs;
-  rec.entregaFoto     = fotoData;
-  // Register as venta local GT or export
-  save(); cotVerDetalle(cotActivaId); renderCotList();
-  toast('📦 Entrega confirmada — '+receptor);
-  // If GT client, offer to generate venta
-  const pais = (rec.pais||'').toUpperCase();
-  const esGT = !pais || pais==='GT' || pais==='GUATEMALA';
-  if (confirm('¿Registrar también como '+( esGT ? 'venta local GT' : 'exportación')+'?\n(Esto descuenta del inventario)')) {
-    if (esGT) {
-      show('ventas-gt');
-      setTimeout(() => cargarCotEnLocal(cotActivaId), 100);
-    } else {
-      show('ventas-int');
-      setTimeout(() => cargarCotEnExport(cotActivaId), 100);
-    }
-  }
-}
-
-let entFotoData = null;
-function entLoadFoto(input) {
-  const file = input.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    entFotoData = e.target.result;
-    const prev = document.getElementById('ent-foto-preview');
-    if (prev) { prev.src = entFotoData; prev.style.display = 'block'; }
-    const badge = document.getElementById('ent-foto-badge');
-    if (badge) badge.style.display = 'inline-flex';
-    toast('📷 Foto cargada');
-  };
-  reader.readAsDataURL(file);
-}
-function cotMarcarAceptada() {
-  const rec = DB.cotizaciones.find(c => c.id === cotActivaId);
-  if (!rec) return;
-  // For terceros, use dedicated function
-  if (rec.tipo === 'terceros') { cotMarcarAceptadaTerceros(); return; }
-  // For interno (legacy)
-  if (!confirm('¿Marcar la cotización "' + rec.nombre + '" como ACEPTADA?\n\nEsto indica que el cliente confirmó el pedido.')) return;
-  rec.estado = 'aceptada';
-  rec.fechaAceptada = new Date().toISOString().split('T')[0];
-  save();
-  cotVerDetalle(cotActivaId);
-  renderCotList();
-  toast('✓ Cotización marcada como Aceptada 🤝');
-}
-
-function cotIrADespacho() {
-  const rec = DB.cotizaciones.find(c => c.id === cotActivaId);
-  if (!rec) return;
-
-  // Determine delivery type from saved field or pais
-  const pais = (rec.pais || '').trim().toUpperCase();
-  const esGT = !pais || pais === 'GT' || pais === 'GUATEMALA' || pais === 'GTM';
-
-  if (esGT) {
-    // Entrega local Guatemala — venta local, NO exportación, NO bodega propia
-    show('ventas-gt');
-    setTimeout(() => cargarCotEnLocal(cotActivaId), 100);
-  } else {
-    // Exportación real a otro país
-    show('ventas-int');
-    setTimeout(() => cargarCotEnExport(cotActivaId), 100);
-  }
-}
-
-function cargarCotEnLocal(cotId) {
-  invEnsureDB();
-  const rec = DB.cotizaciones.find(c => c.id === cotId);
-  if (!rec) return;
-
-  const cont = document.getElementById('vgt-lineas');
-  if (cont) cont.innerHTML = '';
-  vgtLineaCount = 0;
-
-  set('vgt-fecha', rec.fechaAceptada || new Date().toISOString().split('T')[0]);
-  set('vgt-comprador', rec.cliente || '');
-  set('vgt-obs', 'Cotización: ' + rec.nombre);
-
-  (rec.productos || []).forEach((p, idx) => {
-    vgtAddLinea();
-    const n = vgtLineaCount;
-
-    const prod = DB.iproductos.find(pr => pr.nombre === p.nom || pr.id === p.i);
-    const prodSel = document.getElementById('vgl-prod-' + n);
-    if (prodSel && prod) { prodSel.value = prod.id; }
-
-    const cantEl = document.getElementById('vgl-cant-' + n);
-    if (cantEl) cantEl.value = p.qty || '';
-
-    const vl = rec.ventaLineas?.find(vl => vl.i === p.i);
-    const precioEl = document.getElementById('vgl-precio-' + n);
-    if (precioEl && vl) {
-      let precio = vl.precio || 0;
-      if (vl.moneda === 'mxn' && rec.tc > 0) precio = precio * rec.tc;
-      precioEl.value = precio.toFixed(4);
-    }
-  });
-
-  const firstProd = rec.productos?.[0];
-  if (firstProd?.unit) {
-    const unitMap = { kg:'kg', lb:'lb', quintal:'quintal', arroba:'arroba' };
-    const unidadEl = document.getElementById('vgt-unidad');
-    if (unidadEl && unitMap[firstProd.unit]) unidadEl.value = unitMap[firstProd.unit];
-  }
-  const badge = document.getElementById('vint-cot-badge');
-  if (badge) {
-    badge.style.display = 'block';
-    badge.textContent = '';
-    const spBadge = document.createElement('span');
-    spBadge.innerHTML = '📋 Cargado desde cotización: <strong>' + rec.nombre + '</strong>';
-    const btnBadge = document.createElement('button');
-    btnBadge.textContent = ' ✕';
-    btnBadge.style.cssText = 'background:none;border:none;cursor:pointer;color:var(--muted2);font-size:.8rem;';
-    btnBadge.onclick = function(){ document.getElementById('vint-cot-badge').style.display='none'; };
-    badge.appendChild(spBadge);
-    badge.appendChild(btnBadge);
-  }
-
-  vgtRecalc();
-  document.querySelector('#sec-ventas-gt .card')?.scrollIntoView({ behavior:'smooth' });
-  toast('✓ Datos de cotización cargados en Despacho Local GT');
-}
-
-function cargarCotEnExport(cotId) {
-  invEnsureDB();
-  const rec = DB.cotizaciones.find(c => c.id === cotId);
-  if (!rec) return;
-
-  const cont = document.getElementById('vint-lineas');
-  if (cont) cont.innerHTML = '';
-  vintLineaCount = 0;
-
-  set('vint-fecha', rec.fechaAceptada || new Date().toISOString().split('T')[0]);
-  set('vint-comprador', rec.cliente || '');
-  set('vint-pais', rec.pais || '');
-  set('vint-obs', 'Cotización: ' + rec.nombre);
-
-  if (rec.monedaCli === 'mxn') {
-    const monEl = document.getElementById('vint-moneda');
-    if (monEl) monEl.value = 'mxn';
-    const tcEl = document.getElementById('vint-tc');
-    if (tcEl) tcEl.value = rec.tc || '';
-  }
-
-  (rec.productos || []).forEach(p => {
-    vintAddLinea();
-    const n = vintLineaCount;
-
-    const prod = DB.iproductos.find(pr => pr.nombre === p.nom || pr.id === p.i);
-    const prodSel = document.getElementById('vil-prod-' + n);
-    if (prodSel && prod) prodSel.value = prod.id;
-
-    const cantEl = document.getElementById('vil-cant-' + n);
-    if (cantEl) cantEl.value = p.qty || '';
-
-    const kgbuEl = document.getElementById('vil-kgbu-' + n);
-    if (kgbuEl && p.kgu) kgbuEl.value = p.kgu;
-
-    const vl = rec.ventaLineas?.find(vl => vl.i === p.i);
-    const precioEl = document.getElementById('vil-precio-' + n);
-    if (precioEl && vl) precioEl.value = (vl.precio || 0).toFixed(4);
-  });
-
-  const badge = document.getElementById('vint-cot-badge');
-  if (badge) {
-    badge.style.display = 'block';
-    badge.textContent = '';
-    const spBadge = document.createElement('span');
-    spBadge.innerHTML = '📋 Cargado desde cotización: <strong>' + rec.nombre + '</strong>';
-    const btnBadge = document.createElement('button');
-    btnBadge.textContent = ' ✕';
-    btnBadge.style.cssText = 'background:none;border:none;cursor:pointer;color:var(--muted2);font-size:.8rem;';
-    btnBadge.onclick = function(){ document.getElementById('vint-cot-badge').style.display='none'; };
-    badge.appendChild(spBadge);
-    badge.appendChild(btnBadge);
-  }
-
-  vintRecalc();
-  document.querySelector('#sec-ventas-int .card')?.scrollIntoView({ behavior:'smooth' });
-  toast('✓ Datos de cotización cargados en Despacho Exportación');
-}
-
-function populateCotSelects() {
-  invEnsureDB();
-  const aceptadas = (DB.cotizaciones || []).filter(c =>
-    c.tipo === 'terceros' && ['aceptada','duca','bodega'].includes(c.estado)
-  ).sort((a,b) => (b.fechaAceptada||b.fecha).localeCompare(a.fechaAceptada||a.fecha));
-
-  ['vgt-cot-sel', 'vint-cot-sel'].forEach(selId => {
-    const el = document.getElementById(selId);
-    if (!el) return;
-    const cur = el.value;
-    el.innerHTML = '<option value="">— Cargar desde cotización aceptada —</option>' +
-      aceptadas.map(c =>
-        '<option value="' + c.id + '">' + c.nombre +
-        ' · ' + (c.cliente||'') +
-        ' (' + (c.fechaAceptada||c.fecha) + ')' +
-        '</option>'
-      ).join('');
-    if (cur) el.value = cur;
-  });
-}
-
-let provActivaTipo = 'producto';
-let provEditId     = null;
-
-const PROV_TIPOS = {
-  producto:   { label:'Productor',           icon:'🌱', color:'#4ae88a' },
-  proveedor:  { label:'Proveedor Producto',  icon:'🤝', color:'#4a9eff' },
-  servicio:   { label:'Proveedor Servicio',  icon:'🔧', color:'#a078ff' },
-  transporte: { label:'Transporte',          icon:'🚛', color:'var(--warn)' },
-};
-
-function provTab(tipo, el) {
-  provActivaTipo = tipo;
-  document.querySelectorAll('#sec-proveedores .tab').forEach(t => t.classList.remove('active'));
-  if (el) el.classList.add('active');
-  const t = PROV_TIPOS[tipo];
-  const titleEl = document.getElementById('prov-form-title');
-  if (titleEl) titleEl.textContent = 'Nuevo ' + t.label;
-  const badgeEl = document.getElementById('prov-tipo-badge');
-  if (badgeEl) badgeEl.innerHTML = '<span class="chip cb" style="font-size:.6rem;border-color:'+t.color+';color:'+t.color+';">'+t.icon+' '+t.label+'</span>';
-  ['producto','transporte','servicio'].forEach(tp => {
-    const el2 = document.getElementById('prov-campos-'+tp);
-    if (el2) el2.style.display = (tp === tipo || (tp==='servicio' && tipo==='servicio')) ? 'block' : 'none';
-  });
-  renderProveedores();
-  if (tipo === 'producto') populateProveedorLink();
-}
-
-function populateProveedorLink() {
-  const sel = document.getElementById('prov-proveedor-link'); if (!sel) return;
-  const provs = (DB.proveedores||[]).filter(p=>p.tipo==='proveedor');
-  sel.innerHTML = '<option value="">— Asignar proveedor MX intermediario —</option>' +
-    provs.map(p=>'<option value="'+p.id+'">'+p.nombre+'</option>').join('');
-}
-
-function saveProv() {
-  const nombre = (document.getElementById('prov-nombre')?.value||'').trim();
-  if (!nombre) { toast('⚠ El nombre es obligatorio', true); return; }
-
-  const rec = {
-    id:      provEditId || uid(),
-    tipo:    provActivaTipo,
-    nombre,
-    pais:    document.getElementById('prov-pais')?.value    || 'MX',
-    region:  document.getElementById('prov-region')?.value  || '',
-    rfc:     document.getElementById('prov-rfc')?.value     || '',
-    contacto:document.getElementById('prov-contacto')?.value|| '',
-    tel:     document.getElementById('prov-tel')?.value     || '',
-    email:   document.getElementById('prov-email')?.value   || '',
-    banco:   document.getElementById('prov-banco')?.value   || '',
-    credito: parseInt(document.getElementById('prov-credito')?.value)||0,
-    obs:     document.getElementById('prov-obs')?.value     || '',
-    ts:      now(),
-    cultivos:       document.getElementById('prov-cultivos')?.value     || '',
-    certs:          document.getElementById('prov-certs')?.value        || '',
-    proveedorLink:  document.getElementById('prov-proveedor-link')?.value || '',
-    transpTipo:     document.getElementById('prov-transp-tipo')?.value  || '',
-    unidades:       parseInt(document.getElementById('prov-unidades')?.value)||0,
-    capacidad:      parseInt(document.getElementById('prov-capacidad')?.value)||0,
-    servTipo:       document.getElementById('prov-serv-tipo')?.value    || '',
-    tarifa:         document.getElementById('prov-tarifa')?.value       || '',
-  };
-
-  if (!DB.proveedores) DB.proveedores = [];
-  if (provEditId) {
-    const idx = DB.proveedores.findIndex(p=>p.id===provEditId);
-    if (idx>=0) DB.proveedores[idx] = rec;
-    provEditId = null;
-    document.getElementById('prov-btn-cancel').style.display = 'none';
-  } else {
-    DB.proveedores.unshift(rec);
-  }
-
-  ['prov-nombre','prov-region','prov-rfc','prov-contacto','prov-tel','prov-email',
-   'prov-banco','prov-credito','prov-obs','prov-cultivos','prov-certs',
-   'prov-unidades','prov-capacidad','prov-tarifa'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.value='';
-  });
-
-  save();
-  renderProveedores();
-  populateProvSelects();
-  toast('✓ '+PROV_TIPOS[provActivaTipo].label+' "'+nombre+'" guardado');
-}
-
-function editProv(id) {
-  const p = (DB.proveedores||[]).find(x=>x.id===id); if(!p) return;
-  provEditId = id;
-  const tabEl = document.getElementById('prov-tab-'+p.tipo);
-  provTab(p.tipo, tabEl);
-  const flds = {
-    'prov-nombre':p.nombre,'prov-region':p.region,'prov-rfc':p.rfc,
-    'prov-contacto':p.contacto,'prov-tel':p.tel,'prov-email':p.email,
-    'prov-banco':p.banco,'prov-credito':p.credito,'prov-obs':p.obs,
-    'prov-cultivos':p.cultivos,'prov-certs':p.certs,
-    'prov-unidades':p.unidades,'prov-capacidad':p.capacidad,'prov-tarifa':p.tarifa,
-  };
-  Object.entries(flds).forEach(([id,val])=>{ const el=document.getElementById(id); if(el) el.value=val||''; });
-  const paisEl=document.getElementById('prov-pais'); if(paisEl) paisEl.value=p.pais||'MX';
-  const transpEl=document.getElementById('prov-transp-tipo'); if(transpEl) transpEl.value=p.transpTipo||'flete';
-  const servEl=document.getElementById('prov-serv-tipo'); if(servEl) servEl.value=p.servTipo||'agente_aduanal';
-  setTimeout(()=>{
-    const provLink=document.getElementById('prov-proveedor-link'); if(provLink) provLink.value=p.proveedorLink||'';
-  },50);
-  const btnCancel=document.getElementById('prov-btn-cancel'); if(btnCancel) btnCancel.style.display='';
-  document.getElementById('prov-form-title').textContent = 'Editar '+PROV_TIPOS[p.tipo].label;
-  document.getElementById('prov-form-card')?.scrollIntoView({behavior:'smooth'});
-}
-
-function cancelEditProv() {
-  provEditId = null;
-  ['prov-nombre','prov-region','prov-rfc','prov-contacto','prov-tel','prov-email',
-   'prov-banco','prov-credito','prov-obs','prov-cultivos','prov-certs',
-   'prov-unidades','prov-capacidad','prov-tarifa'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.value='';
-  });
-  const btnCancel=document.getElementById('prov-btn-cancel'); if(btnCancel) btnCancel.style.display='none';
-  document.getElementById('prov-form-title').textContent = 'Nuevo '+PROV_TIPOS[provActivaTipo].label;
-}
-
-function delProv(id) {
-  const p=(DB.proveedores||[]).find(x=>x.id===id); if(!p) return;
-  if(!confirm('¿Eliminar "'+p.nombre+'"?')) return;
-  DB.proveedores = DB.proveedores.filter(x=>x.id!==id);
-  save(); renderProveedores(); populateProvSelects();
-  toast('Proveedor eliminado');
-}
-
-function renderProveedores() {
-  const tb = document.getElementById('prov-tbody'); if(!tb) return;
-  const count = document.getElementById('prov-count');
-  const lista = (DB.proveedores||[]).filter(p=>p.tipo===provActivaTipo);
-  const t = PROV_TIPOS[provActivaTipo];
-  if(count) count.textContent = lista.length+' '+t.label+(lista.length!==1?'es':'');
-
-  const listaTitleEl = document.getElementById('prov-lista-title');
-  if(listaTitleEl) listaTitleEl.textContent = t.icon+' '+t.label+'s Registrados';
-
-  const PAIS_FLAG = {MX:'🇲🇽',GT:'🇬🇹',SV:'🇸🇻',HN:'🇭🇳',US:'🇺🇸'};
-  if(!lista.length){
-    tb.innerHTML='<tr><td colspan="9"><div class="empty">Sin '+t.label+'s registrados — agrega el primero arriba</div></td></tr>';
-    return;
-  }
-  tb.innerHTML = lista.map(p => {
-    const flag = PAIS_FLAG[p.pais]||'🌍';
-    const detalle = p.tipo==='producto' ? (p.cultivos||'—') :
-                    p.tipo==='proveedor'? (p.cultivos||p.obs||'—') :
-                    p.tipo==='servicio' ? (p.servTipo||'—') :
-                    p.tipo==='transporte'? (p.transpTipo||'—') : '—';
-    return '<tr>'+
-      '<td><span class="chip cb" style="font-size:.58rem;border-color:'+t.color+';color:'+t.color+';">'+t.icon+' '+t.label+'</span></td>'+
-      '<td style="font-weight:600;">'+p.nombre+'</td>'+
-      '<td style="font-size:.68rem;">'+flag+' '+(p.region||p.pais||'—')+'</td>'+
-      '<td style="font-size:.68rem;">'+( p.contacto||'—')+'</td>'+
-      '<td style="font-size:.68rem;">'+( p.tel||'—')+'</td>'+
-      '<td style="font-size:.65rem;color:var(--muted2);">'+(p.rfc||'—')+'</td>'+
-      '<td style="font-size:.68rem;">'+detalle+'</td>'+
-      '<td style="font-size:.68rem;">'+(p.credito>0?p.credito+' días':'Contado')+'</td>'+
-      '<td style="white-space:nowrap;">'+
-        '<button class="btn bo bsm" onclick="editProv(\''+p.id+'\')">✏️</button> '+
-        '<button class="btn bo bsm" style="border-color:var(--danger);color:var(--danger);" onclick="delProv(\''+p.id+'\')">✕</button>'+
-      '</td>'+
-    '</tr>';
-  }).join('');
-}
-
-function populateProvSelects() {
-  if(!DB.proveedores) return;
-  const productores = DB.proveedores.filter(p=>p.tipo==='producto');
-  const proveedores  = DB.proveedores.filter(p=>p.tipo==='proveedor');
-  const transportes  = DB.proveedores.filter(p=>p.tipo==='transporte');
-  const servicios    = DB.proveedores.filter(p=>p.tipo==='servicio');
-
-  const selProduc = document.getElementById('bodega-productor-sel');
-  if(selProduc) selProduc.innerHTML = '<option value="">— Seleccionar Productor —</option>' +
-    productores.map(p=>'<option value="'+p.id+'" data-nombre="'+escH(p.nombre)+'">'+p.nombre+(p.region?' · '+p.region:'')+'</option>').join('');
-
-  const selProv = document.getElementById('bodega-proveedor-sel');
-  if(selProv) selProv.innerHTML = '<option value="">— Seleccionar Proveedor MX —</option>' +
-    proveedores.map(p=>'<option value="'+p.id+'" data-nombre="'+escH(p.nombre)+'">'+p.nombre+'</option>').join('');
-
-  const agentes = servicios.filter(s=>s.servTipo==='agente_aduanal');
-  const fletes  = transportes.concat(servicios.filter(s=>s.servTipo==='otro'));
-  document.querySelectorAll('.cot-gasto-prov-sel').forEach(sel => {
-    const cur = sel.value;
-    sel.innerHTML = '<option value="">— Proveedor —</option>' +
-      DB.proveedores.map(p=>'<option value="'+p.id+'">'+p.nombre+'</option>').join('');
-    sel.value = cur;
-  });
-
-  populateProveedorLink();
-}
-
-function confirmarRecepcion() {
-  const rec = DB.cotizaciones.find(c=>c.id===cotActivaId); if(!rec) return;
-
-  // BLOQUEAR si ya fue recibido en bodega
-  if (rec.estado === 'bodega' || rec.estado === 'pagado') {
-    toast('⚠ Este contenedor ya fue recibido en bodega. No se puede duplicar el ingreso.', true);
-    return;
-  }
-
-  const duca        = (document.getElementById('duca-numero')?.value||'').trim();
-  const factProv    = (document.getElementById('bodega-fact-proveedor')?.value||'').trim();
-  const factProduc  = (document.getElementById('bodega-fact-productor')?.value||'').trim();
-  const provId      = document.getElementById('bodega-proveedor-sel')?.value || '';
-  const producId    = document.getElementById('bodega-productor-sel')?.value || '';
-
-  const errors = [];
-  if(!duca)       errors.push('📋 Número de DUCA');
-  if(!factProv)   errors.push('🧾 No. Factura Proveedor MX');
-  if(!factProduc) errors.push('🌱 No. Factura Productor MX');
-
-  if(errors.length) {
-    toast('⚠ Campos obligatorios para trazabilidad:\n'+errors.join('\n'), true);
-    if(!duca)      document.getElementById('duca-numero')?.closest('.fg')?.classList.add('fg-error');
-    if(!factProv)  document.getElementById('bodega-fact-proveedor')?.closest('.fg')?.classList.add('fg-error');
-    if(!factProduc)document.getElementById('bodega-fact-productor')?.closest('.fg')?.classList.add('fg-error');
-    return;
-  }
-  ['duca-numero','bodega-fact-proveedor','bodega-fact-productor'].forEach(id=>{
-    document.getElementById(id)?.closest('.fg')?.classList.remove('fg-error');
-  });
-
-  const fecha = document.getElementById('bodega-fecha')?.value || today();
-  const cantRecibida = {};
-  (rec.productos||[]).forEach(p => {
-    cantRecibida[p.i] = {
-      cant: parseFloat(document.getElementById('bodega-cant-'+p.i)?.value)||p.qty,
-      kg:   parseFloat(document.getElementById('bodega-kg-'+p.i)?.value)||p.kgT,
-    };
-  });
-
-  const provNombre   = DB.proveedores?.find(p=>p.id===provId)?.nombre   || provId   || '';
-  const producNombre = DB.proveedores?.find(p=>p.id===producId)?.nombre || producId || '';
-
-  rec.bodegaInfo = {
-    fecha,
-    responsable:    v('bodega-responsable'),
-    obs:            v('bodega-obs'),
-    cantidades:     cantRecibida,
-    duca,
-    factProveedor:  factProv,
-    factProductor:  factProduc,
-    proveedorId:    provId,
-    proveedorNombre:provNombre,
-    productorId:    producId,
-    productorNombre:producNombre,
-  };
-  rec.estado = 'bodega';
-
-  if(!rec.ducaInfo) rec.ducaInfo = {};
-  rec.ducaInfo.numero = rec.ducaInfo.numero || duca;
-
-  invEnsureDB();
-  (rec.productos||[]).forEach(p => {
-    const cant   = cantRecibida[p.i];
-    const lbsBruto = cant.kg * 2.20462;
-    // Merma natural estimada basada en % del producto
-    const prodDB = DB.iproductos.find(pr => pr.nombre === p.nom || pr.id === p.nom);
-    const pctMerma = prodDB?.pctMerma || 0;
-    const mermaLbs = lbsBruto * (pctMerma / 100);
-    const lbsNeto  = lbsBruto - mermaLbs;
-    // Use real productoId from DB - match by name if no direct ID match
-    let productoId = prodDB?.id;
-    if (!productoId) {
-      const byName = DB.iproductos.find(pr => pr.nombre?.toUpperCase() === p.nom?.toUpperCase());
-      productoId = byName?.id || p.nom;
-    }
-
-    DB.ientradas.unshift({
-      id: uid(), ts: now(), fecha,
-      source:           'cotizador',
-      cotizacionId:     rec.id,
-      cotizacionNombre: rec.nombre,
-      productoId,
-      productoNombre:   p.nom,
-      bultos:           cant.cant,
-      kgBruto:          cant.kg,
-      lbsBruto,
-      lbsNeto,
-      mermaLbs,
-      pctMerma,
-      costoUd:          p.costoUd,
-      costoKg:          p.costoKg,
-      costoLb:          p.costoLb,
-      duca,
-      factProd:         factProduc,
-      factMx:           factProv,
-      proveedorId,
-      proveedorNombre,
-      productorId:      producId,
-      productorNombre:  producNombre,
-      obs: 'Recepción desde cotización '+rec.nombre,
-    });
-  });
-
-  save(); renderDetResumen(rec); renderCotList(); renderInvStock();
-  const badge = document.getElementById('bodega-recibido-badge');
-  if(badge){
-    badge.style.display='block';
-    badge.innerHTML='<span class="chip ck" style="font-size:.7rem;padding:6px 12px;">✅ Recibido en bodega el '+fecha+' — cadena: '+producNombre+' → '+provNombre+' → AJÚA</span>';
-  }
-  // Disable the confirm button to prevent re-submission
-  const btnConfirm = document.getElementById('bodega-btn-confirmar');
-  if (btnConfirm) {
-    btnConfirm.disabled = true;
-    btnConfirm.textContent = '✅ Ya recibido en bodega';
-    btnConfirm.style.opacity = '0.5';
-  }
-  toast('✅ Recepción confirmada — inventario actualizado');
-}
-
+// ── Plan de Cuentas — Gastos Generales ───────────────────────────
 const MAQ_CUENTAS = [
-  {
-    id: 'personal', label: '👷 Personal y Mano de Obra', color: '#4a9eff',
-    tipo: 'personal',
-    items: [],  // populated dynamically from empleados
-  },
-  {
-    id: 'alimentos', label: '🍽️ Alimentos (3 tiempos de comida)', color: '#ff9f43',
-    tipo: 'monto_detalle',  // individual expense rows with date+description+amount
-    items: ['Desayuno','Almuerzo','Cena','Refacción / Snack','Otros alimentos'],
-  },
-  {
-    id: 'empaque', label: '📦 Material de Empaque', color: '#a078ff',
-    tipo: 'monto',
-    items: ['Redes / Mallas','Etiquetas','Sellos / Stickers','Bolsas plásticas','Cajas de cartón','Zuncho / Flejes','Ganchos / Broches','Pallets','Otros empaque'],
-  },
-  {
-    id: 'proceso', label: '⚙️ Procesos (Q/lb)', color: '#00d98b',
-    tipo: 'qxlb',
-    items: ['Lavado','Limpieza / Selección','Lavado y desinfección producto'],
-  },
-  {
-    id: 'bodega', label: '🏭 Renta de Bodega e Instalaciones', color: '#4ae88a',
-    tipo: 'monto',
-    items: ['Renta bodega principal','Renta bodega secundaria','Servicios (agua, luz, teléfono)','Seguridad / Vigilancia','Limpieza instalaciones'],
-  },
-  {
-    id: 'transporte', label: '🚛 Transporte Local (rentas y entregas diarias)', color: 'var(--warn)',
-    tipo: 'monto',
-    items: ['Renta furgón refrigerado mensual','Entregas locales diarias GT','Otros transporte local'],
-  },
-  {
-    id: 'mantenimiento', label: '🔧 Mantenimiento y Equipo', color: '#ff6b6b',
-    tipo: 'monto',
-    items: ['Mantenimiento vehículos','Mantenimiento equipo frío','Mantenimiento bodega','Compra equipo','Herramientas y utensilios','Reparaciones'],
-  },
-  {
-    id: 'admin', label: '🏢 Gastos Administrativos', color: '#ffd93d',
-    tipo: 'monto',
-    items: ['Sueldos administrativos','Contabilidad / Legal','Seguros','Comunicaciones','Papelería / Útiles','Otros admin'],
-  },
-  {
-    id: 'comercial', label: '💰 Gastos Comerciales', color: '#c8e6c9',
-    tipo: 'monto',
-    items: ['Comisiones ventas','Publicidad / Marketing','Certificaciones','Gastos representación','Muestras / Degustaciones'],
-  },
-  {
-    id: 'financiero', label: '🏦 Gastos Financieros', color: '#b0bec5',
-    tipo: 'monto',
-    items: ['Intereses bancarios','Comisiones bancarias','Diferencial cambiario','Servicios OSMO / cambista'],
-  },
+  { id:'personal',     label:'👷 Personal y Mano de Obra',                color:'#4a9eff',  tipo:'personal',      items:[] },
+  { id:'alimentos',    label:'🍽️ Alimentos (3 tiempos de comida)',        color:'#ff9f43',  tipo:'monto_detalle', items:['Desayuno','Almuerzo','Cena','Refacción / Snack','Otros alimentos'] },
+  { id:'empaque',      label:'📦 Material de Empaque',                    color:'#a078ff',  tipo:'monto',         items:['Redes / Mallas','Etiquetas','Sellos / Stickers','Bolsas plásticas','Cajas de cartón','Zuncho / Flejes','Ganchos / Broches','Pallets','Otros empaque'] },
+  { id:'proceso',      label:'⚙️ Procesos (Q/lb)',                        color:'#00d98b',  tipo:'qxlb',          items:['Lavado','Limpieza / Selección','Lavado y desinfección producto'] },
+  { id:'bodega',       label:'🏭 Renta de Bodega e Instalaciones',        color:'#4ae88a',  tipo:'monto',         items:['Renta bodega principal','Renta bodega secundaria','Servicios (agua, luz, teléfono)','Seguridad / Vigilancia','Limpieza instalaciones'] },
+  { id:'transporte',   label:'🚛 Transporte Local',                       color:'#f5c518', tipo:'monto',          items:['Renta furgón refrigerado mensual','Entregas locales diarias GT','Combustible Camiones','Combustible Vehículos','Otros transporte local'] },
+  { id:'mantenimiento',label:'🔧 Mantenimiento y Equipo',                 color:'#ff6b6b',  tipo:'monto',         items:['Mantenimiento vehículos','Mantenimiento equipo frío','Mantenimiento bodega','Compra equipo','Herramientas y utensilios','Reparaciones'] },
+  { id:'admin',        label:'🏢 Gastos Administrativos',                 color:'#ffd93d',  tipo:'monto',         items:['Sueldos administrativos','Contabilidad / Legal','Seguros','Comunicaciones','Papelería / Útiles','Gastos No Deducibles','Otros admin'] },
+  { id:'impuestos',    label:'🧾 Impuestos',                              color:'#ff8c00',  tipo:'monto',         items:['ISR','ISO','Retenciones','IVA','IVA Facturas Especiales','Otros impuestos'] },
+  { id:'comercial',    label:'💰 Gastos Comerciales',                     color:'#c8e6c9',  tipo:'monto',         items:['Comisiones ventas','Publicidad / Marketing','Certificaciones','Gastos representación','Muestras / Degustaciones'] },
+  { id:'financiero',   label:'🏦 Gastos Financieros',                     color:'#b0bec5',  tipo:'monto',         items:['Intereses bancarios','Comisiones bancarias','Diferencial cambiario','Servicios OSMO / cambista'] },
 ];
-
 let maqCuentas = {};
 
-function maqToggleGrp(grpId) {
-  const body = document.getElementById('maq-grp-'+grpId);
-  const icon = document.getElementById('maq-grp-toggle-'+grpId);
-  if(!body) return;
-  const hidden = body.style.display === 'none';
-  body.style.display = hidden ? '' : 'none';
-  if(icon) icon.textContent = hidden ? '▼' : '▶';
+// ══════════════════════════════════════════════════════════════════
+// GASTOS GENERALES — WEEKLY EXPENSE CONTROL
+// ══════════════════════════════════════════════════════════════════
+
+// ── Week helpers ─────────────────────────────────────────────────
+function maqGetWeekDates(lunesStr) {
+  const d = new Date(lunesStr + 'T12:00:00');
+  const day = d.getDay(); // 0=sun
+  // Adjust to Monday
+  const diff = (day === 0) ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  const lunes = d.toISOString().split('T')[0];
+  const sabado = new Date(d);
+  sabado.setDate(sabado.getDate() + 5);
+  return { lunes, sabado: sabado.toISOString().split('T')[0] };
 }
 
-function maqSetLabel(grpId, ri, val) {
-  if(maqCuentas[grpId]?.[ri]) maqCuentas[grpId][ri].label = val;
-}
-function maqSetMonto(grpId, ri, val) {
-  if(maqCuentas[grpId]?.[ri]) maqCuentas[grpId][ri].monto = parseFloat(val)||0;
-}
-function maqSetQxlb(grpId, ri, val) {
-  if(maqCuentas[grpId]?.[ri]) maqCuentas[grpId][ri].qxlb = parseFloat(val)||0;
-}
-function maqSetProv(grpId, ri, val) {
-  if(maqCuentas[grpId]?.[ri]) maqCuentas[grpId][ri].provId = val;
-}
-function maqDelRow(grpId, ri) {
-  if(maqCuentas[grpId]) maqCuentas[grpId].splice(ri,1);
+function maqOnWeekChange() {
+  const val = document.getElementById('maq-semana-inicio')?.value;
+  if (!val) return;
+  const { lunes, sabado } = maqGetWeekDates(val);
+  document.getElementById('maq-semana-inicio').value = lunes;
+  document.getElementById('maq-semana-fin').value    = sabado;
+  // Load personal from access control for this week
+  maqRefreshPersonal();
   maqRenderCuentas();
-}
-function maqAddRow(grpId) {
-  if(!maqCuentas[grpId]) maqCuentas[grpId]=[];
-  maqCuentas[grpId].push({ id:uid(), label:'', monto:0, qxlb:0, provId:'' });
-  maqRenderCuentas();
+  maqUpdateStatus();
 }
 
-function maqInit() {
-  MAQ_CUENTAS.forEach(grp => {
-    if (!maqCuentas[grp.id] || maqCuentas[grp.id].length === 0) {
-      if (grp.tipo === 'personal') {
-        maqCuentas['personal'] = maqBuildPersonalRows();
-      } else if (grp.tipo === 'monto_detalle') {
-        maqCuentas[grp.id] = grp.items.map(label => ({
-          id: uid(), label, monto: 0, provId: '',
-        }));
-      } else {
-        maqCuentas[grp.id] = grp.items.map(label => ({
-          id: uid(), label, monto: 0, qxlb: 0, provId: '',
-        }));
-      }
-    }
-  });
-  maqRenderCuentas();
-  maqAutoLbs();
-}
-
-function maqBuildPersonalRows() {
-  const mes = document.getElementById('maq-mes')?.value || '';
-  const rows = [];
-
-  let empConAcceso = [];
-  if (mes && DB.al && DB.al.length) {
-    const [yr, mo] = mes.split('-');
-    const registrosDelMes = DB.al.filter(r => {
-      const f = r.fecha || '';
-      return f.startsWith(yr + '-' + mo);
-    });
-    const diasPorEmp = {};
-    registrosDelMes.forEach(reg => {
-      (reg.empleados || []).forEach(e => {
-        const nombre = typeof e === 'string' ? e : e.nombre;
-        if (!nombre) return;
-        diasPorEmp[nombre] = (diasPorEmp[nombre] || 0) + 1;
-      });
-    });
-    empConAcceso = Object.entries(diasPorEmp).map(([nombre, dias]) => ({
-      nombre, dias,
-    }));
-  }
-
-  const activos = (DB.empleados || []).filter(e => e.estado === 'activo');
-  if (empConAcceso.length === 0) {
-    activos.forEach(emp => {
-      rows.push({
-        id: uid(), empId: emp.id,
-        nombre: emp.nombre,
-        cargo: emp.cargo || '',
-        diasTrabajados: 0,
-        semanaCompleta: false,
-        salarioMensual: emp.salarioMensual || 0,
-        monto: emp.salarioMensual || 0,
-        provId: '',
-      });
-    });
+function maqUpdateStatus() {
+  const el = document.getElementById('maq-semana-status');
+  if (!el) return;
+  const inicio = document.getElementById('maq-semana-inicio')?.value;
+  if (!inicio) return;
+  const existing = (DB.gastosSemanales||[]).find(s => s.semanaInicio === inicio);
+  if (existing) {
+    el.innerHTML = '<span style="color:var(--acc);">✓ Semana guardada — editando</span>';
   } else {
-    empConAcceso.forEach(({ nombre, dias }) => {
-      const emp = activos.find(e => e.nombre === nombre);
-      const semanaCompleta = dias >= 5;
-      const salario = emp?.salarioMensual || 0;
-      rows.push({
-        id: uid(), empId: emp?.id || '',
-        nombre,
-        cargo: emp?.cargo || '',
-        diasTrabajados: dias,
-        semanaCompleta,
-        salarioMensual: salario,
-        monto: semanaCompleta ? salario : Math.round(salario / 30 * dias),
-        provId: '',
-      });
-    });
+    el.innerHTML = '<span style="color:var(--orange);">● Semana nueva — sin guardar</span>';
   }
+}
+
+function maqNuevaSemana() {
+  // Set to current Monday
+  const today = new Date();
+  const day = today.getDay();
+  const diff = (day === 0) ? -6 : 1 - day;
+  today.setDate(today.getDate() + diff);
+  const lunes = today.toISOString().split('T')[0];
+  document.getElementById('maq-semana-inicio').value = lunes;
+  maqOnWeekChange();
+  // Reset cuentas
+  maqCuentas = {};
+  maqRenderCuentas();
+  document.getElementById('maq-grand-total').textContent = 'Q 0.00';
+  toast('Nueva semana lista');
+}
+
+// ── Personal rows from access control ────────────────────────────
+function maqBuildPersonalRows() {
+  const inicio = document.getElementById('maq-semana-inicio')?.value || '';
+  const fin    = document.getElementById('maq-semana-fin')?.value    || '';
+  const rows   = [];
+
+  // Build days of this week (Mon-Sat)
+  const weekDays = [];
+  if (inicio) {
+    const d = new Date(inicio + 'T12:00:00');
+    for (let i = 0; i < 6; i++) {
+      weekDays.push(new Date(d.getTime() + i * 86400000).toISOString().split('T')[0]);
+    }
+  }
+
+  // Get employees who worked from DB.al (access control)
+  const trabajadores = {};
+  (DB.al || []).forEach(reg => {
+    const fecha = reg.fecha || '';
+    if (inicio && (fecha < inicio || fecha > fin)) return;
+    (reg.empleados || []).forEach(e => {
+      const nombre = typeof e === 'string' ? e : (e.nombre || '');
+      if (!nombre) return;
+      if (!trabajadores[nombre]) trabajadores[nombre] = new Set();
+      trabajadores[nombre].add(fecha);
+    });
+  });
+
+  // Also add all employees from DB.empleados as options (even if no access record)
+  const todosEmp = (DB.empleados || []).map(e => e.nombre || e).filter(Boolean);
+
+  // Merge: prioritize those with access records, then add rest
+  const allNames = [...new Set([...Object.keys(trabajadores), ...todosEmp])];
+
+  allNames.forEach(nombre => {
+    const diasTrabajados = trabajadores[nombre] ? [...trabajadores[nombre]].sort() : [];
+    // Load saved anticipo for this employee
+    const empObj = (DB.empleados || []).find(e => (e.nombre||e) === nombre);
+    const anticipo = empObj?.anticipo || 0;
+
+    rows.push({
+      label:         nombre,
+      diasSemana:    weekDays,
+      diasTrabajados: diasTrabajados,
+      salarioSemanal: 0,
+      anticipo:       anticipo,
+      monto:          0,  // net = salario - anticipo
+    });
+  });
+
   return rows;
 }
 
 function maqRefreshPersonal() {
-  maqCuentas['personal'] = maqBuildPersonalRows();
-  maqRenderCuentas();
+  const inicio = document.getElementById('maq-semana-inicio')?.value || '';
+  if (!inicio) return;
+  // Check if already loaded from saved week
+  const saved = (DB.gastosSemanales||[]).find(s => s.semanaInicio === inicio);
+  if (saved && saved.cuentas?.personal) {
+    maqCuentas['personal'] = saved.cuentas.personal;
+  } else {
+    maqCuentas['personal'] = maqBuildPersonalRows();
+  }
+}
+
+// ── Render ────────────────────────────────────────────────────────
+function maqRenderCuentas() {
+  const container = document.getElementById('maq-cuentas-container');
+  if (!container) return;
+
+  const inicio = document.getElementById('maq-semana-inicio')?.value || '';
+
+  // Load saved week data if exists
+  const saved = (DB.gastosSemanales||[]).find(s => s.semanaInicio === inicio);
+  if (saved) {
+    maqCuentas = JSON.parse(JSON.stringify(saved.cuentas || {}));
+    if (document.getElementById('maq-lbs-proc'))
+      document.getElementById('maq-lbs-proc').value = saved.lbsProc || 0;
+  }
+
+  let html = '';
+  MAQ_CUENTAS.forEach(grp => {
+    if (!maqCuentas[grp.id] || maqCuentas[grp.id].length === 0) {
+      if (grp.tipo === 'personal') {
+        maqCuentas['personal'] = maqBuildPersonalRows();
+      } else {
+        maqCuentas[grp.id] = grp.items.map(item => ({
+          label: item, monto: 0, qxlb: 0
+        }));
+      }
+    }
+
+    const rows = maqCuentas[grp.id] || [];
+
+    html += `<div class="card" style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:4px 0;"
+           onclick="maqToggleGrp('${grp.id}')">
+        <div style="font-weight:700;font-size:.9rem;color:${grp.color};">${grp.label}</div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <span id="maq-grp-subtotal-${grp.id}" style="font-weight:700;font-size:.85rem;color:var(--green-deep);">Q 0.00</span>
+          <span id="maq-grp-toggle-${grp.id}" style="color:var(--muted);font-size:.8rem;">▼</span>
+        </div>
+      </div>
+      <div id="maq-grp-${grp.id}">`;
+
+    if (grp.tipo === 'personal') {
+      html += maqRenderPersonalHTML(rows);
+    } else if (grp.tipo === 'qxlb') {
+      rows.forEach((row, ri) => {
+        html += `<div class="fgrid g3" style="margin-bottom:6px;align-items:center;">
+          <div class="fg"><input value="${row.label||''}" onchange="maqSetLabel('${grp.id}',${ri},this.value)" style="font-size:.78rem;"></div>
+          <div class="fg"><label style="font-size:.68rem;">Q/lb</label>
+            <input type="number" value="${row.qxlb||0}" onchange="maqSetQxlb('${grp.id}',${ri},this.value);maqCalc()" style="font-size:.78rem;"></div>
+          <div class="fg"><label style="font-size:.68rem;">Total</label>
+            <input readonly id="maq-qxlb-tot-${grp.id}-${ri}" value="Q 0.00" style="font-size:.78rem;background:var(--s2);"></div>
+        </div>`;
+      });
+    } else {
+      rows.forEach((row, ri) => {
+        html += `<div class="fgrid g2" style="margin-bottom:6px;align-items:center;">
+          <div class="fg"><input value="${row.label||''}" onchange="maqSetLabel('${grp.id}',${ri},this.value)" style="font-size:.78rem;"></div>
+          <div class="fg"><label style="font-size:.68rem;">Monto (Q)</label>
+            <input type="number" value="${row.monto||0}" onchange="maqSetMonto('${grp.id}',${ri},this.value);maqCalc()" style="font-size:.78rem;"></div>
+        </div>`;
+      });
+      html += `<button class="btn bo bsm" onclick="maqAddRow('${grp.id}')" style="margin-top:4px;">+ Agregar</button>`;
+    }
+
+    html += `</div></div>`;
+  });
+
+  container.innerHTML = html;
   maqCalc();
 }
 
-function maqRenderCuentas() {
-  const cont = document.getElementById('maq-materiales'); if (!cont) return;
-  const fs = 'background:var(--s1);border:1.5px solid var(--br);color:var(--txt);padding:5px 7px;border-radius:3px;font-family:var(--fm);font-size:.72rem;width:100%;';
-  const allProvs = DB.proveedores || [];
-  const provOpts = '<option value="">— Proveedor —</option>' +
-    allProvs.map(p => '<option value="' + p.id + '">' + (PROV_TIPOS[p.tipo]?.icon||'') + ' ' + p.nombre + '</option>').join('');
+// ── Personal HTML ─────────────────────────────────────────────────
+function maqRenderPersonalHTML(rows) {
+  if (!rows || rows.length === 0) {
+    return '<div style="font-size:.78rem;color:var(--muted);padding:8px;">No hay empleados. Agrega empleados en el módulo de Empleados.</div>';
+  }
 
-  cont.innerHTML = MAQ_CUENTAS.map(grp => {
-    const rows  = maqCuentas[grp.id] || [];
-    const esQxLb = grp.tipo === 'qxlb';
-    const esPersonal = grp.tipo === 'personal';
-    const esDetalle  = grp.tipo === 'monto_detalle';
+  let h = `<div style="overflow-x:auto;margin-bottom:8px;">
+    <table style="width:100%;font-size:.75rem;border-collapse:collapse;">
+      <thead>
+        <tr style="background:var(--s2);">
+          <th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--br);">Empleado</th>
+          <th style="padding:6px 4px;border-bottom:1px solid var(--br);">Lun</th>
+          <th style="padding:6px 4px;border-bottom:1px solid var(--br);">Mar</th>
+          <th style="padding:6px 4px;border-bottom:1px solid var(--br);">Mié</th>
+          <th style="padding:6px 4px;border-bottom:1px solid var(--br);">Jue</th>
+          <th style="padding:6px 4px;border-bottom:1px solid var(--br);">Vie</th>
+          <th style="padding:6px 4px;border-bottom:1px solid var(--br);">Sáb</th>
+          <th style="padding:6px 6px;border-bottom:1px solid var(--br);">Días</th>
+          <th style="padding:6px 6px;border-bottom:1px solid var(--br);">Salario sem.</th>
+          <th style="padding:6px 6px;border-bottom:1px solid var(--br);">Anticipo</th>
+          <th style="padding:6px 6px;border-bottom:1px solid var(--br);color:var(--green-deep);">Neto a pagar</th>
+        </tr>
+      </thead>
+      <tbody>`;
 
-    let subtotal = 0;
-    if (esPersonal)  subtotal = rows.reduce((s,r) => s + (r.monto||0), 0);
-    else if (esQxLb) subtotal = 0; // calculated against lbs
-    else             subtotal = rows.reduce((s,r) => s + (r.monto||0), 0);
+  rows.forEach((row, ri) => {
+    const dias = row.diasSemana || [];
+    const trabajados = new Set(row.diasTrabajados || []);
+    const numDias = trabajados.size;
+    const salario = row.salarioSemanal || 0;
+    const anticipo = row.anticipo || 0;
+    const neto = Math.max(0, salario - anticipo);
 
-    let bodyHtml = '';
+    h += `<tr style="border-bottom:1px solid var(--br);">
+      <td style="padding:6px 8px;font-weight:600;">${row.label}</td>`;
 
-    if (esPersonal) {
-      bodyHtml =
-        '<div style="margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' +
-          '<div style="font-size:.65rem;color:var(--muted2);">Empleados que registraron acceso este mes. ' +
-            '✅ Semana completa = salario completo.</div>' +
-          '<button onclick="maqRefreshPersonal()" style="background:var(--s3);border:1.5px solid var(--br);color:var(--acc);padding:3px 8px;border-radius:3px;cursor:pointer;font-size:.65rem;">🔄 Actualizar desde acceso</button>' +
-        '</div>' +
-        '<div style="display:grid;grid-template-columns:2fr 0.8fr 0.8fr 1fr 0.8fr 1fr auto;gap:4px;margin-bottom:4px;">' +
-          '<div style="font-size:.58rem;color:var(--muted2);">Empleado</div>' +
-          '<div style="font-size:.58rem;color:var(--muted2);">Cargo</div>' +
-          '<div style="font-size:.58rem;color:var(--muted2);">Días</div>' +
-          '<div style="font-size:.58rem;color:var(--muted2);">Salario mensual Q</div>' +
-          '<div style="font-size:.58rem;color:var(--muted2);">Sem. Completa</div>' +
-          '<div style="font-size:.58rem;color:var(--acc);">A pagar Q</div>' +
-          '<div></div>' +
-        '</div>' +
-        rows.map((r,ri) =>
-          '<div style="display:grid;grid-template-columns:2fr 0.8fr 0.8fr 1fr 0.8fr 1fr auto;gap:4px;align-items:center;margin-bottom:3px;background:' + (r.semanaCompleta?'rgba(0,217,139,.05)':'rgba(255,159,67,.05)') + ';border-radius:3px;padding:3px 4px;">' +
-            '<input value="' + escH(r.nombre) + '" style="' + fs + '" onchange="maqPersLabel(\'personal\',' + ri + ',this.value)">' +
-            '<input value="' + escH(r.cargo||'') + '" style="' + fs + 'color:var(--muted2);" onchange="maqPersField(\'personal\',' + ri + ',\'cargo\',this.value)">' +
-            '<input type="number" value="' + (r.diasTrabajados||0) + '" min="0" max="31" style="' + fs + '" onchange="maqPersDias(\'personal\',' + ri + ',this.value)">' +
-            '<input type="number" value="' + (r.salarioMensual||0) + '" step="0.01" style="' + fs + '" onchange="maqPersSalario(\'personal\',' + ri + ',this.value)">' +
-            '<div style="text-align:center;font-size:.8rem;">' + (r.semanaCompleta ? '✅' : '⚠️') + '</div>' +
-            '<input type="number" value="' + (r.monto||0) + '" step="0.01" style="' + fs + 'color:var(--acc);font-weight:700;" onchange="maqSetMonto(\'personal\',' + ri + ',this.value)">' +
-            '<button onclick="maqDelRow(\'personal\',' + ri + ')" style="background:var(--danger);color:#fff;border:none;padding:4px 7px;border-radius:3px;cursor:pointer;font-size:.7rem;">✕</button>' +
-          '</div>'
-        ).join('') +
-        '<button onclick="maqAddPersonalRow()" style="background:none;border:1px dashed var(--br);color:var(--muted2);padding:4px 10px;border-radius:3px;cursor:pointer;font-size:.68rem;margin-top:4px;">+ Agregar persona</button>';
-    }
-    else if (esDetalle) {
-      bodyHtml =
-        '<div style="font-size:.65rem;color:var(--muted2);margin-bottom:8px;">Ingresa cada gasto de alimento individualmente para trazabilidad completa.</div>' +
-        '<div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:4px;margin-bottom:4px;">' +
-          '<div style="font-size:.58rem;color:var(--muted2);">Descripción / Concepto</div>' +
-          '<div style="font-size:.58rem;color:var(--muted2);">Monto Q</div>' +
-          '<div style="font-size:.58rem;color:var(--muted2);">Proveedor</div>' +
-          '<div></div>' +
-        '</div>' +
-        rows.map((r,ri) =>
-          '<div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:4px;align-items:center;margin-bottom:3px;">' +
-            '<input value="' + escH(r.label) + '" style="' + fs + '" onchange="maqSetLabel(\'' + grp.id + '\',' + ri + ',this.value)">' +
-            '<input type="number" value="' + (r.monto||'') + '" step="0.01" placeholder="0" style="' + fs + '" onchange="maqSetMonto(\'' + grp.id + '\',' + ri + ',this.value);maqCalc()">' +
-            '<select class="cot-gasto-prov-sel" style="' + fs + 'padding:5px;" onchange="maqSetProv(\'' + grp.id + '\',' + ri + ',this.value)">' + provOpts + '</select>' +
-            '<button onclick="maqDelRow(\'' + grp.id + '\',' + ri + ')" style="background:var(--danger);color:#fff;border:none;padding:4px 7px;border-radius:3px;cursor:pointer;font-size:.7rem;">✕</button>' +
-          '</div>'
-        ).join('') +
-        '<button onclick="maqAddRow(\'' + grp.id + '\')" style="background:none;border:1px dashed var(--br);color:var(--muted2);padding:4px 10px;border-radius:3px;cursor:pointer;font-size:.68rem;margin-top:4px;">+ Agregar gasto alimento</button>';
-    }
-    else {
-      const cols = esQxLb ? '2fr 0.7fr 1fr 1fr auto' : '2fr 1fr 1fr auto';
-      bodyHtml =
-        '<div style="display:grid;grid-template-columns:' + cols + ';gap:4px;margin-bottom:4px;">' +
-          '<div style="font-size:.58rem;color:var(--muted2);">Concepto</div>' +
-          (esQxLb ? '<div style="font-size:.58rem;color:var(--muted2);">Q/lb</div>' : '') +
-          '<div style="font-size:.58rem;color:var(--muted2);">' + (esQxLb ? 'Total (calc.)' : 'Monto Q') + '</div>' +
-          '<div style="font-size:.58rem;color:var(--muted2);">Proveedor</div>' +
-          '<div></div>' +
-        '</div>' +
-        rows.map((r,ri) =>
-          '<div style="display:grid;grid-template-columns:' + cols + ';gap:4px;align-items:center;margin-bottom:3px;">' +
-            '<input value="' + escH(r.label) + '" style="' + fs + '" onchange="maqSetLabel(\'' + grp.id + '\',' + ri + ',this.value)">' +
-            (esQxLb
-              ? ('<input type="number" value="' + (r.qxlb||'') + '" step="0.0001" placeholder="0" style="' + fs + '" onchange="maqSetQxlb(\'' + grp.id + '\',' + ri + ',this.value);maqCalc()">' +
-                 '<input readonly value="" id="maq-qxlb-tot-' + grp.id + '-' + ri + '" style="' + fs + 'color:var(--acc);cursor:default;background:var(--s3);">')
-              : '<input type="number" value="' + (r.monto||'') + '" step="0.01" placeholder="0" style="' + fs + '" onchange="maqSetMonto(\'' + grp.id + '\',' + ri + ',this.value);maqCalc()">'
-            ) +
-            '<select class="cot-gasto-prov-sel" style="' + fs + 'padding:5px;" onchange="maqSetProv(\'' + grp.id + '\',' + ri + ',this.value)">' + provOpts + '</select>' +
-            '<button onclick="maqDelRow(\'' + grp.id + '\',' + ri + ')" style="background:var(--danger);color:#fff;border:none;padding:4px 7px;border-radius:3px;cursor:pointer;font-size:.7rem;">✕</button>' +
-          '</div>'
-        ).join('') +
-        '<button onclick="maqAddRow(\'' + grp.id + '\')" style="background:none;border:1px dashed var(--br);color:var(--muted2);padding:4px 10px;border-radius:3px;cursor:pointer;font-size:.68rem;margin-top:4px;">+ Agregar línea</button>';
+    dias.forEach(fecha => {
+      const worked = trabajados.has(fecha);
+      h += `<td style="text-align:center;padding:4px;">
+        <input type="checkbox" ${worked?'checked':''} 
+          onchange="maqPersToggleDia(${ri},'${fecha}',this.checked)"
+          title="${fecha}">
+      </td>`;
+    });
+
+    // Fill empty if less than 6 days defined
+    for (let i = dias.length; i < 6; i++) {
+      h += `<td></td>`;
     }
 
-    return '<div style="background:var(--s2);border:1.5px solid var(--br);border-left:3px solid ' + grp.color + ';border-radius:4px;margin-bottom:10px;overflow:hidden;">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--s3);" onclick="maqToggleGrp(\'' + grp.id + '\')">' +
-        '<div style="font-size:.7rem;font-weight:700;color:' + grp.color + ';">' + grp.label + '</div>' +
-        '<div style="display:flex;gap:10px;align-items:center;">' +
-          (!esQxLb && subtotal > 0 ? '<span style="font-size:.7rem;color:var(--warn);">Q ' + subtotal.toFixed(2) + '</span>' : '') +
-          '<span id="maq-grp-toggle-' + grp.id + '" style="font-size:.7rem;color:var(--muted2);">▼</span>' +
-        '</div>' +
-      '</div>' +
-      '<div id="maq-grp-' + grp.id + '" style="padding:8px 10px;">' + bodyHtml + '</div>' +
-    '</div>';
-  }).join('') +
-  '<div id="maq-procesos" style="display:none;"></div>';
+    h += `
+      <td style="text-align:center;padding:4px;font-weight:700;color:var(--info);">${numDias}</td>
+      <td style="padding:4px;">
+        <input type="number" value="${salario}" min="0" step="50"
+          style="width:90px;font-size:.75rem;"
+          oninput="maqPersSetSalario(${ri},this.value)">
+      </td>
+      <td style="padding:4px;">
+        <input type="number" value="${anticipo}" min="0" step="50"
+          style="width:80px;font-size:.75rem;"
+          oninput="maqPersSetAnticipo(${ri},this.value)">
+      </td>
+      <td style="padding:4px;font-weight:700;color:var(--green-deep);">Q ${neto.toFixed(2)}</td>
+    </tr>`;
+  });
 
+  h += `</tbody></table></div>
+    <button class="btn bo bsm" onclick="maqAddPersonalRow()">+ Agregar empleado manual</button>`;
+
+  return h;
+}
+
+// ── Personal event handlers ───────────────────────────────────────
+function maqPersToggleDia(ri, fecha, checked) {
+  const row = maqCuentas['personal']?.[ri];
+  if (!row) return;
+  const set = new Set(row.diasTrabajados || []);
+  checked ? set.add(fecha) : set.delete(fecha);
+  row.diasTrabajados = [...set];
+  maqCalc();
+  // Update dias count cell
+  maqRenderCuentas();
+}
+
+function maqPersSetSalario(ri, val) {
+  const row = maqCuentas['personal']?.[ri];
+  if (!row) return;
+  row.salarioSemanal = parseFloat(val) || 0;
+  maqCalc();
+}
+
+function maqPersSetAnticipo(ri, val) {
+  const row = maqCuentas['personal']?.[ri];
+  if (!row) return;
+  row.anticipo = parseFloat(val) || 0;
+  // Also save anticipo to employee record
+  const emp = (DB.empleados||[]).find(e => (e.nombre||e) === row.label);
+  if (emp && typeof emp === 'object') {
+    emp.anticipo = row.anticipo;
+    save();
+  }
   maqCalc();
 }
 
 function maqAddPersonalRow() {
   if (!maqCuentas['personal']) maqCuentas['personal'] = [];
   maqCuentas['personal'].push({
-    id: uid(), empId: '', nombre: '', cargo: '',
-    diasTrabajados: 0, semanaCompleta: false, salarioMensual: 0, monto: 0, provId: '',
+    label: 'Nuevo empleado', diasSemana: [], diasTrabajados: [],
+    salarioSemanal: 0, anticipo: 0, monto: 0
   });
   maqRenderCuentas();
 }
 
-function maqPersLabel(grpId, ri, val) {
-  if (maqCuentas[grpId]?.[ri]) maqCuentas[grpId][ri].nombre = val;
-}
-function maqPersField(grpId, ri, field, val) {
-  if (maqCuentas[grpId]?.[ri]) maqCuentas[grpId][ri][field] = val;
-}
-function maqPersDias(grpId, ri, val) {
-  const row = maqCuentas[grpId]?.[ri]; if (!row) return;
-  row.diasTrabajados = parseInt(val)||0;
-  row.semanaCompleta = row.diasTrabajados >= 5;
-  if (!row.semanaCompleta && row.salarioMensual > 0) {
-    row.monto = Math.round(row.salarioMensual / 30 * row.diasTrabajados);
-  } else {
-    row.monto = row.salarioMensual;
-  }
-  maqRenderCuentas();
-}
-function maqPersSalario(grpId, ri, val) {
-  const row = maqCuentas[grpId]?.[ri]; if (!row) return;
-  row.salarioMensual = parseFloat(val)||0;
-  row.monto = row.semanaCompleta ? row.salarioMensual : Math.round(row.salarioMensual / 30 * row.diasTrabajados);
-  maqCalc();
-}
-
+// ── Calc ──────────────────────────────────────────────────────────
 function maqCalc() {
   const lbsProc = parseFloat(document.getElementById('maq-lbs-proc')?.value) || 0;
-  const groupTotals = {};
   let grandTotal = 0;
+  const resumen = [];
 
   MAQ_CUENTAS.forEach(grp => {
     const rows = maqCuentas[grp.id] || [];
     let grpTotal = 0;
-    rows.forEach((r,ri) => {
-      let amt = 0;
-      if (grp.tipo === 'qxlb') {
-        amt = (r.qxlb||0) * lbsProc;
-        const totEl = document.getElementById('maq-qxlb-tot-' + grp.id + '-' + ri);
-        if (totEl) totEl.value = 'Q ' + amt.toFixed(2);
-      } else {
-        amt = r.monto || 0;
-      }
-      grpTotal += amt;
-    });
-    groupTotals[grp.id] = grpTotal;
-    grandTotal += grpTotal;
-    const grpEl = document.getElementById('maq-grp-' + grp.id);
-    if (grpEl) {
-      const hdr = grpEl.previousElementSibling;
-      if (hdr) {
-        const span = hdr.querySelector('span[style*="var(--warn)"]');
-        if (span) span.textContent = 'Q ' + grpTotal.toFixed(2);
-      }
+
+    if (grp.tipo === 'personal') {
+      rows.forEach(r => {
+        const neto = Math.max(0, (r.salarioSemanal||0) - (r.anticipo||0));
+        r.monto = neto;
+        grpTotal += neto;
+      });
+    } else if (grp.tipo === 'qxlb') {
+      rows.forEach((r, ri) => {
+        const amt = (r.qxlb||0) * lbsProc;
+        grpTotal += amt;
+        const el = document.getElementById(`maq-qxlb-tot-${grp.id}-${ri}`);
+        if (el) el.value = 'Q ' + amt.toFixed(2);
+      });
+    } else {
+      rows.forEach(r => grpTotal += (r.monto||0));
     }
+
+    const subEl = document.getElementById(`maq-grp-subtotal-${grp.id}`);
+    if (subEl) subEl.textContent = 'Q ' + grpTotal.toFixed(2);
+    grandTotal += grpTotal;
+    if (grpTotal > 0) resumen.push({ label: grp.label, total: grpTotal });
   });
 
-  const cxlb = lbsProc > 0 ? grandTotal / lbsProc : 0;
-  const div   = document.getElementById('maq-resultado-cards'); if (!div) return;
+  const gtEl = document.getElementById('maq-grand-total');
+  if (gtEl) gtEl.textContent = 'Q ' + grandTotal.toFixed(2);
 
-  const personalTotal = groupTotals['personal'] || 0;
-  const alimentosTotal = groupTotals['alimentos'] || 0;
-
-  const summaryCards = MAQ_CUENTAS.map(grp =>
-    '<div style="background:var(--s2);border:1.5px solid var(--br);border-left:2px solid ' + grp.color + ';border-radius:4px;padding:8px 10px;min-width:140px;">' +
-      '<div style="font-size:.55rem;color:var(--muted2);margin-bottom:2px;">' + grp.label + '</div>' +
-      '<div style="font-family:var(--fh);font-size:.78rem;font-weight:700;color:' + grp.color + ';">Q ' + (groupTotals[grp.id]||0).toFixed(2) + '</div>' +
-    '</div>'
-  ).join('');
-
-  div.innerHTML =
-    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin-bottom:10px;">' + summaryCards + '</div>' +
-    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">' +
-      '<div style="background:var(--s2);border:1.5px solid var(--br);border-radius:4px;padding:10px;text-align:center;">' +
-        '<div style="font-size:.58rem;color:var(--muted2);">LBS Procesadas</div>' +
-        '<div style="font-family:var(--fh);font-size:.8rem;font-weight:700;">' + lbsProc.toFixed(1) + ' lbs</div>' +
-      '</div>' +
-      '<div style="background:var(--s2);border:2px solid var(--warn);border-radius:4px;padding:10px;text-align:center;">' +
-        '<div style="font-size:.58rem;color:var(--muted2);">Total Costos Maquila</div>' +
-        '<div style="font-family:var(--fh);font-size:.9rem;font-weight:700;color:var(--warn);">Q ' + grandTotal.toFixed(2) + '</div>' +
-      '</div>' +
-      '<div style="background:var(--s2);border:2px solid var(--acc);border-radius:4px;padding:10px;text-align:center;">' +
-        '<div style="font-size:.58rem;color:var(--muted2);">Costo Maquila / lb</div>' +
-        '<div style="font-family:var(--fh);font-size:.9rem;font-weight:700;color:var(--acc);">Q ' + cxlb.toFixed(4) + '</div>' +
-        '<div style="font-size:.6rem;color:var(--muted2);margin-top:2px;">= costo real post-importación</div>' +
-      '</div>' +
-    '</div>';
-
-  return { groupTotals, grandTotal, cxlb, lbsProc, totalMat: grandTotal, totalProc: 0, totalMaq: grandTotal };
+  // Render resumen
+  const resEl = document.getElementById('maq-resumen-semanal');
+  if (resEl) {
+    resEl.innerHTML = resumen.map(r =>
+      `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--br);font-size:.82rem;">
+        <span>${r.label}</span>
+        <span style="font-weight:700;">Q ${r.total.toFixed(2)}</span>
+      </div>`
+    ).join('');
+  }
 }
+
+// ── Save / Load week ──────────────────────────────────────────────
+function maqGuardarSemana() {
+  const inicio = document.getElementById('maq-semana-inicio')?.value;
+  const fin    = document.getElementById('maq-semana-fin')?.value;
+  if (!inicio) { toast('Selecciona una semana primero', true); return; }
+
+  const lbsProc = parseFloat(document.getElementById('maq-lbs-proc')?.value) || 0;
+
+  // Compute totals
+  const totales = {};
+  let grandTotal = 0;
+  MAQ_CUENTAS.forEach(grp => {
+    const rows = maqCuentas[grp.id] || [];
+    let t = 0;
+    if (grp.tipo === 'personal') {
+      rows.forEach(r => t += Math.max(0,(r.salarioSemanal||0)-(r.anticipo||0)));
+    } else if (grp.tipo === 'qxlb') {
+      rows.forEach(r => t += (r.qxlb||0) * lbsProc);
+    } else {
+      rows.forEach(r => t += (r.monto||0));
+    }
+    totales[grp.id] = t;
+    grandTotal += t;
+  });
+
+  const record = {
+    id:           uid(),
+    semanaInicio: inicio,
+    semanaFin:    fin,
+    lbsProc,
+    cuentas:      JSON.parse(JSON.stringify(maqCuentas)),
+    totales,
+    grandTotal,
+    ts:           new Date().toISOString(),
+  };
+
+  if (!DB.gastosSemanales) DB.gastosSemanales = [];
+  const existingIdx = DB.gastosSemanales.findIndex(s => s.semanaInicio === inicio);
+  if (existingIdx >= 0) {
+    record.id = DB.gastosSemanales[existingIdx].id;
+    DB.gastosSemanales[existingIdx] = record;
+  } else {
+    DB.gastosSemanales.unshift(record);
+  }
+
+  save();
+  maqUpdateStatus();
+  toast('✅ Semana guardada');
+}
+
+function maqVerHistorial() {
+  const panel = document.getElementById('maq-historial-panel');
+  const lista = document.getElementById('maq-historial-lista');
+  if (!panel || !lista) return;
+
+  const visible = panel.style.display !== 'none';
+  if (visible) { panel.style.display = 'none'; return; }
+
+  const semanas = (DB.gastosSemanales || []).sort((a,b) => b.semanaInicio.localeCompare(a.semanaInicio));
+  if (!semanas.length) {
+    lista.innerHTML = '<div style="color:var(--muted);font-size:.8rem;padding:8px;">No hay semanas guardadas aún.</div>';
+  } else {
+    lista.innerHTML = semanas.map(s => {
+      const d1 = s.semanaInicio.split('-').reverse().join('/');
+      const d2 = s.semanaFin?.split('-').reverse().join('/') || '';
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;border-bottom:1px solid var(--br);">
+        <div>
+          <span style="font-weight:700;font-size:.85rem;">${d1} — ${d2}</span>
+          <span style="font-size:.75rem;color:var(--muted);margin-left:8px;">Q ${(s.grandTotal||0).toFixed(2)} total</span>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn bsm bo" onclick="maqCargarSemana('${s.semanaInicio}')">📂 Cargar</button>
+          <button class="btn bsm" style="background:#d63030;color:#fff;" onclick="maqEliminarSemana('${s.semanaInicio}')">🗑</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  panel.style.display = '';
+}
+
+function maqCargarSemana(inicio) {
+  const saved = (DB.gastosSemanales||[]).find(s => s.semanaInicio === inicio);
+  if (!saved) return;
+  document.getElementById('maq-semana-inicio').value = saved.semanaInicio;
+  document.getElementById('maq-semana-fin').value    = saved.semanaFin || '';
+  if (document.getElementById('maq-lbs-proc'))
+    document.getElementById('maq-lbs-proc').value = saved.lbsProc || 0;
+  maqCuentas = JSON.parse(JSON.stringify(saved.cuentas || {}));
+  maqRenderCuentas();
+  maqUpdateStatus();
+  document.getElementById('maq-historial-panel').style.display = 'none';
+  toast('Semana cargada');
+}
+
+function maqEliminarSemana(inicio) {
+  if (!confirm('¿Eliminar esta semana?')) return;
+  DB.gastosSemanales = (DB.gastosSemanales||[]).filter(s => s.semanaInicio !== inicio);
+  save();
+  maqVerHistorial();
+  toast('Semana eliminada');
+}
+
+// ── maqInit (called on section load) ─────────────────────────────
+function maqInit() {
+  // Set current week by default
+  const today = new Date();
+  const day = today.getDay();
+  const diff = (day === 0) ? -6 : 1 - day;
+  today.setDate(today.getDate() + diff);
+  const lunes = today.toISOString().split('T')[0];
+
+  const inEl = document.getElementById('maq-semana-inicio');
+  if (inEl && !inEl.value) {
+    inEl.value = lunes;
+    const { sabado } = maqGetWeekDates(lunes);
+    document.getElementById('maq-semana-fin').value = sabado;
+  }
+
+  maqRefreshPersonal();
+  maqRenderCuentas();
+  maqUpdateStatus();
+}
+
+// ── Excel export ──────────────────────────────────────────────────
+function maqExportExcel() {
+  const inicio = document.getElementById('maq-semana-inicio')?.value || 'semana';
+  const fin    = document.getElementById('maq-semana-fin')?.value    || '';
+  const lbsProc = parseFloat(document.getElementById('maq-lbs-proc')?.value) || 0;
+
+  let csv = `GASTOS GENERALES AJÚA\n`;
+  csv += `Semana:,${inicio} al ${fin}\n`;
+  csv += `Lbs procesadas:,${lbsProc}\n\n`;
+  csv += `Categoría,Rubro,Días trabajados,Salario sem.,Anticipo,Neto/Monto (Q)\n`;
+
+  MAQ_CUENTAS.forEach(grp => {
+    const rows = maqCuentas[grp.id] || [];
+    rows.forEach(r => {
+      if (grp.tipo === 'personal') {
+        const dias = (r.diasTrabajados||[]).length;
+        const neto = Math.max(0,(r.salarioSemanal||0)-(r.anticipo||0));
+        csv += `"${grp.label}","${r.label}",${dias},${r.salarioSemanal||0},${r.anticipo||0},${neto}\n`;
+      } else if (grp.tipo === 'qxlb') {
+        const amt = (r.qxlb||0) * lbsProc;
+        csv += `"${grp.label}","${r.label}",,,,${amt.toFixed(2)}\n`;
+      } else {
+        if (r.monto) csv += `"${grp.label}","${r.label}",,,,${r.monto}\n`;
+      }
+    });
+  });
+
+  // Grand total
+  let gt = 0;
+  MAQ_CUENTAS.forEach(grp => {
+    const rows = maqCuentas[grp.id]||[];
+    if (grp.tipo==='personal') rows.forEach(r=>gt+=Math.max(0,(r.salarioSemanal||0)-(r.anticipo||0)));
+    else if (grp.tipo==='qxlb') rows.forEach(r=>gt+=(r.qxlb||0)*lbsProc);
+    else rows.forEach(r=>gt+=(r.monto||0));
+  });
+  csv += `\nTOTAL SEMANA,,,,, ${gt.toFixed(2)}\n`;
+
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `GastosGenerales_${inicio}_al_${fin}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('✅ Excel descargado');
+}
+
+
 
 function saveMaquila() {
   invEnsureDB();
