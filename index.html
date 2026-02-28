@@ -789,7 +789,7 @@ tr:hover td{background:var(--green-pale);}
 <div class="ns">⚙ Configuración</div>
 <div class="ni" onclick="show('empleados-db',this)"><span class="ico">👥</span>Base de Empleados</div>
 <div class="ns" id="nav-ns-admin" style="display:none;">⚙ Administración</div>
-<div class="ni" id="nav-usuarios" style="display:none;" onclick="show('usuarios',this)"><span class="ico">👥</span>Usuarios y Accesos</div>
+<div class="ni" id="nav-usuarios" onclick="show('usuarios',this)"><span class="ico">👥</span>Usuarios y Accesos</div>
 </nav>
 <main>
 <div class="sec active" id="sec-dashboard">
@@ -6229,12 +6229,21 @@ function authApplySession() {
 
 function authFilterNav() {
   if (!AUTH_SESSION) return;
-  const isSuperOrAdmin = AUTH_SESSION.rol === 'superadmin' || AUTH_SESSION.rol === 'admin';
-  if (isSuperOrAdmin) return; // See everything
+  const isSuperAdmin = AUTH_SESSION.rol === 'superadmin';
+  const isAdmin      = AUTH_SESSION.rol === 'admin';
 
-  // Hide nav items user can't access
-  document.querySelectorAll('[data-module]').forEach(el => {
-    const mod = el.getAttribute('data-module');
+  // Usuarios nav — only superadmin sees it
+  const navUsr = document.getElementById('nav-usuarios');
+  if (navUsr) navUsr.style.display = isSuperAdmin ? '' : 'none';
+
+  if (isSuperAdmin || isAdmin) return; // See everything else
+
+  // Hide nav items user can't access (uses onclick attribute to detect module)
+  document.querySelectorAll('.ni[onclick]').forEach(el => {
+    const match = el.getAttribute('onclick').match(/show\('([^']+)'/);
+    if (!match) return;
+    const mod = match[1];
+    if (mod === 'dashboard') return; // always visible
     const canAccess = AUTH_SESSION.modulos.includes(mod);
     el.style.display = canAccess ? '' : 'none';
   });
