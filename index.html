@@ -3251,7 +3251,7 @@ tr:hover td{background:var(--green-pale);}
 <th>Contacto</th><th>Teléfono</th><th>RFC / NIT</th>
 <th>Cultivos / Servicio</th><th>Crédito</th><th></th>
 </tr></thead>
-</tbody>
+<tbody id="prov-tbody"></tbody>
 </table>
 </div>
 </div>
@@ -3357,6 +3357,229 @@ tr:hover td{background:var(--green-pale);}
 
 <script>
 // ══════════════════════════════════════════════════════════════════
+// FUNCIONES RECONSTRUIDAS — renderAll, renderInvAll, provTab, etc.
+// ══════════════════════════════════════════════════════════════════
+
+let provActivaTipo = 'producto';
+let provEditId     = null;
+
+function renderAll() {
+  try { renderAL(); }   catch(e) {}
+  try { renderBL(); }   catch(e) {}
+  try { renderTL(); }   catch(e) {}
+  try { renderDT(); }   catch(e) {}
+  try { renderRod(); }  catch(e) {}
+  try { renderCap(); }  catch(e) {}
+  try { renderEE(); }   catch(e) {}
+  try { renderVis(); }  catch(e) {}
+  try { renderVP(); }   catch(e) {}
+  try { renderBas(); }  catch(e) {}
+  try { renderLP(); }   catch(e) {}
+  try { renderFum(); }  catch(e) {}
+  try { renderVgtVentas(); } catch(e) {}
+  try { renderVintVentas(); } catch(e) {}
+  try { renderEmpleados(); }  catch(e) {}
+  try { renderInvAll(); }     catch(e) {}
+  try { renderProveedores(); } catch(e) {}
+  try { renderClientes(); }   catch(e) {}
+  try { renderConductores(); } catch(e) {}
+  try { updateDash(); }       catch(e) {}
+}
+
+function renderInvAll() {
+  try { invEnsureDB(); }        catch(e) {}
+  try { invPopulateSelects(); } catch(e) {}
+  try { renderInvStock(); }     catch(e) {}
+  try { renderIne(); }          catch(e) {}
+  try { renderSal(); }          catch(e) {}
+  try { renderIprod(); }        catch(e) {}
+  try { renderIpres(); }        catch(e) {}
+  try { renderIcli(); }         catch(e) {}
+  try { renderCotList(); }      catch(e) {}
+  try { renderInvMovs(); }      catch(e) {}
+  try { renderDetResumen(); }   catch(e) {}
+}
+
+function populateProvSelects() {
+  // Populate proveedor dropdowns in other modules
+  const opts = '<option value="">— Seleccionar —</option>' +
+    (DB.proveedores||[]).map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+  document.querySelectorAll('select.prov-select').forEach(s => { s.innerHTML = opts; });
+}
+
+function populateCotSelects() {
+  // Populate cotizador selects
+  try { invEnsureDB(); invPopulateSelects(); } catch(e) {}
+  try { renderCotList(); } catch(e) {}
+}
+
+function invInit() {
+  try { invEnsureDB(); } catch(e) {}
+  try { renderInvAll(); } catch(e) {}
+}
+
+function cotInit() {
+  try { invEnsureDB(); } catch(e) {}
+  try { renderCotList(); } catch(e) {}
+  try { renderIprod(); } catch(e) {}
+}
+
+function renderStock() {
+  try { renderInvStock(); } catch(e) {}
+}
+
+// ── Proveedores module ────────────────────────────────────────────
+function provTab(tipo, el) {
+  provActivaTipo = tipo || 'producto';
+  // Update tab active state
+  document.querySelectorAll('#sec-proveedores .tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  // Update form title
+  const titles = {
+    producto:   'Nuevo Productor',
+    proveedor:  'Nuevo Proveedor',
+    servicio:   'Nuevo Servicio',
+    transporte: 'Nueva Empresa de Transporte',
+  };
+  const formTitle = document.getElementById('prov-form-title');
+  if (formTitle) formTitle.textContent = provEditId ? ('Editando ' + provActivaTipo) : (titles[tipo] || 'Nuevo');
+  // Show/hide tipo-specific fields
+  document.getElementById('prov-campos-producto')?.style &&
+    (document.getElementById('prov-campos-producto').style.display  = tipo === 'producto'   ? '' : 'none');
+  document.getElementById('prov-campos-transporte')?.style &&
+    (document.getElementById('prov-campos-transporte').style.display = tipo === 'transporte' ? '' : 'none');
+  document.getElementById('prov-campos-servicio')?.style &&
+    (document.getElementById('prov-campos-servicio').style.display   = tipo === 'servicio'   ? '' : 'none');
+  // Render list
+  renderProveedores();
+}
+
+function renderProveedores() {
+  const tb    = document.getElementById('prov-tbody');
+  const count = document.getElementById('prov-count');
+  const title = document.getElementById('prov-lista-title');
+  if (!tb) return;
+
+  const tipo  = provActivaTipo || 'producto';
+  const tipoLabels = { producto:'Productores', proveedor:'Proveedores', servicio:'Servicios', transporte:'Transporte' };
+  if (title) title.textContent = tipoLabels[tipo] || 'Registros';
+
+  const list = (DB.proveedores||[]).filter(p => p.tipo === tipo);
+  if (count) count.textContent = list.length + ' registros';
+
+  if (!list.length) {
+    tb.innerHTML = '<tr><td colspan="9"><div class="empty">Sin registros — agrega el primero arriba</div></td></tr>';
+    return;
+  }
+
+  tb.innerHTML = list.map(p => {
+    const cultivos = p.cultivos || p.servTipo || p.transpTipo || '—';
+    return `<tr>
+      <td><span class="chip cb" style="font-size:.6rem;">${p.tipo||'—'}</span></td>
+      <td style="font-weight:600;">${p.nombre||'—'}</td>
+      <td style="font-size:.7rem;">${p.pais||''} ${p.region ? '· '+p.region : ''}</td>
+      <td style="font-size:.7rem;">${p.contacto||'—'}</td>
+      <td style="font-size:.7rem;">${p.tel||'—'}</td>
+      <td style="font-size:.7rem;">${p.rfc||'—'}</td>
+      <td style="font-size:.7rem;">${cultivos}</td>
+      <td style="font-size:.7rem;">${p.credito||'—'}</td>
+      <td style="white-space:nowrap;">
+        <button class="btn bo bsm" onclick="editProv('${p.id}')" style="font-size:.62rem;">✏️</button>
+        <button class="btn bsm" onclick="deleteProv('${p.id}')" style="background:#d63030;color:#fff;font-size:.62rem;">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function saveProv() {
+  const nombre = document.getElementById('prov-nombre')?.value.trim();
+  if (!nombre) { toast('⚠ El nombre es obligatorio', true); return; }
+
+  const data = {
+    tipo:       provActivaTipo,
+    nombre,
+    pais:       document.getElementById('prov-pais')?.value       || '',
+    region:     document.getElementById('prov-region')?.value.trim() || '',
+    rfc:        document.getElementById('prov-rfc')?.value.trim()  || '',
+    contacto:   document.getElementById('prov-contacto')?.value.trim() || '',
+    tel:        document.getElementById('prov-tel')?.value.trim()  || '',
+    email:      document.getElementById('prov-email')?.value.trim() || '',
+    banco:      document.getElementById('prov-banco')?.value.trim() || '',
+    credito:    document.getElementById('prov-credito')?.value.trim() || '',
+    cultivos:   document.getElementById('prov-cultivos')?.value.trim() || '',
+    certs:      document.getElementById('prov-certs')?.value.trim() || '',
+    servTipo:   document.getElementById('prov-serv-tipo')?.value.trim() || '',
+    tarifa:     document.getElementById('prov-tarifa')?.value.trim() || '',
+    transpTipo: document.getElementById('prov-transp-tipo')?.value.trim() || '',
+    unidades:   document.getElementById('prov-unidades')?.value.trim() || '',
+    capacidad:  document.getElementById('prov-capacidad')?.value.trim() || '',
+    obs:        document.getElementById('prov-obs')?.value.trim()  || '',
+  };
+
+  if (provEditId) {
+    const p = (DB.proveedores||[]).find(x => x.id === provEditId);
+    if (p) Object.assign(p, data);
+    provEditId = null;
+  } else {
+    if (!DB.proveedores) DB.proveedores = [];
+    DB.proveedores.push({ id: uid(), ts: now(), ...data });
+  }
+
+  save();
+  cancelEditProv();
+  renderProveedores();
+  populateProvSelects();
+  toast('✅ Proveedor guardado');
+}
+
+function editProv(id) {
+  const p = (DB.proveedores||[]).find(x => x.id === id);
+  if (!p) return;
+  provEditId = id;
+  provActivaTipo = p.tipo || 'producto';
+
+  const fields = ['nombre','pais','region','rfc','contacto','tel','email','banco','credito',
+                  'cultivos','certs','obs'];
+  fields.forEach(f => {
+    const el = document.getElementById('prov-'+f);
+    if (el) el.value = p[f] || '';
+  });
+  ['serv-tipo','tarifa','transp-tipo','unidades','capacidad'].forEach(f => {
+    const key = f.replace('-','');
+    const el  = document.getElementById('prov-'+f);
+    if (el) el.value = p[key] || p[f.replace('-','')] || '';
+  });
+
+  const tab = document.getElementById('prov-tab-'+p.tipo);
+  provTab(p.tipo, tab);
+  const btn = document.getElementById('prov-btn-cancel');
+  if (btn) btn.style.display = '';
+  document.getElementById('sec-proveedores').scrollIntoView({behavior:'smooth'});
+}
+
+function cancelEditProv() {
+  provEditId = null;
+  ['nombre','region','rfc','contacto','tel','email','banco','credito','cultivos','certs',
+   'obs','tarifa','unidades','capacidad'].forEach(f => {
+    const el = document.getElementById('prov-'+f);
+    if (el) el.value = '';
+  });
+  const btn = document.getElementById('prov-btn-cancel');
+  if (btn) btn.style.display = 'none';
+  provTab(provActivaTipo, document.getElementById('prov-tab-'+provActivaTipo));
+}
+
+function deleteProv(id) {
+  if (!confirm('¿Eliminar este registro?')) return;
+  DB.proveedores = (DB.proveedores||[]).filter(p => p.id !== id);
+  save();
+  renderProveedores();
+  populateProvSelects();
+  toast('✓ Eliminado');
+}
+
+
+// ══════════════════════════════════════════════════════════════════
 // SISTEMA DE AUTENTICACIÓN Y USUARIOS
 // ══════════════════════════════════════════════════════════════════
 
@@ -3374,11 +3597,11 @@ const AUTH_ROLES = {
 };
 
 const AUTH_ALL_MODULES = [
-  'dashboard','limptrans','desptrans','limpbodega','fumigacion','roedores',
-  'capacitacion','enfermos','acceso-lavado','visitas','vidrioplas','basculas',
-  'lavprod','inv-stock','inv-entrada','inv-cotizador','maquila','inv-salida',
+  'dashboard','transporte-limpieza','despacho','bodega-limpieza','fumigacion','roedores',
+  'capacitacion','empleados-enfermos','acceso-lavado','visitas','vidrio','basculas',
+  'lavado-prod','inv-stock','inv-entrada','inv-cotizador','maquila','inv-salida',
   'ventas-gt','ventas-int','reporte','inv-trazabilidad','inv-config',
-  'proveedores','pedidos-walmart','usuarios',
+  'proveedores','pedidos-walmart','empleados-db','usuarios',
 ];
 
 // Modules unlocked by role by default
@@ -3386,9 +3609,9 @@ const AUTH_ROLE_DEFAULTS = {
   superadmin: AUTH_ALL_MODULES,
   admin:      AUTH_ALL_MODULES,
   supervisor: AUTH_ALL_MODULES.filter(m => m !== 'usuarios'),
-  operador:   ['dashboard','limptrans','desptrans','limpbodega','roedores',
-               'capacitacion','enfermos','acceso-lavado','visitas','vidrioplas',
-               'basculas','lavprod'],
+  operador:   ['dashboard','transporte-limpieza','despacho','bodega-limpieza','roedores',
+               'capacitacion','empleados-enfermos','acceso-lavado','visitas','vidrio',
+               'basculas','lavado-prod'],
 };
 
 // ── Ensure default admin exists ───────────────────────────────────
@@ -3410,13 +3633,29 @@ function authEnsureDB() {
     return;
   }
 
-  // Patch: ensure fields exist on existing users without overwriting data
+  // Patch: ensure fields exist + migrate old module names to new ones
+  const OLD_TO_NEW = {
+    'limptrans':'transporte-limpieza','desptrans':'despacho','limpbodega':'bodega-limpieza',
+    'enfermos':'empleados-enfermos','vidrioplas':'vidrio','lavprod':'lavado-prod',
+    'empleados-db-module':'empleados-db',
+  };
   let changed = false;
   DB.usuarios.forEach(u => {
     if (!u.modulos) {
       u.modulos = (u.rol === 'superadmin' || u.rol === 'admin')
         ? AUTH_ALL_MODULES
         : (AUTH_ROLE_DEFAULTS[u.rol] || []);
+      changed = true;
+    } else {
+      // Migrate old names
+      const migrated = u.modulos.map(m => OLD_TO_NEW[m] || m);
+      if (JSON.stringify(migrated) !== JSON.stringify(u.modulos)) {
+        u.modulos = migrated;
+        changed = true;
+      }
+    }
+    if (u.rol === 'superadmin' || u.rol === 'admin') {
+      u.modulos = AUTH_ALL_MODULES;
       changed = true;
     }
     if (u.activo === undefined) { u.activo = true; changed = true; }
@@ -3553,15 +3792,16 @@ function authLogout() {
 
 // ── User CRUD ─────────────────────────────────────────────────────
 const AUTH_MODULO_LABELS = {
-  'dashboard':'Dashboard','limptrans':'Limpieza Transporte','desptrans':'Despacho Transporte',
-  'limpbodega':'Limpieza Bodega','fumigacion':'Fumigación','roedores':'Control Roedores',
-  'capacitacion':'Capacitación','enfermos':'Empleados Enfermos','acceso-lavado':'Acceso y Lavado',
-  'visitas':'Visitas','vidrioplas':'Vidrio y Plástico','basculas':'Básculas',
-  'lavprod':'Lavado Producto','inv-stock':'Inventario Stock','inv-entrada':'Ingresos Bodega',
+  'dashboard':'Dashboard','transporte-limpieza':'Limpieza Transporte','despacho':'Despacho Transporte',
+  'bodega-limpieza':'Limpieza Bodega','fumigacion':'Fumigación','roedores':'Control Roedores',
+  'capacitacion':'Capacitación','empleados-enfermos':'Empleados Enfermos','acceso-lavado':'Acceso y Lavado',
+  'visitas':'Visitas','vidrio':'Vidrio y Plástico','basculas':'Básculas',
+  'lavado-prod':'Lavado Producto','inv-stock':'Inventario Stock','inv-entrada':'Ingresos Bodega',
   'inv-cotizador':'Cotizador','maquila':'Gastos Generales','inv-salida':'Despachos',
   'ventas-gt':'Ventas GT','ventas-int':'Ventas Int.','reporte':'Reportes',
   'inv-trazabilidad':'Trazabilidad','inv-config':'Config Inventario',
-  'proveedores':'Proveedores','pedidos-walmart':'Pedidos Walmart','usuarios':'Usuarios',
+  'proveedores':'Proveedores','pedidos-walmart':'Pedidos Walmart',
+  'empleados-db':'Base Empleados','usuarios':'Usuarios',
 };
 
 function usrRolChange() {
@@ -6699,23 +6939,20 @@ function renderLP() {
 // Definición de módulos BPM con sus reglas
 const BPM_MODULOS = [
   // DIARIOS — activos solo si hay maquila ese día
-  { id:'al',  nombre:'Acceso y Lavado de Manos', icono:'🖐',  tipo:'diario',   seccion:'acceso-lavado',  color:'#00a86b' },
-  { id:'bl',  nombre:'Limpieza Bodega',           icono:'🏭',  tipo:'diario',   seccion:'limpbodega',     color:'#00a86b' },
-  { id:'rod', nombre:'Control Roedores',           icono:'🐭',  tipo:'diario',   seccion:'roedores',       color:'#00a86b' },
-  { id:'tl',  nombre:'Limpieza Transporte',        icono:'🚛',  tipo:'diario',   seccion:'limptrans',      color:'#00a86b' },
-  { id:'maq', nombre:'Gastos Generales (Maquila)', icono:'⚙️', tipo:'maestro',  seccion:'maquila',        color:'#4a9eff' },
-  // CON ENTREGA — solo si hay pedido Walmart hoy
-  { id:'dt',  nombre:'Despacho Transporte',        icono:'📦',  tipo:'entrega',  seccion:'desptrans',      color:'#f26822' },
-  { id:'vgt', nombre:'Ventas GT / Walmart',        icono:'🛒',  tipo:'entrega',  seccion:'ventas-gt',      color:'#f26822' },
-  // EVENTUALES — nunca generan alerta
-  { id:'ee',  nombre:'Empleados Enfermos',         icono:'🏥',  tipo:'eventual', seccion:'enfermos',       color:'#888' },
-  { id:'cap', nombre:'Registro Capacitación',      icono:'📚',  tipo:'eventual', seccion:'capacitacion',   color:'#888' },
-  { id:'vis', nombre:'Visitas',                    icono:'👤',  tipo:'eventual', seccion:'visitas',        color:'#888' },
-  // PERIÓDICOS — semanales/eventuales informativos
-  { id:'fum', nombre:'Control Fumigación',         icono:'💨',  tipo:'periodico', seccion:'fumigacion',    color:'#a078ff' },
-  { id:'vp',  nombre:'Vidrio y Plástico',          icono:'🔍',  tipo:'periodico', seccion:'vidrioplas',    color:'#a078ff' },
-  { id:'bas', nombre:'Básculas / Calibración',     icono:'⚖️',  tipo:'periodico', seccion:'basculas',      color:'#a078ff' },
-  { id:'lp',  nombre:'Lavado de Producto',         icono:'💧',  tipo:'periodico', seccion:'lavprod',       color:'#a078ff' },
+  { id:'al',  nombre:'Acceso y Lavado de Manos', icono:'🖐',  tipo:'diario',   seccion:'acceso-lavado',     color:'#00a86b' },
+  { id:'bl',  nombre:'Limpieza Bodega',           icono:'🏭',  tipo:'diario',   seccion:'bodega-limpieza',   color:'#00a86b' },
+  { id:'rod', nombre:'Control Roedores',           icono:'🐭',  tipo:'diario',   seccion:'roedores',          color:'#00a86b' },
+  { id:'tl',  nombre:'Limpieza Transporte',        icono:'🚛',  tipo:'diario',   seccion:'transporte-limpieza',color:'#00a86b' },
+  { id:'maq', nombre:'Gastos Generales (Maquila)', icono:'⚙️', tipo:'maestro',  seccion:'maquila',           color:'#4a9eff' },
+  { id:'dt',  nombre:'Despacho Transporte',        icono:'📦',  tipo:'entrega',  seccion:'despacho',          color:'#f26822' },
+  { id:'vgt', nombre:'Ventas GT / Walmart',        icono:'🛒',  tipo:'entrega',  seccion:'ventas-gt',         color:'#f26822' },
+  { id:'ee',  nombre:'Empleados Enfermos',         icono:'🏥',  tipo:'eventual', seccion:'empleados-enfermos',color:'#888' },
+  { id:'cap', nombre:'Registro Capacitación',      icono:'📚',  tipo:'eventual', seccion:'capacitacion',      color:'#888' },
+  { id:'vis', nombre:'Visitas',                    icono:'👤',  tipo:'eventual', seccion:'visitas',           color:'#888' },
+  { id:'fum', nombre:'Control Fumigación',         icono:'💨',  tipo:'periodico',seccion:'fumigacion',        color:'#a078ff' },
+  { id:'vp',  nombre:'Vidrio y Plástico',          icono:'🔍',  tipo:'periodico',seccion:'vidrio',            color:'#a078ff' },
+  { id:'bas', nombre:'Básculas / Calibración',     icono:'⚖️',  tipo:'periodico',seccion:'basculas',          color:'#a078ff' },
+  { id:'lp',  nombre:'Lavado de Producto',         icono:'💧',  tipo:'periodico',seccion:'lavado-prod',       color:'#a078ff' },
 ];
 
 // Nombres legibles de tipo
