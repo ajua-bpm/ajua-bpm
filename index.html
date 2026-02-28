@@ -3109,7 +3109,7 @@ tr:hover td{background:var(--green-pale);}
         </label>
 </div>
 </div>
-<div class="fa"><button class="btn bp" onclick="saveEmpleado()">+ Agregar Empleado</button></div>
+<div class="fa" style="gap:8px;flex-wrap:wrap;"><button class="btn bp" id="emp-save-btn" onclick="saveEmpleado()">➕ Agregar Empleado</button><button class="btn bo" id="emp-cancel-btn" onclick="cancelEditEmpleado()" style="display:none;">✕ Cancelar</button></div>
 </div>
 <div class="tw">
 <div class="twh" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
@@ -3354,6 +3354,7 @@ tr:hover td{background:var(--green-pale);}
     </div>
   </div>
 </div>
+
 
 
 <script>
@@ -5111,28 +5112,42 @@ function show(id,el){closeNavOnMobile();
       toast('⚠ No tienes acceso a este módulo', true); return;
     }
   }
-  if (id === 'usuarios') {
-    cancelEditUsuario();
-    renderUsuarios();
-  }
-  if (id === 'proveedores') {
-    const activeTab = document.querySelector('#sec-proveedores .tab.active');
-    provTab(provActivaTipo, activeTab);
-  }
-  if (['inv-stock','inv-entrada','inv-cotizador','maquila','inv-salida',
-       'ventas-gt','ventas-int','reporte','inv-trazabilidad','inv-config',
-       'proveedores','pedidos-walmart'].includes(id)) {
-    try { renderInvAll(); } catch(e) { console.error('renderAll error:', e); }
-    if (id==='pedidos-walmart') { try { invEnsureDB(); pwInit(); } catch(e) { console.error('pwInit error:', e); } }
-  }
-  if (id === 'empleados-db') {
-    renderEmpleados();
-    populateAllRespSelects();
-  }
+  // Switch active section first
   document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
   document.getElementById('sec-'+id)?.classList.add('active');
   if(el) el.classList.add('active');
+
+  // Then render module-specific data
+  if (id === 'dashboard')         { try { updateDash(); } catch(e) {} }
+  if (id === 'acceso-lavado')     { try { alBuildEmpTable(); renderAL(); } catch(e) {} }
+  if (id === 'transporte-limpieza'){ try { renderTL(); } catch(e) {} }
+  if (id === 'despacho')          { try { renderDT(); } catch(e) {} }
+  if (id === 'bodega-limpieza')   { try { renderBL(); } catch(e) {} }
+  if (id === 'fumigacion')        { try { renderFum(); } catch(e) {} }
+  if (id === 'roedores')          { try { renderRod(); } catch(e) {} }
+  if (id === 'capacitacion')      { try { renderCap(); } catch(e) {} }
+  if (id === 'empleados-enfermos'){ try { renderEE(); } catch(e) {} }
+  if (id === 'visitas')           { try { renderVis(); } catch(e) {} }
+  if (id === 'vidrio')            { try { renderVP(); } catch(e) {} }
+  if (id === 'basculas')          { try { renderBas(); renderCalib(); } catch(e) {} }
+  if (id === 'lavado-prod')       { try { renderLP(); } catch(e) {} }
+  if (id === 'usuarios')          { try { cancelEditUsuario(); renderUsuarios(); } catch(e) {} }
+  if (id === 'empleados-db')      { try { renderEmpleados(); populateAllRespSelects(); } catch(e) {} }
+  if (id === 'proveedores') {
+    try {
+      const activeTab = document.querySelector('#sec-proveedores .tab.active');
+      provTab(provActivaTipo, activeTab);
+    } catch(e) {}
+  }
+  if (['inv-stock','inv-entrada','inv-cotizador','maquila','inv-salida',
+       'ventas-gt','ventas-int','reporte','inv-trazabilidad','inv-config','pedidos-walmart'].includes(id)) {
+    try { renderInvAll(); } catch(e) {}
+    if (id==='maquila')         { try { maqInit(); } catch(e) {} }
+    if (id==='pedidos-walmart') { try { invEnsureDB(); pwInit(); } catch(e) {} }
+    if (id==='ventas-gt')       { try { renderVgtVentas(); } catch(e) {} }
+    if (id==='ventas-int')      { try { renderVintVentas(); } catch(e) {} }
+  }
 }
 
 function chipSN(v){
