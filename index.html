@@ -3302,6 +3302,74 @@ tr:hover td{background:var(--green-pale);}
 </div>
 </div>
 </main>
+
+<!-- ═══ PANEL DE PRUEBAS ═══ -->
+<div id="test-btn" onclick="testToggle()" title="Panel de Pruebas" style="
+  position:fixed;bottom:20px;right:20px;z-index:8000;
+  width:44px;height:44px;border-radius:50%;
+  background:#1a1a2e;color:#00ff88;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.2rem;cursor:pointer;
+  box-shadow:0 4px 20px rgba(0,255,136,.3);
+  border:2px solid #00ff88;
+  font-family:monospace;font-weight:700;
+  transition:.2s;">🛠</div>
+
+<div id="test-panel" style="
+  display:none;position:fixed;bottom:74px;right:20px;z-index:8000;
+  width:340px;max-height:70vh;overflow-y:auto;
+  background:#1a1a2e;border:1px solid #00ff88;border-radius:12px;
+  padding:16px;font-family:monospace;font-size:.72rem;color:#e0e0e0;
+  box-shadow:0 8px 32px rgba(0,0,0,.6);">
+  <div style="color:#00ff88;font-weight:700;font-size:.82rem;margin-bottom:12px;">
+    🛠 PANEL DE PRUEBAS
+    <span onclick="testToggle()" style="float:right;cursor:pointer;color:#888;">✕</span>
+  </div>
+
+  <!-- Auth status -->
+  <div style="background:#0d0d1a;border-radius:6px;padding:8px;margin-bottom:10px;">
+    <div style="color:#888;font-size:.65rem;margin-bottom:4px;">SESSION</div>
+    <div id="test-session">—</div>
+  </div>
+
+  <!-- DB counts -->
+  <div style="background:#0d0d1a;border-radius:6px;padding:8px;margin-bottom:10px;">
+    <div style="color:#888;font-size:.65rem;margin-bottom:4px;">BASE DE DATOS</div>
+    <div id="test-db-counts">—</div>
+  </div>
+
+  <!-- Users list -->
+  <div style="background:#0d0d1a;border-radius:6px;padding:8px;margin-bottom:10px;">
+    <div style="color:#888;font-size:.65rem;margin-bottom:4px;">USUARIOS EN DB</div>
+    <div id="test-users">—</div>
+  </div>
+
+  <!-- Firebase status -->
+  <div style="background:#0d0d1a;border-radius:6px;padding:8px;margin-bottom:10px;">
+    <div style="color:#888;font-size:.65rem;margin-bottom:4px;">FIREBASE</div>
+    <div id="test-firebase">—</div>
+  </div>
+
+  <!-- Quick login -->
+  <div style="background:#0d0d1a;border-radius:6px;padding:8px;margin-bottom:10px;">
+    <div style="color:#888;font-size:.65rem;margin-bottom:6px;">LOGIN RÁPIDO</div>
+    <div style="display:flex;gap:6px;margin-bottom:6px;">
+      <input id="test-user" placeholder="usuario" style="flex:1;background:#1a1a2e;border:1px solid #333;color:#fff;padding:4px 6px;border-radius:4px;font-size:.7rem;font-family:monospace;">
+      <input id="test-pass" type="password" placeholder="clave" style="flex:1;background:#1a1a2e;border:1px solid #333;color:#fff;padding:4px 6px;border-radius:4px;font-size:.7rem;font-family:monospace;">
+    </div>
+    <button onclick="testLogin()" style="width:100%;background:#00412d;color:#00ff88;border:1px solid #00ff88;border-radius:4px;padding:5px;cursor:pointer;font-family:monospace;font-size:.7rem;">⚡ Login directo</button>
+  </div>
+
+  <!-- Actions -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+    <button onclick="testRefresh()" style="background:#0d0d1a;color:#00ff88;border:1px solid #333;border-radius:4px;padding:5px;cursor:pointer;font-size:.65rem;font-family:monospace;">🔄 Refrescar</button>
+    <button onclick="testForceEnsure()" style="background:#0d0d1a;color:#f5c518;border:1px solid #333;border-radius:4px;padding:5px;cursor:pointer;font-size:.65rem;font-family:monospace;">🔧 Force authEnsure</button>
+    <button onclick="testShowDB()" style="background:#0d0d1a;color:#4a9eff;border:1px solid #333;border-radius:4px;padding:5px;cursor:pointer;font-size:.65rem;font-family:monospace;">📋 Ver DB completa</button>
+    <button onclick="testLogout()" style="background:#0d0d1a;color:#ff6b6b;border:1px solid #333;border-radius:4px;padding:5px;cursor:pointer;font-size:.65rem;font-family:monospace;">🚪 Cerrar sesión</button>
+  </div>
+
+  <div id="test-output" style="margin-top:10px;background:#0d0d1a;border-radius:6px;padding:8px;color:#aaa;white-space:pre-wrap;max-height:200px;overflow-y:auto;display:none;"></div>
+</div>
 </div>
 <div id="toast"></div>
 
@@ -5860,6 +5928,74 @@ tr:hover td{background:var(--green-pale);}
 </div>
 </div>
 </main>
+
+<!-- ═══ PANEL DE PRUEBAS ═══ -->
+<div id="test-btn" onclick="testToggle()" title="Panel de Pruebas" style="
+  position:fixed;bottom:20px;right:20px;z-index:8000;
+  width:44px;height:44px;border-radius:50%;
+  background:#1a1a2e;color:#00ff88;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.2rem;cursor:pointer;
+  box-shadow:0 4px 20px rgba(0,255,136,.3);
+  border:2px solid #00ff88;
+  font-family:monospace;font-weight:700;
+  transition:.2s;">🛠</div>
+
+<div id="test-panel" style="
+  display:none;position:fixed;bottom:74px;right:20px;z-index:8000;
+  width:340px;max-height:70vh;overflow-y:auto;
+  background:#1a1a2e;border:1px solid #00ff88;border-radius:12px;
+  padding:16px;font-family:monospace;font-size:.72rem;color:#e0e0e0;
+  box-shadow:0 8px 32px rgba(0,0,0,.6);">
+  <div style="color:#00ff88;font-weight:700;font-size:.82rem;margin-bottom:12px;">
+    🛠 PANEL DE PRUEBAS
+    <span onclick="testToggle()" style="float:right;cursor:pointer;color:#888;">✕</span>
+  </div>
+
+  <!-- Auth status -->
+  <div style="background:#0d0d1a;border-radius:6px;padding:8px;margin-bottom:10px;">
+    <div style="color:#888;font-size:.65rem;margin-bottom:4px;">SESSION</div>
+    <div id="test-session">—</div>
+  </div>
+
+  <!-- DB counts -->
+  <div style="background:#0d0d1a;border-radius:6px;padding:8px;margin-bottom:10px;">
+    <div style="color:#888;font-size:.65rem;margin-bottom:4px;">BASE DE DATOS</div>
+    <div id="test-db-counts">—</div>
+  </div>
+
+  <!-- Users list -->
+  <div style="background:#0d0d1a;border-radius:6px;padding:8px;margin-bottom:10px;">
+    <div style="color:#888;font-size:.65rem;margin-bottom:4px;">USUARIOS EN DB</div>
+    <div id="test-users">—</div>
+  </div>
+
+  <!-- Firebase status -->
+  <div style="background:#0d0d1a;border-radius:6px;padding:8px;margin-bottom:10px;">
+    <div style="color:#888;font-size:.65rem;margin-bottom:4px;">FIREBASE</div>
+    <div id="test-firebase">—</div>
+  </div>
+
+  <!-- Quick login -->
+  <div style="background:#0d0d1a;border-radius:6px;padding:8px;margin-bottom:10px;">
+    <div style="color:#888;font-size:.65rem;margin-bottom:6px;">LOGIN RÁPIDO</div>
+    <div style="display:flex;gap:6px;margin-bottom:6px;">
+      <input id="test-user" placeholder="usuario" style="flex:1;background:#1a1a2e;border:1px solid #333;color:#fff;padding:4px 6px;border-radius:4px;font-size:.7rem;font-family:monospace;">
+      <input id="test-pass" type="password" placeholder="clave" style="flex:1;background:#1a1a2e;border:1px solid #333;color:#fff;padding:4px 6px;border-radius:4px;font-size:.7rem;font-family:monospace;">
+    </div>
+    <button onclick="testLogin()" style="width:100%;background:#00412d;color:#00ff88;border:1px solid #00ff88;border-radius:4px;padding:5px;cursor:pointer;font-family:monospace;font-size:.7rem;">⚡ Login directo</button>
+  </div>
+
+  <!-- Actions -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+    <button onclick="testRefresh()" style="background:#0d0d1a;color:#00ff88;border:1px solid #333;border-radius:4px;padding:5px;cursor:pointer;font-size:.65rem;font-family:monospace;">🔄 Refrescar</button>
+    <button onclick="testForceEnsure()" style="background:#0d0d1a;color:#f5c518;border:1px solid #333;border-radius:4px;padding:5px;cursor:pointer;font-size:.65rem;font-family:monospace;">🔧 Force authEnsure</button>
+    <button onclick="testShowDB()" style="background:#0d0d1a;color:#4a9eff;border:1px solid #333;border-radius:4px;padding:5px;cursor:pointer;font-size:.65rem;font-family:monospace;">📋 Ver DB completa</button>
+    <button onclick="testLogout()" style="background:#0d0d1a;color:#ff6b6b;border:1px solid #333;border-radius:4px;padding:5px;cursor:pointer;font-size:.65rem;font-family:monospace;">🚪 Cerrar sesión</button>
+  </div>
+
+  <div id="test-output" style="margin-top:10px;background:#0d0d1a;border-radius:6px;padding:8px;color:#aaa;white-space:pre-wrap;max-height:200px;overflow-y:auto;display:none;"></div>
+</div>
 </div>
 <div id="toast"></div>
 
@@ -5882,6 +6018,116 @@ tr:hover td{background:var(--green-pale);}
   </div>
 </div>
 <script>
+// ══════════════════════════════════════════════════════════════════
+// PANEL DE PRUEBAS
+// ══════════════════════════════════════════════════════════════════
+function testToggle() {
+  const p = document.getElementById('test-panel');
+  if (!p) return;
+  const open = p.style.display !== 'none';
+  p.style.display = open ? 'none' : 'block';
+  if (!open) testRefresh();
+}
+
+function testRefresh() {
+  // Session
+  const sessEl = document.getElementById('test-session');
+  if (sessEl) {
+    if (AUTH_SESSION) {
+      sessEl.innerHTML = `<span style="color:#00ff88;">✓ ${AUTH_SESSION.nombre}</span> <span style="color:#888;">(${AUTH_SESSION.rol})</span>`;
+    } else {
+      sessEl.innerHTML = '<span style="color:#ff6b6b;">✗ Sin sesión</span>';
+    }
+  }
+
+  // DB counts
+  const dbEl = document.getElementById('test-db-counts');
+  if (dbEl && typeof DB !== 'undefined') {
+    const keys = ['tl','dt','bl','fum','rod','cap','ee','al','vis','vp','bas','lp',
+                  'iproductos','ientradas','isalidas','cotizaciones','vgtVentas',
+                  'vintVentas','gastosSemanales','pedidosWalmart','usuarios','empleados','proveedores'];
+    dbEl.innerHTML = keys.map(k => {
+      const count = (DB[k]||[]).length;
+      const color = count > 0 ? '#00ff88' : '#444';
+      return `<span style="color:${color};margin-right:8px;">${k}:${count}</span>`;
+    }).join('');
+  }
+
+  // Users
+  const usersEl = document.getElementById('test-users');
+  if (usersEl) {
+    const users = DB.usuarios || [];
+    if (!users.length) {
+      usersEl.innerHTML = '<span style="color:#ff6b6b;">0 usuarios</span>';
+    } else {
+      usersEl.innerHTML = users.map(u =>
+        `<div style="padding:2px 0;border-bottom:1px solid #222;">
+          <span style="color:${u.activo!==false?'#00ff88':'#ff6b6b'};">●</span>
+          <span style="color:#fff;margin:0 6px;">${u.nombre}</span>
+          <span style="color:#888;">${u.rol}</span>
+          <span style="color:#555;margin-left:6px;">clave:${u.clave||'—'}</span>
+        </div>`
+      ).join('');
+    }
+  }
+
+  // Firebase
+  const fbEl = document.getElementById('test-firebase');
+  if (fbEl) {
+    const status = document.getElementById('fb-status')?.textContent || '—';
+    fbEl.innerHTML = `<span style="color:#4a9eff;">${status}</span>`;
+  }
+}
+
+function testLogin() {
+  const nombre = document.getElementById('test-user')?.value.trim();
+  const clave  = document.getElementById('test-pass')?.value.trim();
+  if (!nombre || !clave) { testOut('⚠ Ingresa usuario y clave'); return; }
+
+  const user = (DB.usuarios||[]).find(u =>
+    u.nombre.toLowerCase() === nombre.toLowerCase() &&
+    u.clave === clave && u.activo !== false
+  );
+  if (!user) {
+    const all = (DB.usuarios||[]).map(u => u.nombre + '(' + u.clave + ')').join(', ');
+    testOut('✗ No encontrado. Usuarios: ' + all);
+    return;
+  }
+  AUTH_SESSION = { id: user.id, nombre: user.nombre, rol: user.rol, modulos: user.modulos||[] };
+  sessionStorage.setItem(AUTH_SESS_KEY, JSON.stringify(AUTH_SESSION));
+  authApplySession();
+  testOut('✓ Login OK: ' + user.nombre);
+  testRefresh();
+}
+
+function testForceEnsure() {
+  authEnsureDB();
+  testRefresh();
+  testOut('authEnsureDB() ejecutado. Usuarios: ' + (DB.usuarios||[]).length);
+}
+
+function testLogout() {
+  authLogout();
+  testRefresh();
+  testOut('Sesión cerrada');
+}
+
+function testShowDB() {
+  const out = JSON.stringify({
+    usuarios: DB.usuarios,
+    session: AUTH_SESSION,
+    sessionStorage: sessionStorage.getItem(AUTH_SESS_KEY),
+  }, null, 2);
+  testOut(out);
+}
+
+function testOut(msg) {
+  const el = document.getElementById('test-output');
+  if (!el) return;
+  el.style.display = 'block';
+  el.textContent = msg;
+}
+
 // ══════════════════════════════════════════════════════════════════
 // SISTEMA DE AUTENTICACIÓN Y USUARIOS
 // ══════════════════════════════════════════════════════════════════
