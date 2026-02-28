@@ -7305,6 +7305,8 @@ async function initFirebase(firebaseConfig) {
         }
       } catch(e) {}
       fbShowStatus('online');
+      // Re-run auth ensure after Firebase data loads
+      setTimeout(() => { try { authEnsureDB(); } catch(e) {} }, 500);
     });
 
     fbShowStatus('online');
@@ -13410,7 +13412,14 @@ window.addEventListener('DOMContentLoaded', () => {
       hint.style.display = 'block';
       hint.style.background = 'rgba(0,217,139,.08)';
       hint.style.borderColor = 'rgba(0,217,139,.3)';
-      // No hint shown - contact administrator for credentials
+      hint.style.color = 'var(--acc)';
+      hint.textContent = 'Usuario: Admin  |  Clave: admin123';
+      // Debug: show user count
+      setTimeout(() => {
+        const count = (DB.usuarios||[]).length;
+        const names = (DB.usuarios||[]).map(u=>u.nombre).join(', ');
+        hint.textContent = 'Admin / admin123 — Usuarios en DB: ' + count + (names ? ' ('+names+')' : '');
+      }, 1500);
     }
   }
 });
