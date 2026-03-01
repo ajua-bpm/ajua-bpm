@@ -611,8 +611,12 @@ tr:hover td{background:var(--green-pale);}
 
 /* ─── RESPONSIVE ──────────────────────────────────── */
 @media(max-width:768px){
-  #sec-dashboard>div[style*="grid"]{grid-template-columns:1fr!important;}
+  /* Layout */
   .app{grid-template-columns:1fr;grid-template-rows:56px 1fr;}
+  main{padding:10px 8px;overflow-x:hidden;}
+  .card{padding:12px 10px;margin-bottom:10px;}
+
+  /* Nav drawer */
   nav{
     display:flex;
     position:fixed;
@@ -625,41 +629,61 @@ tr:hover td{background:var(--green-pale);}
     padding-top:60px;
   }
   nav.open{left:0;}
-  .nav-overlay{
-    display:none;
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,.45);
-    z-index:1999;
-  }
+  .nav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1999;}
   .nav-overlay.open{display:block;}
   .hamburger{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    width:40px; height:40px;
-    background:rgba(255,255,255,.15);
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
-    margin-right:8px;
-    font-size:1.3rem;
-    color:var(--cream);
-    flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    width:40px;height:40px;background:rgba(255,255,255,.15);
+    border:none;border-radius:8px;cursor:pointer;
+    margin-right:8px;font-size:1.3rem;color:var(--cream);flex-shrink:0;
   }
-  header{
-    display:flex;
-    align-items:center;
-    padding:0 12px;
-  }
-  .logo{font-size:.95rem;}
-  .stats{grid-template-columns:repeat(2,1fr);}
-  .g3,.g4,.g5{grid-template-columns:1fr;}
-  main{padding:12px 10px;}
-  .card{padding:14px 12px;}
-  .fgrid.g3,.fgrid.g2{grid-template-columns:1fr;}
-  table{font-size:.72rem;}
+  header{display:flex;align-items:center;padding:0 12px;}
+  .logo{font-size:.9rem;}
+
+  /* Forms — single column */
+  .fgrid,.fgrid.g2,.fgrid.g3,.fgrid.g4,.fgrid.g5,
+  .g2,.g3,.g4,.g5{grid-template-columns:1fr!important;}
+  .fg{margin-bottom:8px;}
+  input,select,textarea{font-size:16px!important;} /* prevent iOS zoom */
+
+  /* Stats cards — 2 col */
+  .stats{grid-template-columns:repeat(2,1fr);gap:8px;}
+  .scard{padding:12px 10px;}
+  .sval{font-size:1.6rem;}
+
+  /* Dashboard grids */
+  #sec-dashboard>div[style*="grid"]{grid-template-columns:1fr!important;}
+
+  /* Tables — horizontal scroll */
+  .tw{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  table{font-size:.68rem;min-width:500px;}
+  th,td{padding:6px 8px;white-space:nowrap;}
+
+  /* Buttons */
   .btn{font-size:.72rem;padding:7px 10px;}
+  .fa{flex-wrap:wrap;gap:6px;}
+  .fa .btn{flex:1;min-width:120px;text-align:center;}
+
+  /* Chips */
+  .chip{font-size:.6rem;padding:2px 6px;}
+
+  /* Page headers */
+  .ph h1{font-size:1.1rem;}
+  .ph p{font-size:.72rem;}
+
+  /* Tabs */
+  .tabs{flex-wrap:wrap;gap:4px;}
+  .tab{font-size:.7rem;padding:6px 10px;}
+
+  /* Hide non-essential columns in tables on mobile */
+  .tw table .hide-mobile{display:none;}
+}
+
+/* Very small screens */
+@media(max-width:380px){
+  .stats{grid-template-columns:1fr 1fr;}
+  .sval{font-size:1.4rem;}
+  main{padding:8px 6px;}
 }
 @media(min-width:769px){
   .hamburger{display:none;}
@@ -675,6 +699,22 @@ tr:hover td{background:var(--green-pale);}
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="AJÚA BPM">
   <link rel="apple-touch-icon" href="icon-192.png">
+<!-- Firebase ESM — preloaded to avoid dynamic import failures -->
+<script type="module">
+  import { initializeApp }    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getFirestore, doc, getDoc, setDoc, onSnapshot,
+           enableMultiTabIndexedDbPersistence }
+           from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+  window._fbInitializeApp = initializeApp;
+  window._fbGetFirestore  = getFirestore;
+  window._fbDoc           = doc;
+  window._fbGetDoc        = getDoc;
+  window._fbSetDoc        = setDoc;
+  window._fbOnSnapshot    = onSnapshot;
+  window._fbPersistence   = enableMultiTabIndexedDbPersistence;
+  window._fbModulesReady  = true;
+  window.dispatchEvent(new Event('fb-modules-ready'));
+</script>
 </head>
 <body>
 <div id="login-screen" style="
@@ -5006,9 +5046,20 @@ function fbShowStatus(status) {
 // ── Firebase init ─────────────────────────────────────────────────
 async function initFirebase(firebaseConfig) {
   try {
-    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-    const { getFirestore, doc, getDoc, setDoc, onSnapshot, enableMultiTabIndexedDbPersistence }
-      = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    // Wait for ESM modules preloaded in <head> (up to 8 seconds)
+    if (!window._fbModulesReady) {
+      await new Promise((resolve, reject) => {
+        const t = setTimeout(() => reject(new Error('Firebase modules timeout')), 8000);
+        window.addEventListener('fb-modules-ready', () => { clearTimeout(t); resolve(); }, {once:true});
+      });
+    }
+    const initializeApp                    = window._fbInitializeApp;
+    const getFirestore                     = window._fbGetFirestore;
+    const doc                              = window._fbDoc;
+    const getDoc                           = window._fbGetDoc;
+    const setDoc                           = window._fbSetDoc;
+    const onSnapshot                       = window._fbOnSnapshot;
+    const enableMultiTabIndexedDbPersistence = window._fbPersistence;
 
     const app = initializeApp(firebaseConfig);
     const db  = getFirestore(app);
@@ -5112,42 +5163,71 @@ function show(id,el){closeNavOnMobile();
       toast('⚠ No tienes acceso a este módulo', true); return;
     }
   }
-  // Switch active section first
+  // Switch active section
   document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
   document.getElementById('sec-'+id)?.classList.add('active');
   if(el) el.classList.add('active');
 
-  // Then render module-specific data
-  if (id === 'dashboard')         { try { updateDash(); } catch(e) {} }
-  if (id === 'acceso-lavado')     { try { alBuildEmpTable(); renderAL(); } catch(e) {} }
-  if (id === 'transporte-limpieza'){ try { renderTL(); } catch(e) {} }
-  if (id === 'despacho')          { try { renderDT(); } catch(e) {} }
-  if (id === 'bodega-limpieza')   { try { renderBL(); } catch(e) {} }
-  if (id === 'fumigacion')        { try { renderFum(); } catch(e) {} }
-  if (id === 'roedores')          { try { renderRod(); } catch(e) {} }
-  if (id === 'capacitacion')      { try { renderCap(); } catch(e) {} }
-  if (id === 'empleados-enfermos'){ try { renderEE(); } catch(e) {} }
-  if (id === 'visitas')           { try { renderVis(); } catch(e) {} }
-  if (id === 'vidrio')            { try { renderVP(); } catch(e) {} }
-  if (id === 'basculas')          { try { renderBas(); renderCalib(); } catch(e) {} }
-  if (id === 'lavado-prod')       { try { renderLP(); } catch(e) {} }
-  if (id === 'usuarios')          { try { cancelEditUsuario(); renderUsuarios(); } catch(e) {} }
-  if (id === 'empleados-db')      { try { renderEmpleados(); populateAllRespSelects(); } catch(e) {} }
-  if (id === 'proveedores') {
-    try {
-      const activeTab = document.querySelector('#sec-proveedores .tab.active');
-      provTab(provActivaTipo, activeTab);
-    } catch(e) {}
-  }
-  if (['inv-stock','inv-entrada','inv-cotizador','maquila','inv-salida',
-       'ventas-gt','ventas-int','reporte','inv-trazabilidad','inv-config','pedidos-walmart'].includes(id)) {
-    try { renderInvAll(); } catch(e) {}
-    if (id==='maquila')         { try { maqInit(); } catch(e) {} }
-    if (id==='pedidos-walmart') { try { invEnsureDB(); pwInit(); } catch(e) {} }
-    if (id==='ventas-gt')       { try { renderVgtVentas(); } catch(e) {} }
-    if (id==='ventas-int')      { try { renderVintVentas(); } catch(e) {} }
-  }
+  // Lazy render — only what's needed for this module
+  try {
+    switch(id) {
+      case 'dashboard':
+        updateDash(); break;
+      case 'transporte-limpieza':
+        buildTLChecklist(); renderTL(); break;
+      case 'despacho':
+        buildDTChecklist(); renderDT(); break;
+      case 'bodega-limpieza':
+        buildBLChecklist(); renderBL(); break;
+      case 'roedores':
+        buildRodTrampas(); renderRod(); break;
+      case 'vidrio':
+        buildVPChecklist(); renderVP(); break;
+      case 'basculas':
+        buildBasList(); renderBas(); renderCalib(); break;
+      case 'lavado-prod':
+        buildLPTanques(); renderLP(); break;
+      case 'fumigacion':
+        renderFum(); break;
+      case 'capacitacion':
+        renderCap(); break;
+      case 'empleados-enfermos':
+        renderEE(); break;
+      case 'acceso-lavado':
+        alBuildEmpTable(); renderAL(); break;
+      case 'visitas':
+        renderVis(); break;
+      case 'usuarios':
+        cancelEditUsuario(); renderUsuarios(); break;
+      case 'empleados-db':
+        renderEmpleados(); populateAllRespSelects(); break;
+      case 'proveedores':
+        provTab(provActivaTipo, document.querySelector('#sec-proveedores .tab.active')); break;
+      case 'inv-stock':
+        invEnsureDB(); invPopulateSelects(); renderInvStock(); break;
+      case 'inv-entrada':
+        invEnsureDB(); invPopulateSelects(); renderIne(); break;
+      case 'inv-salida':
+        invEnsureDB(); invPopulateSelects(); renderSal(); break;
+      case 'inv-cotizador':
+        invEnsureDB(); invPopulateSelects(); renderCotList(); break;
+      case 'inv-trazabilidad':
+        invEnsureDB(); renderInvMovs(); break;
+      case 'inv-config':
+        invEnsureDB(); renderIprod(); renderIpres(); renderIcli(); invConfigTab('productos', null); break;
+      case 'maquila':
+        invEnsureDB(); maqInit(); break;
+      case 'pedidos-walmart':
+        invEnsureDB(); pwInit(); break;
+      case 'ventas-gt':
+        invEnsureDB(); renderVgtVentas(); break;
+      case 'ventas-int':
+        invEnsureDB(); renderVintVentas(); break;
+      case 'reporte':
+        invEnsureDB(); renderDetResumen(); break;
+    }
+  } catch(e) { console.error('show error ['+id+']:', e); }
 }
 
 function chipSN(v){
