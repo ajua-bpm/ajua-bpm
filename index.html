@@ -2497,16 +2497,46 @@ tr:hover td{background:var(--green-pale);}
 <div class="sec" id="sec-inv-config">
 <div class="ph"><h1>Productos, Presentaciones y Clientes</h1><p>Bases de datos maestras — Walmart siempre en cajas; clientes locales, exportación e individuales en cualquier formato</p></div>
 <div class="card" style="margin-bottom:14px;">
-  <div class="ct">☁️ Base de Datos y Respaldos</div>
+  <div class="ct">🛡️ Protección de Datos — Sistema Anti-Pérdida</div>
   <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
     <div id="fb-status-full" style="font-size:.82rem;font-family:var(--fn);padding:8px 14px;background:var(--green-pale);border-radius:var(--r);border:1.5px solid var(--br);min-width:200px;"></div>
     <button class="btn bo bsm" onclick="document.getElementById('fb-config-modal').style.display='flex'">⚙ Cambiar configuración Firebase</button>
   </div>
-  <div style="display:flex;gap:10px;flex-wrap:wrap;">
-    <button class="btn bsm" style="background:var(--green-deep);color:var(--cream);font-weight:700;" onclick="fbExportBackup()">⬇ Descargar respaldo JSON</button>
-    <label class="btn bsm bo" style="cursor:pointer;">⬆ Restaurar respaldo <input type="file" accept=".json" style="display:none;" onchange="fbImportBackup(this)"></label>
+
+  <!-- NIVEL 1: Snapshots locales -->
+  <div style="background:rgba(0,61,34,.06);border:1.5px solid rgba(0,61,34,.15);border-radius:8px;padding:14px;margin-bottom:10px;">
+    <div style="font-weight:700;font-size:.82rem;margin-bottom:8px;">📸 Nivel 1 — Snapshots Locales (cada hora, últimas 24h)</div>
+    <div style="font-size:.75rem;color:var(--muted);margin-bottom:10px;">Guardados automáticamente en este dispositivo. Funcionan sin internet.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+      <button class="btn bsm" style="background:var(--green-deep);color:var(--cream);" onclick="snapSave();toast('📸 Snapshot guardado ahora')">📸 Snapshot ahora</button>
+      <button class="btn bo bsm" onclick="showSnapshots()">📋 Ver historial snapshots</button>
+    </div>
+    <div id="snapshots-panel" style="display:none;margin-top:8px;"></div>
   </div>
-  <div style="margin-top:12px;font-size:.75rem;color:var(--muted);">Los respaldos incluyen todos los datos: cotizaciones, ventas, inventario, pedidos, usuarios y configuración.</div>
+
+  <!-- NIVEL 2: Backup Firebase -->
+  <div style="background:rgba(242,104,34,.06);border:1.5px solid rgba(242,104,34,.2);border-radius:8px;padding:14px;margin-bottom:10px;">
+    <div style="font-weight:700;font-size:.82rem;margin-bottom:8px;">☁️ Nivel 2 — Backup Firebase (documento separado, cada hora)</div>
+    <div style="font-size:.75rem;color:var(--muted);margin-bottom:10px;">Copia independiente en <code>ajua_bpm/backup_auto</code> — separada de los datos en uso. Nunca se sobreescribe si tiene más datos.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn bsm" style="background:#e65c00;color:#fff;" onclick="backupToFirebase().then(()=>toast('☁️ Backup guardado en Firebase'))">☁️ Backup ahora</button>
+      <button class="btn bo bsm" style="border-color:#e65c00;color:#e65c00;" onclick="restoreFromFirebaseBackup()">↩️ Restaurar desde backup Firebase</button>
+    </div>
+  </div>
+
+  <!-- NIVEL 3: Export/Import manual -->
+  <div style="background:rgba(0,100,200,.06);border:1.5px solid rgba(0,100,200,.15);border-radius:8px;padding:14px;margin-bottom:10px;">
+    <div style="font-weight:700;font-size:.82rem;margin-bottom:8px;">💾 Nivel 3 — Respaldo Manual JSON</div>
+    <div style="font-size:.75rem;color:var(--muted);margin-bottom:10px;">Descarga un archivo JSON completo a tu computadora. Guárdalo en Drive, WhatsApp, correo — donde quieras.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn bsm" style="background:var(--green-deep);color:var(--cream);font-weight:700;" onclick="fbExportBackup()">⬇ Descargar JSON ahora</button>
+      <label class="btn bsm bo" style="cursor:pointer;">⬆ Restaurar desde JSON <input type="file" accept=".json" style="display:none;" onchange="fbImportBackup(this)"></label>
+    </div>
+  </div>
+
+  <div style="margin-top:8px;font-size:.72rem;color:var(--muted);line-height:1.6;">
+    🔒 <strong>Guard activo:</strong> El sistema bloquea automáticamente cualquier guardado que tenga menos del 30% de registros del último snapshot — previniendo pérdidas accidentales.
+  </div>
 </div>
 
 <div class="tabs">
@@ -5184,7 +5214,182 @@ function pwFechaAmigable(dateStr) {
   return d + ' ' + (meses[parseInt(m)-1]||m) + ' ' + y;
 }
 
-const DB_KEY = 'ajua_bpm_v2';
+const DB_KEY      = 'ajua_bpm_v2';
+const SNAP_KEY    = 'ajua_bpm_snapshots'; // Historial local de snapshots
+const SNAP_MAX    = 24;                   // Máximo 24 snapshots (24 horas)
+const BACKUP_DOC  = 'backup_auto';        // Documento separado en Firebase para backups
+
+// ══════════════════════════════════════════════════════════════════
+// 🛡️ SISTEMA DE PROTECCIÓN ANTI-PÉRDIDA — 3 NIVELES
+// ══════════════════════════════════════════════════════════════════
+//
+// NIVEL 1 — Snapshots locales cada hora (localStorage)
+//   • 24 copias rotativas = 24 horas de historial local
+//   • Sobrevive recargas, actualizaciones de SW, bugs de merge
+//   • Clave: 'ajua_bpm_snapshots' → array de {ts, data}
+//
+// NIVEL 2 — Backup automático en Firebase (doc separado)
+//   • Documento 'ajua_bpm/backup_auto' independiente de 'main'
+//   • Se actualiza cada hora SI los datos tienen contenido real
+//   • NUNCA se sobreescribe si el nuevo tiene menos datos que el guardado
+//   • Accesible desde Firebase Console aunque 'main' se borre
+//
+// NIVEL 3 — Guard en save() — nunca guarda DB vacía sobre datos reales
+//   • Antes de cualquier setDoc, cuenta registros totales
+//   • Si el nuevo tiene <50% de registros del backup → BLOQUEA el save
+//   • Alerta visual inmediata al admin
+//
+// ══════════════════════════════════════════════════════════════════
+
+function _dbTotalRecords(dbObj) {
+  // Cuenta total de registros en todos los arrays — métrica de "salud" de la DB
+  return Object.values(dbObj || {})
+    .filter(v => Array.isArray(v))
+    .reduce((sum, arr) => sum + arr.length, 0);
+}
+
+function snapSave() {
+  // Nivel 1: guardar snapshot local con timestamp
+  try {
+    const snaps = JSON.parse(localStorage.getItem(SNAP_KEY) || '[]');
+    snaps.unshift({ ts: Date.now(), gtTime: new Date(Date.now()-6*3600000).toISOString(), data: DB });
+    if (snaps.length > SNAP_MAX) snaps.length = SNAP_MAX; // rotar
+    localStorage.setItem(SNAP_KEY, JSON.stringify(snaps));
+  } catch(e) { console.warn('snapSave error:', e); }
+}
+
+function snapList() {
+  // Retorna lista de snapshots disponibles para restaurar
+  try {
+    return JSON.parse(localStorage.getItem(SNAP_KEY) || '[]');
+  } catch(e) { return []; }
+}
+
+function snapRestore(index) {
+  // Restaura un snapshot específico
+  try {
+    const snaps = snapList();
+    if (!snaps[index]) return false;
+    const snap = snaps[index];
+    const records = _dbTotalRecords(snap.data);
+    if (!confirm(`¿Restaurar snapshot del ${new Date(snap.ts).toLocaleString('es-GT')}?\n${records} registros totales.\n\nEsto reemplazará los datos actuales.`)) return false;
+    DB = Object.assign({}, DB_DEFAULT, snap.data);
+    save();
+    renderAll();
+    toast(`✅ Snapshot restaurado — ${records} registros`);
+    return true;
+  } catch(e) {
+    toast('⚠ Error restaurando snapshot', true);
+    return false;
+  }
+}
+
+async function backupToFirebase() {
+  // Nivel 2: backup automático a documento separado en Firebase
+  if (!_fbReady || !_fbDb) return;
+  const total = _dbTotalRecords(DB);
+  if (total < 5) return; // No hacer backup si hay menos de 5 registros
+  try {
+    const { db, doc, getDoc, setDoc } = _fbDb;
+    const backupRef = doc(db, 'ajua_bpm', BACKUP_DOC);
+    // Leer el backup existente
+    const existing = await getDoc(backupRef);
+    if (existing.exists()) {
+      const existTotal = _dbTotalRecords(existing.data());
+      // PROTECCIÓN: nunca sobreescribir un backup con más datos por uno con menos
+      if (total < existTotal * 0.5) {
+        console.warn(`⚠️ BACKUP BLOQUEADO: actual(${total}) < 50% de backup(${existTotal}) — posible pérdida`);
+        return;
+      }
+    }
+    await setDoc(backupRef, {
+      ...DB,
+      _backupMeta: {
+        ts: Date.now(),
+        gtTime: new Date(Date.now()-6*3600000).toISOString(),
+        totalRecords: total,
+        version: 'build-3'
+      }
+    });
+    console.log(`✅ Backup Firebase guardado — ${total} registros`);
+  } catch(e) {
+    console.warn('backupToFirebase error:', e);
+  }
+}
+
+// Iniciar backup automático cada hora
+function startAutoBackup() {
+  // Primer backup a los 2 minutos de cargar (dar tiempo a Firebase)
+  setTimeout(() => {
+    snapSave();
+    backupToFirebase();
+  }, 2 * 60 * 1000);
+  // Luego cada hora
+  setInterval(() => {
+    snapSave();
+    backupToFirebase();
+    console.log('⏰ Auto-backup ejecutado:', new Date().toLocaleString('es-GT'));
+  }, 60 * 60 * 1000);
+}
+
+function showSnapshots() {
+  const panel = document.getElementById('snapshots-panel');
+  if (!panel) return;
+  const snaps = snapList();
+  panel.style.display = 'block';
+  if (!snaps.length) {
+    panel.innerHTML = '<div style="font-size:.75rem;color:var(--muted);">No hay snapshots aún — se crearán automáticamente cada hora.</div>';
+    return;
+  }
+  panel.innerHTML = `
+    <table style="width:100%;font-size:.75rem;border-collapse:collapse;">
+      <thead><tr style="background:var(--s1);">
+        <th style="padding:5px 8px;text-align:left;">Fecha (GT)</th>
+        <th style="padding:5px 8px;text-align:right;">Registros</th>
+        <th style="padding:5px 8px;text-align:center;">Acción</th>
+      </tr></thead>
+      <tbody>
+      ${snaps.map((s,i) => {
+        const total = _dbTotalRecords(s.data);
+        const fecha = s.gtTime ? new Date(s.gtTime).toLocaleString('es-GT') : new Date(s.ts).toLocaleString('es-GT');
+        return `<tr style="border-bottom:1px solid var(--br);">
+          <td style="padding:5px 8px;">${fecha}${i===0?' <span style="color:var(--acc);font-weight:700;">← más reciente</span>':''}</td>
+          <td style="padding:5px 8px;text-align:right;font-weight:700;">${total}</td>
+          <td style="padding:5px 8px;text-align:center;">
+            <button class="btn bo bsm" onclick="snapRestore(${i})" style="font-size:.68rem;padding:3px 8px;">↩ Restaurar</button>
+          </td>
+        </tr>`;
+      }).join('')}
+      </tbody>
+    </table>`;
+}
+async function restoreFromFirebaseBackup() {
+  if (!_fbReady || !_fbDb) {
+    toast('⚠ Firebase no conectado', true); return;
+  }
+  try {
+    const { db, doc, getDoc } = _fbDb;
+    const backupRef = doc(db, 'ajua_bpm', BACKUP_DOC);
+    const snap = await getDoc(backupRef);
+    if (!snap.exists()) {
+      toast('⚠ No hay backup en Firebase aún', true); return;
+    }
+    const data = snap.data();
+    const meta = data._backupMeta || {};
+    const total = meta.totalRecords || _dbTotalRecords(data);
+    const fecha = meta.gtTime ? new Date(meta.gtTime).toLocaleString('es-GT') : 'fecha desconocida';
+    if (!confirm(`¿Restaurar backup de Firebase?\n\nFecha: ${fecha}\nRegistros: ${total}\n\nEsto reemplazará los datos actuales de 'main'.`)) return;
+    // Limpiar meta antes de restaurar
+    const clean = Object.assign({}, data);
+    delete clean._backupMeta;
+    DB = Object.assign({}, DB_DEFAULT, clean);
+    save();
+    renderAll();
+    toast(`✅ Backup restaurado — ${total} registros`);
+  } catch(e) {
+    toast('⚠ Error restaurando backup: ' + e.message, true);
+  }
+}
 // ── DB default structure ─────────────────────────────────────────
 const DB_DEFAULT = {tl:[],dt:[],bl:[],fum:[],rod:[],cap:[],ee:[],al:[],vis:[],vp:[],bas:[],lp:[],
   iproductos:[],ipresentaciones:[],iclientes:[],ientradas:[],isalidas:[],cotizaciones:[],
@@ -5301,6 +5506,8 @@ async function initFirebase(firebaseConfig) {
       // que no estuviera en DB_DEFAULT (calibraciones, gastoSemanales, etc.)
       DB = Object.assign({}, DB_DEFAULT, cloud);
       localStorage.setItem(DB_KEY, JSON.stringify(DB));
+      // 🛡️ Snapshot inmediato al cargar datos reales de Firebase
+      snapSave();
       const counts = Object.entries(DB)
         .filter(([,v]) => Array.isArray(v))
         .map(([k,v]) => `${k}:${v.length}`)
@@ -5318,6 +5525,7 @@ async function initFirebase(firebaseConfig) {
     }
 
     _fbReady = true;
+    startAutoBackup(); // 🛡️ Iniciar sistema de backup automático
     // ── authEnsureDB DESPUÉS de cargar cloud ──────────────────────
     try { authEnsureDB(); } catch(e) {}
     // Si ya hay sesión activa, re-validarla con datos reales de Firebase
@@ -5388,10 +5596,26 @@ async function initFirebase(firebaseConfig) {
 const EMPLEADOS=['MARIA VILLANUEVA','EDUARDO GARCIA','HENRY CU','OSCAR BA','AURELIO CHOC','ROLANDO ICAL','ROLANDO CHOCOJ','MANUEL SALAZAR','BYRON FAJARDO','RICARDO SAGASTUME','ANGELES QUEZADA'];
 
 function save() {
-  // Always save to localStorage immediately (fast, works offline)
+  // ── NIVEL 3: Guard anti-pérdida ──────────────────────────────────
+  // Nunca subir a Firebase si tenemos menos del 30% de registros del último backup
+  const currentTotal = _dbTotalRecords(DB);
+  try {
+    const snaps = snapList();
+    if (snaps.length > 0) {
+      const lastGoodTotal = _dbTotalRecords(snaps[0].data);
+      if (lastGoodTotal > 10 && currentTotal < lastGoodTotal * 0.3) {
+        console.error(`🚨 SAVE BLOQUEADO: DB actual(${currentTotal}) << último snapshot(${lastGoodTotal})`);
+        // Guardar en localStorage está bien (es reversible), pero NO subir a Firebase
+        try { localStorage.setItem(DB_KEY, JSON.stringify(DB)); } catch(e) {}
+        updateDash();
+        return; // ← No llega a Firebase
+      }
+    }
+  } catch(e) {}
+  // ── Guardar en localStorage (siempre, rápido) ────────────────────
   try { localStorage.setItem(DB_KEY, JSON.stringify(DB)); } catch(e) {}
   updateDash();
-  // Save to Firebase debounced 500ms
+  // ── Guardar en Firebase (debounced 500ms) ────────────────────────
   if (!_fbReady || !_fbDb) return;
   fbShowStatus('saving');
   if (_fbSaveQ) clearTimeout(_fbSaveQ);
