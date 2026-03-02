@@ -5619,33 +5619,47 @@ async function initFirebase(firebaseConfig) {
 const EMPLEADOS=['MARIA VILLANUEVA','EDUARDO GARCIA','HENRY CU','OSCAR BA','AURELIO CHOC','ROLANDO ICAL','ROLANDO CHOCOJ','MANUEL SALAZAR','BYRON FAJARDO','RICARDO SAGASTUME','ANGELES QUEZADA'];
 
 function save() {
-  // ── NIVEL 3: Guard anti-pérdida ──────────────────────────────────
-  // Nunca subir a Firebase si tenemos menos del 30% de registros del último backup
   const currentTotal = _dbTotalRecords(DB);
+
+  // ══ GUARD 1: Nunca subir a Firebase antes de que cargue ══════════
+  // Si Firebase aún no terminó de leer, solo guardar local
+  // Esto previene el caso: nuevo dispositivo → DB vacía → save() → borra Firebase
+  const canWriteFirebase = _fbReady;
+
+  // ══ GUARD 2: Nunca subir menos datos de los que había ════════════
+  // Compara con el último snapshot local
+  let blockedByGuard = false;
   try {
     const snaps = snapList();
     if (snaps.length > 0) {
       const lastGoodTotal = _dbTotalRecords(snaps[0].data);
       if (lastGoodTotal > 10 && currentTotal < lastGoodTotal * 0.3) {
-        console.error(`🚨 SAVE BLOQUEADO: DB actual(${currentTotal}) << último snapshot(${lastGoodTotal})`);
-        // Guardar en localStorage está bien (es reversible), pero NO subir a Firebase
-        try { localStorage.setItem(DB_KEY, JSON.stringify(DB)); } catch(e) {}
-        updateDash();
-        return; // ← No llega a Firebase
+        console.error(`🚨 FIREBASE BLOQUEADO: actual(${currentTotal}) < 30% de snapshot(${lastGoodTotal})`);
+        blockedByGuard = true;
       }
     }
   } catch(e) {}
-  // ── Guardar en localStorage (siempre, rápido) ────────────────────
+
+  // ── Guardar en localStorage siempre (rápido, reversible) ─────────
   try { localStorage.setItem(DB_KEY, JSON.stringify(DB)); } catch(e) {}
   updateDash();
-  // ── Guardar en Firebase (debounced 500ms) ────────────────────────
-  if (!_fbReady || !_fbDb) return;
+
+  // ── Guardar en Firebase solo si pasa ambos guards ─────────────────
+  if (!canWriteFirebase || blockedByGuard || !_fbDb) return;
+
   fbShowStatus('saving');
   if (_fbSaveQ) clearTimeout(_fbSaveQ);
   _fbSaveQ = setTimeout(async () => {
     try {
       _fbSaving = true;
       const { db, doc, setDoc } = _fbDb;
+      // Verificación final justo antes de escribir
+      const finalTotal = _dbTotalRecords(DB);
+      if (finalTotal === 0) {
+        console.error('🚨 ABORT: intentando guardar DB completamente vacía en Firebase');
+        fbShowStatus('offline');
+        return;
+      }
       await setDoc(doc(db, 'ajua_bpm', 'main'), DB);
       fbShowStatus('online');
     } catch(err) {
@@ -11983,6 +11997,10 @@ function limpiarBaseOperativa() {
     '¿Confirmas? Esta acción NO se puede deshacer.'
   )) return;
 
+  // 🛡️ Backup automático ANTES de limpiar
+  snapSave();
+  backupToFirebase().catch(()=>{});
+
   maqCuentas = {};
   DB.tl   = []; DB.dt  = []; DB.bl  = []; DB.fum = [];
   DB.rod  = []; DB.cap = []; DB.ee  = []; DB.al  = [];
@@ -11995,10 +12013,14 @@ function limpiarBaseOperativa() {
 
   save();
   renderAll();
-  toast('✓ Datos operativos limpiados — base lista para empezar');
+  toast('✓ Operativos limpiados — snapshot guardado como respaldo');
 }
 
 function limpiarTodo() {
+  // 🛡️ Backup automático ANTES de limpiar TODO
+  snapSave();
+  backupToFirebase().catch(()=>{});
+
   if (!confirm(
     '💣 LIMPIAR TODO\n\n' +
     'Se eliminarán ABSOLUTAMENTE TODOS los datos incluyendo:\n' +
