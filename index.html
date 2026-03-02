@@ -783,7 +783,7 @@ tr:hover td{background:var(--green-pale);}
 <div style="font-size:2rem;margin-bottom:6px;">🌿</div>
 <div style="font-family:var(--fh);font-size:1.3rem;font-weight:700;color:var(--acc);">AJÚA</div>
 <div style="font-size:.72rem;color:var(--muted2);margin-top:3px;">Sistema de Control Interno</div>
-<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 01/03/2026 05:16</div>
+<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 01/03/2026 — build 2 · fix Firebase</div>
 </div>
 <div style="margin-bottom:14px;">
 <label style="font-size:.68rem;color:var(--muted2);display:block;margin-bottom:5px;">Usuario</label>
@@ -804,6 +804,11 @@ tr:hover td{background:var(--green-pale);}
       border-radius:4px;font-weight:700;font-size:.84rem;cursor:pointer;
       font-family:var(--fh);letter-spacing:.05em;
     ">Ingresar →</button>
+<div id="login-fb-status" style="
+      margin-top:10px;padding:6px 10px;
+      background:rgba(0,61,34,.06);border:1px solid rgba(0,61,34,.15);
+      border-radius:4px;font-size:.68rem;color:var(--acc);text-align:center;
+    ">⏳ Conectando a la nube...</div>
 <div id="login-err" style="
       display:none;margin-top:12px;padding:8px 12px;
       background:rgba(255,56,88,.12);border:1px solid rgba(255,56,88,.3);
@@ -4231,7 +4236,7 @@ function fbImportBackup(input) {
   reader.onload = async e => {
     try {
       const data = JSON.parse(e.target.result);
-      DB = Object.assign(DB_DEFAULT, data);
+      DB = Object.assign({}, DB_DEFAULT, data);
       save();
       toast('✅ Backup restaurado — ' + Object.keys(data).length + ' colecciones');
       try { renderAll(); } catch(err) {}
@@ -5186,6 +5191,21 @@ function fbShowStatus(status) {
     config:  '<span style="color:#f26822;">⚙ Sin configurar — usando modo local</span>',
   };
   el.innerHTML = map[status] || '';
+  // ✅ Also update login screen indicator
+  const loginStatus = document.getElementById('login-fb-status');
+  if (loginStatus) {
+    if (status === 'online') {
+      loginStatus.style.background = 'rgba(0,168,107,.1)';
+      loginStatus.style.borderColor = 'rgba(0,168,107,.3)';
+      loginStatus.style.color = '#00a86b';
+      loginStatus.textContent = '☁ Conectado — datos cargados correctamente';
+    } else if (status === 'offline') {
+      loginStatus.style.background = 'rgba(214,48,48,.08)';
+      loginStatus.style.borderColor = 'rgba(214,48,48,.3)';
+      loginStatus.style.color = '#d63030';
+      loginStatus.textContent = '⚠ Sin conexión — usando datos locales';
+    }
+  }
 }
 
 // ── Firebase init ─────────────────────────────────────────────────
@@ -5218,16 +5238,35 @@ async function initFirebase(firebaseConfig) {
     const snap   = await getDoc(docRef);
     if (snap.exists()) {
       const cloud = snap.data();
-      // Merge cloud over local (cloud = source of truth)
-      DB = Object.assign({}, DB_DEFAULT, DB, cloud);
+      // ✅ FIX: Cloud is ALWAYS the source of truth.
+      // We only fill in missing keys from DB_DEFAULT — never let local empty arrays overwrite cloud data.
+      const merged = Object.assign({}, DB_DEFAULT, cloud);
+      // If local has data that cloud is missing for a key, keep cloud (cloud wins).
+      // But if cloud key is empty array and local has data, prefer local (safety net).
+      Object.keys(DB_DEFAULT).forEach(k => {
+        const cloudVal = cloud[k];
+        const localVal = DB[k];
+        if (Array.isArray(cloudVal) && cloudVal.length === 0 && Array.isArray(localVal) && localVal.length > 0) {
+          merged[k] = localVal; // local has data cloud doesn't — keep it
+        }
+      });
+      DB = merged;
       localStorage.setItem(DB_KEY, JSON.stringify(DB));
-      console.log('Firebase: datos cargados desde la nube');
+      console.log('✅ Firebase: datos cargados desde la nube —', Object.keys(cloud).length, 'colecciones');
     } else {
-      // First time: push local data up
-      await setDoc(docRef, DB);
-      console.log('Firebase: datos locales subidos por primera vez');
+      // ✅ FIX: Only push to cloud if local DB has actual data (not empty default)
+      const hasData = Object.values(DB).some(v => Array.isArray(v) && v.length > 0);
+      if (hasData) {
+        await setDoc(docRef, DB);
+        console.log('✅ Firebase: datos locales subidos por primera vez');
+      } else {
+        console.warn('⚠️ Firebase: documento no existe y DB local está vacía — no se sobrescribe nada');
+      }
     }
     _fbReady = true;
+
+    // ✅ FIX: Call authEnsureDB AFTER cloud data is loaded — never before
+    try { authEnsureDB(); } catch(e) {}
 
     // Refresh ALL UI with cloud data immediately after load
     try { renderAll(); } catch(e) {}
@@ -11675,7 +11714,15 @@ window.addEventListener('DOMContentLoaded', () => {
   try { provTab('producto', document.getElementById('prov-tab-producto')); } catch(e) { console.error('provTab error:', e); }
   try { populateProvSelects(); } catch(e) { console.error('populateProvSelects error:', e); }
   try { populateCotSelects(); } catch(e) { console.error('populateCotSelects error:', e); }
-  authEnsureDB();
+  // ✅ FIX: Do NOT call authEnsureDB() here — it runs too early before Firebase loads.
+  // authEnsureDB() is called inside initFirebase() after cloud data is loaded.
+  // We only call it now as fallback if Firebase never initializes (offline / no config).
+  setTimeout(() => {
+    if (!_fbReady) {
+      console.warn('⚠️ Firebase no listo en 10s — ejecutando authEnsureDB en modo local');
+      try { authEnsureDB(); } catch(e) {}
+    }
+  }, 10000);
   if (!authResumeSession()) {
     const ls = document.getElementById('login-screen');
     if (ls) ls.style.display = 'flex';
