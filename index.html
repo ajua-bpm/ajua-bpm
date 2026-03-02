@@ -812,7 +812,7 @@ tr:hover td{background:var(--green-pale);}
 <div style="font-size:2rem;margin-bottom:6px;">🌿</div>
 <div style="font-family:var(--fh);font-size:1.3rem;font-weight:700;color:var(--acc);">AJÚA</div>
 <div style="font-size:.72rem;color:var(--muted2);margin-top:3px;">Sistema de Control Interno</div>
-<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 02/03/2026 — build 11 · Reporte General funcional + Gastos Diarios integrados a utilidad</div>
+<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 02/03/2026 — build 12 · Fix bodega: dropdowns productor/proveedor + confirmarRecepcion + layout</div>
 </div>
 <div style="margin-bottom:14px;">
 <label style="font-size:.68rem;color:var(--muted2);display:block;margin-bottom:5px;">Usuario</label>
@@ -3366,7 +3366,7 @@ tr:hover td{background:var(--green-pale);}
 <input id="bodega-fact-productor" placeholder="Ej. FAC-PROD-001" style="border-color:rgba(255,56,88,.4);">
 </div>
 </div>
-<div class="fgrid g2" style="margin-top:8px;">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">
 <div class="fg"><label>🏭 Productor (origen)</label>
 <select id="bodega-productor-sel" style="background:var(--s1);border:1px solid var(--br);color:var(--txt);padding:6px;border-radius:4px;width:100%;font-size:.72rem;">
 <option value="">— Seleccionar Productor —</option>
@@ -4077,7 +4077,10 @@ function saveProv() {
   cancelEditProv();
   renderProveedores();
   populateProvSelects();
-  toast('✅ Proveedor guardado');
+  // Re-populate bodega dropdowns with updated list
+  const recActiva = DB.cotizaciones?.find(c => c.id === cotActivaId);
+  if (recActiva) { try { renderDucaPanel(recActiva); } catch(e) {} }
+  toast('✅ ' + (provActivaTipo==='producto' ? 'Productor' : 'Proveedor') + ' guardado — ya disponible en bodega');
 }
 
 function editProv(id) {
@@ -10491,6 +10494,24 @@ function renderDucaPanel(rec) {
 
   const yaRecibido = !!(rec.bodegaInfo);
 
+  // ── POPULATE producer / provider dropdowns ─────────────────────
+  const prodSel = document.getElementById('bodega-productor-sel');
+  const provSel = document.getElementById('bodega-proveedor-sel');
+  if (prodSel) {
+    const productores = (DB.proveedores||[]).filter(p => p.tipo === 'producto');
+    prodSel.innerHTML = '<option value="">— Seleccionar Productor —</option>' +
+      productores.map(p => `<option value="${p.id}">${p.nombre}${p.pais?' ('+p.pais+')':''}</option>`).join('');
+  }
+  if (provSel) {
+    const proveedores = (DB.proveedores||[]).filter(p => p.tipo === 'proveedor' || p.tipo === 'servicio' || !p.tipo || p.tipo === '');
+    // Also include ALL if no type distinction
+    const allProvs = (DB.proveedores||[]).filter(p => p.tipo !== 'producto');
+    const list = allProvs.length ? allProvs : (DB.proveedores||[]);
+    provSel.innerHTML = '<option value="">— Seleccionar Proveedor MX —</option>' +
+      list.map(p => `<option value="${p.id}">${p.nombre}${p.pais?' ('+p.pais+')':''}</option>`).join('');
+  }
+  // ──────────────────────────────────────────────────────────────
+
   if (rec.bodegaInfo) {
     set('bodega-fecha',       rec.bodegaInfo.fecha||'');
     set('bodega-responsable', rec.bodegaInfo.responsable||'');
@@ -10498,6 +10519,9 @@ function renderDucaPanel(rec) {
     set('duca-numero',        rec.bodegaInfo.duca||rec.ducaInfo?.numero||'');
     set('bodega-fact-proveedor', rec.bodegaInfo.factProveedor||'');
     set('bodega-fact-productor', rec.bodegaInfo.factProductor||'');
+    // Restore saved selections
+    if (prodSel && rec.bodegaInfo.productorId) prodSel.value = rec.bodegaInfo.productorId;
+    if (provSel && rec.bodegaInfo.proveedorId) provSel.value = rec.bodegaInfo.proveedorId;
     const badge = document.getElementById('bodega-recibido-badge');
     if (badge) {
       badge.style.display='block';
@@ -10539,6 +10563,98 @@ function renderDucaPanel(rec) {
     const el = document.getElementById(id);
     if (el) { el.disabled = yaRecibido; if(yaRecibido) el.style.opacity='0.6'; }
   });
+}
+
+// ── CONFIRMAR RECEPCIÓN EN BODEGA ─────────────────────────────────
+function confirmarRecepcion() {
+  const rec = DB.cotizaciones?.find(c => c.id === cotActivaId);
+  if (!rec) { toast('⚠ No hay cotización activa', true); return; }
+  if (rec.bodegaInfo) { toast('⚠ Esta cotización ya fue recibida en bodega', true); return; }
+
+  // Validate required trazabilidad fields
+  const duca      = v('duca-numero-bodega') || v('duca-numero');
+  const factProv  = v('bodega-fact-proveedor');
+  const factProd  = v('bodega-fact-productor');
+  if (!duca)     { toast('⚠ Ingresa el número de DUCA', true); return; }
+  if (!factProv) { toast('⚠ Ingresa el No. de Factura Proveedor MX', true); return; }
+  if (!factProd) { toast('⚠ Ingresa el No. de Factura Productor MX', true); return; }
+
+  const fecha        = v('bodega-fecha') || today();
+  const responsable  = v('bodega-responsable') || '';
+  const obs          = v('bodega-obs') || '';
+
+  // Producer / Provider selections
+  const prodSel       = document.getElementById('bodega-productor-sel');
+  const provSel       = document.getElementById('bodega-proveedor-sel');
+  const productorId   = prodSel?.value || '';
+  const productorNom  = prodSel?.options[prodSel.selectedIndex]?.text || '';
+  const proveedorId   = provSel?.value || '';
+  const proveedorNom  = provSel?.options[provSel.selectedIndex]?.text || '';
+
+  // Collect actual quantities received per product
+  const cantidades = {};
+  (rec.productos||[]).forEach(p => {
+    const cantEl = document.getElementById('bodega-cant-'+p.i);
+    const kgEl   = document.getElementById('bodega-kg-'+p.i);
+    cantidades[p.i] = {
+      cant: parseFloat(cantEl?.value) || p.qty,
+      kg:   parseFloat(kgEl?.value)   || p.kgT,
+    };
+  });
+
+  // Save bodegaInfo on the cotizacion record
+  rec.bodegaInfo = {
+    fecha, responsable, obs,
+    duca, factProveedor: factProv, factProductor: factProd,
+    productorId, productorNombre: productorNom !== '— Seleccionar Productor —' ? productorNom : '',
+    proveedorId, proveedorNombre: proveedorNom !== '— Seleccionar Proveedor MX —' ? proveedorNom : '',
+    cantidades,
+    ts: now(),
+  };
+  if (!['bodega','entregada'].includes(rec.estado)) rec.estado = 'bodega';
+
+  // ── Load inventory (ientradas) ──────────────────────────────────
+  invEnsureDB();
+  if (!DB.ientradas) DB.ientradas = [];
+
+  (rec.productos||[]).forEach(p => {
+    const cant = cantidades[p.i];
+    const lbs  = cant ? (cant.kg * 2.20462) : p.lbsT;
+    const kg   = cant ? cant.kg : p.kgT;
+    const costoLb = lbs > 0 ? (p.costoUd * p.qty) / lbs : 0;
+
+    DB.ientradas.push({
+      id: uid(),
+      ts: now(),
+      fecha,
+      productoId:     p.productoId || '',
+      productoNombre: p.nom || '',
+      lbsTotal:  lbs,
+      kgTotal:   kg,
+      bultos:    cant ? cant.cant : p.qty,
+      unidad:    p.unit || 'bulto',
+      costoTotal: p.costoUd * p.qty,
+      costoLb,
+      source:        'cotizador',
+      cotizacionId:  rec.id,
+      cotizacionNom: rec.nombre || '',
+      duca,
+      productorId, productorNombre: rec.bodegaInfo.productorNombre,
+      proveedorId, proveedorNombre: rec.bodegaInfo.proveedorNombre,
+      factProveedor: factProv,
+      factProductor: factProd,
+      obs,
+    });
+  });
+
+  save();
+  renderDucaPanel(rec);
+  renderCotList();
+  try { renderInvStock(); } catch(e) {}
+  try { renderIne(); } catch(e) {}
+
+  const chain = [rec.bodegaInfo.productorNombre, rec.bodegaInfo.proveedorNombre, 'AJÚA'].filter(Boolean).join(' → ');
+  toast('✅ Recibido en bodega — inventario cargado · ' + chain);
 }
 
 function ducaLoadDoc(input) {
