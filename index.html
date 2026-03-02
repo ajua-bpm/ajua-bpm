@@ -752,19 +752,22 @@ tr:hover td{background:var(--green-pale);}
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="AJÚA BPM">
   <link rel="apple-touch-icon" href="icon-192.png">
-<!-- Firebase ESM — preloaded to avoid dynamic import failures -->
+<!-- Firebase ESM — v10.12 con persistencia moderna -->
 <script type="module">
-  import { initializeApp }    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
   import { getFirestore, doc, getDoc, setDoc, onSnapshot,
-           enableMultiTabIndexedDbPersistence }
-           from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+           initializeFirestore, persistentLocalCache, persistentMultipleTabManager }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
   window._fbInitializeApp = initializeApp;
   window._fbGetFirestore  = getFirestore;
+  window._fbInitFirestore = initializeFirestore;
+  window._fbPersistCache  = persistentLocalCache;
+  window._fbMultiTab      = persistentMultipleTabManager;
   window._fbDoc           = doc;
   window._fbGetDoc        = getDoc;
   window._fbSetDoc        = setDoc;
   window._fbOnSnapshot    = onSnapshot;
-  window._fbPersistence   = enableMultiTabIndexedDbPersistence;
   window._fbModulesReady  = true;
   window.dispatchEvent(new Event('fb-modules-ready'));
 </script>
@@ -5185,6 +5188,7 @@ function fbShowStatus(status) {
   const el = document.getElementById('fb-status');
   if (!el) return;
   const map = {
+    loading: '<span style="color:#f26822;">⏳ Cargando datos...</span>',
     online:  '<span style="color:#00a86b;">☁ En línea</span>',
     saving:  '<span style="color:#f26822;">↑ Guardando...</span>',
     offline: '<span style="color:#d63030;">⚠ Sin conexión — guardando local</span>',
@@ -5194,7 +5198,12 @@ function fbShowStatus(status) {
   // ✅ Also update login screen indicator
   const loginStatus = document.getElementById('login-fb-status');
   if (loginStatus) {
-    if (status === 'online') {
+    if (status === 'loading') {
+      loginStatus.style.background = 'rgba(242,104,34,.08)';
+      loginStatus.style.borderColor = 'rgba(242,104,34,.3)';
+      loginStatus.style.color = '#f26822';
+      loginStatus.textContent = '⏳ Conectando y cargando datos...';
+    } else if (status === 'online') {
       loginStatus.style.background = 'rgba(0,168,107,.1)';
       loginStatus.style.borderColor = 'rgba(0,168,107,.3)';
       loginStatus.style.color = '#00a86b';
@@ -5211,81 +5220,110 @@ function fbShowStatus(status) {
 // ── Firebase init ─────────────────────────────────────────────────
 async function initFirebase(firebaseConfig) {
   try {
-    // Wait for ESM modules preloaded in <head> (up to 8 seconds)
+    // ── Esperar módulos ESM (máx 12 segundos) ────────────────────
     if (!window._fbModulesReady) {
       await new Promise((resolve, reject) => {
-        const t = setTimeout(() => reject(new Error('Firebase modules timeout')), 8000);
+        const t = setTimeout(() => reject(new Error('Firebase modules timeout — revisa conexión')), 12000);
         window.addEventListener('fb-modules-ready', () => { clearTimeout(t); resolve(); }, {once:true});
       });
     }
-    const initializeApp                    = window._fbInitializeApp;
-    const getFirestore                     = window._fbGetFirestore;
-    const doc                              = window._fbDoc;
-    const getDoc                           = window._fbGetDoc;
-    const setDoc                           = window._fbSetDoc;
-    const onSnapshot                       = window._fbOnSnapshot;
-    const enableMultiTabIndexedDbPersistence = window._fbPersistence;
+
+    const initializeApp       = window._fbInitializeApp;
+    const initializeFirestore = window._fbInitFirestore;
+    const getFirestore        = window._fbGetFirestore;
+    const persistentLocalCache     = window._fbPersistCache;
+    const persistentMultipleTabManager = window._fbMultiTab;
+    const doc        = window._fbDoc;
+    const getDoc     = window._fbGetDoc;
+    const setDoc     = window._fbSetDoc;
+    const onSnapshot = window._fbOnSnapshot;
 
     const app = initializeApp(firebaseConfig);
-    const db  = getFirestore(app);
+
+    // ── Persistencia offline moderna (reemplaza enableMultiTabIndexedDbPersistence) ──
+    let db;
+    try {
+      db = initializeFirestore(app, {
+        localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+      });
+      console.log('✅ Firestore con persistencia multi-tab activada');
+    } catch(persistErr) {
+      // Si falla (otra pestaña ya la tiene), usar getFirestore normal
+      try { db = getFirestore(app); } catch(e) { db = getFirestore(); }
+      console.warn('⚠️ Persistencia multi-tab no disponible — usando modo normal:', persistErr.message);
+    }
+
     _fbDb = { db, doc, getDoc, setDoc };
 
-    // Offline persistence (works without internet)
-    try { await enableMultiTabIndexedDbPersistence(db); } catch(e) {}
-
-    // Load from Firestore
+    // ── Cargar datos desde Firestore ──────────────────────────────
+    fbShowStatus('loading');
     const docRef = doc(db, 'ajua_bpm', 'main');
-    const snap   = await getDoc(docRef);
+    let snap;
+    try {
+      snap = await getDoc(docRef);
+    } catch(fetchErr) {
+      console.error('❌ Error al leer Firestore:', fetchErr);
+      fbShowStatus('offline');
+      try { authEnsureDB(); } catch(e) {}
+      return;
+    }
+
     if (snap.exists()) {
       const cloud = snap.data();
-      // ✅ FIX: Cloud is ALWAYS the source of truth.
-      // We only fill in missing keys from DB_DEFAULT — never let local empty arrays overwrite cloud data.
-      const merged = Object.assign({}, DB_DEFAULT, cloud);
-      // If local has data that cloud is missing for a key, keep cloud (cloud wins).
-      // But if cloud key is empty array and local has data, prefer local (safety net).
+      console.log('✅ Firebase: documento encontrado —', Object.keys(cloud).length, 'colecciones');
+
+      // ── Merge inteligente: cloud gana SIEMPRE ──────────────────
+      // Nunca dejar que arrays vacíos locales destruyan datos de cloud
+      const merged = Object.assign({}, DB_DEFAULT);
       Object.keys(DB_DEFAULT).forEach(k => {
-        const cloudVal = cloud[k];
-        const localVal = DB[k];
-        if (Array.isArray(cloudVal) && cloudVal.length === 0 && Array.isArray(localVal) && localVal.length > 0) {
-          merged[k] = localVal; // local has data cloud doesn't — keep it
+        const cv = cloud[k];
+        const lv = DB[k]; // localStorage data (puede ser vacío si es nuevo dispositivo)
+        if (cv !== undefined) {
+          // Cloud tiene el dato — siempre usar cloud
+          merged[k] = cv;
+        } else if (lv !== undefined) {
+          // Cloud no tiene este key — usar local como fallback
+          merged[k] = lv;
         }
+        // Si ninguno tiene dato, queda DB_DEFAULT (array vacío)
       });
       DB = merged;
       localStorage.setItem(DB_KEY, JSON.stringify(DB));
-      console.log('✅ Firebase: datos cargados desde la nube —', Object.keys(cloud).length, 'colecciones');
+      console.log('✅ DB cargada desde cloud. Empleados:', (DB.empleados||[]).length,
+                  '| Usuarios:', (DB.usuarios||[]).length,
+                  '| Cotizaciones:', (DB.cotizaciones||[]).length);
     } else {
-      // ✅ FIX: Only push to cloud if local DB has actual data (not empty default)
+      // Documento NO existe en Firestore
       const hasData = Object.values(DB).some(v => Array.isArray(v) && v.length > 0);
       if (hasData) {
         await setDoc(docRef, DB);
-        console.log('✅ Firebase: datos locales subidos por primera vez');
+        console.log('✅ Firebase: datos locales subidos (primer registro)');
       } else {
-        console.warn('⚠️ Firebase: documento no existe y DB local está vacía — no se sobrescribe nada');
+        console.warn('⚠️ Firebase: documento no existe y DB local vacía — no se sube nada');
       }
     }
-    _fbReady = true;
 
-    // ✅ FIX: Call authEnsureDB AFTER cloud data is loaded — never before
+    _fbReady = true;
+    // ── authEnsureDB DESPUÉS de cargar cloud ──────────────────────
     try { authEnsureDB(); } catch(e) {}
 
-    // Refresh ALL UI with cloud data immediately after load
-    try { renderAll(); } catch(e) {}
-    // Intentional: renderAll already calls populateAllRespSelects
-    // but call again to be sure selects are populated
+    // ── Refrescar toda la UI con datos cloud ──────────────────────
+    try { renderAll(); } catch(e) { console.error('renderAll:', e); }
     setTimeout(() => {
       try { populateAllRespSelects(); } catch(e) {}
-      try { alBuildEmpTable(); } catch(e) {}
+      try { alBuildEmpTable();        } catch(e) {}
       try { capBuildAsistentesList(); } catch(e) {}
-      try { eePopulateSelect(); } catch(e) {}
-    }, 100);
+      try { eePopulateSelect();       } catch(e) {}
+    }, 150);
 
-    // Real-time listener — sync changes from other users instantly
+    // ── Listener en tiempo real ───────────────────────────────────
     onSnapshot(docRef, (snap) => {
       if (!snap.exists() || _fbSaving) return;
-      DB = Object.assign({}, DB, snap.data());
+      const cloud = snap.data();
+      // Merge: cloud gana sobre DB actual
+      Object.keys(cloud).forEach(k => { DB[k] = cloud[k]; });
       localStorage.setItem(DB_KEY, JSON.stringify(DB));
       try { updateDash(); } catch(e) {}
-      // Re-render active section
       try {
         const active = document.querySelector('.sec.active');
         if (active) {
@@ -5298,17 +5336,18 @@ async function initFirebase(firebaseConfig) {
         }
       } catch(e) {}
       try { populateAllRespSelects(); } catch(e) {}
-      try { alBuildEmpTable(); } catch(e) {}
+      try { alBuildEmpTable();        } catch(e) {}
       try { capBuildAsistentesList(); } catch(e) {}
-      try { eePopulateSelect(); } catch(e) {}
+      try { eePopulateSelect();       } catch(e) {}
       fbShowStatus('online');
       setTimeout(() => { try { authEnsureDB(); } catch(e) {} }, 500);
     });
 
     fbShowStatus('online');
   } catch(err) {
-    console.error('Firebase error:', err);
+    console.error('❌ Firebase init error:', err);
     fbShowStatus('offline');
+    try { authEnsureDB(); } catch(e) {}
   }
 }
 
