@@ -809,7 +809,7 @@ tr:hover td{background:var(--green-pale);}
 <div style="font-size:2rem;margin-bottom:6px;">🌿</div>
 <div style="font-family:var(--fh);font-size:1.3rem;font-weight:700;color:var(--acc);">AJÚA</div>
 <div style="font-size:.72rem;color:var(--muted2);margin-top:3px;">Sistema de Control Interno</div>
-<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 01/03/2026 23:26 GT — build 7 · gastos diarios · nómina desde acceso · excel red/granel</div>
+<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 02/03/2026 00:08 GT — build 8 · fix cotizador: porcentajes, repollo unidades, totales</div>
 </div>
 <div style="margin-bottom:14px;">
 <label style="font-size:.68rem;color:var(--muted2);display:block;margin-bottom:5px;">Usuario</label>
@@ -9017,6 +9017,12 @@ function cotNueva() {
   cotGastosMX  = [];
   cotGastosGT  = [];
 
+  // Reset manual-edit flags for % gastos fields
+  document.querySelectorAll('[id^="cot-p-pct-gas-"]').forEach(el => {
+    el._userEdited = false;
+    el._listenerAdded = false;
+  });
+
   const title = document.getElementById('cot-form-title');
   if (title) title.textContent = cotTipo === 'interno' ? 'Nueva Cotización Interna' : 'Nueva Cotización para Terceros';
 
@@ -9257,108 +9263,200 @@ function cotCalc() {
     const kgu  = parseFloat(v('cot-p-kgu-' + i))  || 0;
     const pMXN = parseFloat(v('cot-p-pxn-' + i))  || 0;
     const unit = v('cot-p-unit-' + i) || 'bolsa';
-    const esPorUnidad = unit==='unidad' || unit==='pza' || unit==='pieza';
-    const kgT  = esPorUnidad ? 0 : (unit==='kg' ? qty : qty*kgu);
-    const lbsT = esPorUnidad ? 0 : kgT*2.20462;
-    const sMXN = qty*pMXN;
-    const sGTQ = tc>0 ? sMXN/tc : 0;  // GTQ = MXN ÷ TC (1 GTQ = TC MXN)
-    const pGTQ = tc>0 ? pMXN/tc : 0;
-    set('cot-p-kgt-' +i, kgT>0  ? kgT.toFixed(2)  : '');
-    set('cot-p-lbs-' +i, lbsT>0 ? lbsT.toFixed(2) : '');
-    set('cot-p-pgtq-'+i, pGTQ>0 ? 'Q '+pGTQ.toFixed(4) : (tc<=0?'Falta TC':''));
-    set('cot-p-smxn-'+i, sMXN>0 ? '$ '+sMXN.toFixed(2) : '');
-    set('cot-p-sgtq-'+i, sGTQ>0 ? 'Q '+sGTQ.toFixed(2) : (tc<=0&&sMXN>0?'Falta TC':''));
+
+    // ── BUG 2 FIX: unidad/pieza no tiene peso, pero sí tiene costo ──
+    const esPorUnidad = unit === 'unidad' || unit === 'pza' || unit === 'pieza';
+    const kgT  = esPorUnidad ? 0 : (unit === 'kg' ? qty : qty * kgu);
+    const lbsT = esPorUnidad ? 0 : kgT * 2.20462;
+
+    const sMXN = qty * pMXN;
+    const sGTQ = tc > 0 ? sMXN / tc : 0;
+    const pGTQ = tc > 0 ? pMXN / tc : 0;
+
+    set('cot-p-kgt-' + i, kgT > 0  ? kgT.toFixed(2)  : (esPorUnidad ? 'N/A (ud)' : ''));
+    set('cot-p-lbs-' + i, lbsT > 0 ? lbsT.toFixed(2) : (esPorUnidad ? 'N/A (ud)' : ''));
+    set('cot-p-pgtq-' + i, pGTQ > 0 ? 'Q ' + pGTQ.toFixed(4) : (tc <= 0 ? 'Falta TC' : ''));
+    set('cot-p-smxn-' + i, sMXN > 0 ? '$ ' + sMXN.toFixed(2) : '');
+    set('cot-p-sgtq-' + i, sGTQ > 0 ? 'Q ' + sGTQ.toFixed(2) : (tc <= 0 && sMXN > 0 ? 'Falta TC' : ''));
+
     const vn = document.getElementById('cot-vent-nom-' + i);
     if (vn) vn.value = nom;
-    totalKg += kgT; totalLbs += lbsT; totalBultos += qty; totalCompraGTQ += sGTQ;
-    prods.push({ i, nom, qty, unit, kgu, kgT, lbsT, pMXN, pGTQ, sMXN, sGTQ });
+
+    totalKg     += kgT;
+    totalLbs    += lbsT;
+    totalBultos += qty;
+    totalCompraGTQ += sGTQ;
+    prods.push({ i, nom, qty, unit, kgu, kgT, lbsT, pMXN, pGTQ, sMXN, sGTQ, esPorUnidad });
   }
 
+  // ── BUG 1 FIX: porcentajes ─────────────────────────────────────
+  // Para productos con KG: % basado en proporción de KG sobre total
+  // Para productos por unidad (sin KG): % basado en proporción del costo de compra
+  const totalCompraParaPct = totalCompraGTQ > 0 ? totalCompraGTQ : 1;
+
   prods.forEach(p => {
-    const auto = totalKg>0 ? p.kgT/totalKg*100 : 0;
-    set('cot-p-pct-kg-'+p.i, totalKg>0 ? auto.toFixed(1)+'%' : '');
-    const gasEl = document.getElementById('cot-p-pct-gas-'+p.i);
-    if (gasEl && !gasEl._userSet && auto>0) gasEl.value = auto.toFixed(1);
-  });
-  document.querySelectorAll('[id^="cot-p-pct-gas-"]').forEach(el => {
-    if (!el._listenerAdded) { el.addEventListener('input', ()=>{ el._userSet=true; }, {once:false}); el._listenerAdded=true; }
+    let auto;
+    if (p.esPorUnidad) {
+      // Unidades: su % de gastos proporcional a su costo relativo
+      auto = totalCompraParaPct > 0 ? p.sGTQ / totalCompraParaPct * 100 : 0;
+    } else {
+      // Con peso: proporcional al KG que representa
+      auto = totalKg > 0 ? p.kgT / totalKg * 100 : 0;
+    }
+    set('cot-p-pct-kg-' + p.i, auto > 0 ? auto.toFixed(1) + '%' : '');
+
+    const gasEl = document.getElementById('cot-p-pct-gas-' + p.i);
+    // Solo auto-rellenar si el usuario NO lo ha tocado manualmente
+    if (gasEl && !gasEl._userEdited && auto > 0) {
+      gasEl.value = auto.toFixed(1);
+    }
   });
 
-  let pctSum=0;
-  prods.forEach(p=>{ pctSum += parseFloat(document.getElementById('cot-p-pct-gas-'+p.i)?.value)||0; });
+  // Registrar edición manual solo una vez por elemento
+  document.querySelectorAll('[id^="cot-p-pct-gas-"]').forEach(el => {
+    if (!el._listenerAdded) {
+      el.addEventListener('input', () => { el._userEdited = true; }, { once: false });
+      el._listenerAdded = true;
+    }
+  });
+
+  // Advertencia si los % no suman 100
+  let pctSum = 0;
+  prods.forEach(p => { pctSum += parseFloat(document.getElementById('cot-p-pct-gas-' + p.i)?.value) || 0; });
   const pw = document.getElementById('cot-pct-warn');
-  if (pw) pw.style.display = prods.length>1 && Math.abs(pctSum-100)>0.5 ? 'block':'none';
+  if (pw) pw.style.display = prods.length > 1 && Math.abs(pctSum - 100) > 0.5 ? 'block' : 'none';
 
   set('cot-tot-bultos', totalBultos.toFixed(0));
-  set('cot-tot-kg',     totalKg.toFixed(2)+' kg');
-  set('cot-tot-lbs',    totalLbs.toFixed(2)+' lbs');
-  set('cot-tot-mxn',    '$ '+prods.reduce((s,p)=>s+p.sMXN,0).toFixed(2));
-  set('cot-tot-gtq',    'Q '+totalCompraGTQ.toFixed(2));
+  set('cot-tot-kg',     totalKg > 0 ? totalKg.toFixed(2) + ' kg' : '—');
+  set('cot-tot-lbs',    totalLbs > 0 ? totalLbs.toFixed(2) + ' lbs' : '—');
+  set('cot-tot-mxn',    '$ ' + prods.reduce((s, p) => s + p.sMXN, 0).toFixed(2));
+  set('cot-tot-gtq',    'Q ' + totalCompraGTQ.toFixed(2));
 
   const bar = document.getElementById('cot-pct-bar');
-  if (bar && prods.length>0) {
-    bar.innerHTML = prods.map((p,idx) => {
-      const pct = totalKg>0 ? p.kgT/totalKg*100 : 0;
-      return '<div style="flex:'+pct+';background:'+COT_COLORS[idx%COT_COLORS.length]+';display:flex;align-items:center;justify-content:center;font-size:.58rem;color:var(--green-deep);font-weight:700;overflow:hidden;white-space:nowrap;padding:0 3px;" title="'+p.nom+' '+pct.toFixed(1)+'%">'+(pct>8?p.nom.split(' ')[0]+' '+pct.toFixed(0)+'%':'')+'</div>';
+  if (bar && prods.length > 0) {
+    bar.innerHTML = prods.map((p, idx) => {
+      // Barra proporcional al costo de compra (funciona para todos los tipos)
+      const pct = totalCompraGTQ > 0 ? p.sGTQ / totalCompraGTQ * 100 : 0;
+      return '<div style="flex:' + pct + ';background:' + COT_COLORS[idx % COT_COLORS.length] + ';display:flex;align-items:center;justify-content:center;font-size:.58rem;color:var(--green-deep);font-weight:700;overflow:hidden;white-space:nowrap;padding:0 3px;" title="' + p.nom + ' ' + pct.toFixed(1) + '%">' + (pct > 8 ? p.nom.split(' ')[0] + ' ' + pct.toFixed(0) + '%' : '') + '</div>';
     }).join('');
   }
 
   let subMXmxn=0, subMXgtq=0, subGTgtq=0;
-  cotGastosMX.forEach(g=>{ const m=g.monto||0; if(g.moneda==='mxn'){subMXmxn+=m;subMXgtq+=tc>0?m/tc:0;}else{subMXgtq+=m;} }); // MXN/TC = GTQ
-  cotGastosGT.forEach(g=>{ subGTgtq+=g.monto||0; });
-  const totalGastos=subMXgtq+subGTgtq, totalCosto=totalCompraGTQ+totalGastos;
-  set('cot-sub-mx-mxn','$ '+subMXmxn.toFixed(2));
-  set('cot-sub-mx-gtq','Q '+subMXgtq.toFixed(2));
-  set('cot-sub-gt-gtq','Q '+subGTgtq.toFixed(2));
-  set('cot-total-gastos','Q '+totalGastos.toFixed(2));
-  set('cot-total-compra','Q '+totalCompraGTQ.toFixed(2));
-  set('cot-total-total', 'Q '+totalCosto.toFixed(2));
+  cotGastosMX.forEach(g => {
+    const m = g.monto || 0;
+    if (g.moneda === 'mxn') { subMXmxn += m; subMXgtq += tc > 0 ? m / tc : 0; }
+    else { subMXgtq += m; }
+  });
+  cotGastosGT.forEach(g => { subGTgtq += g.monto || 0; });
 
-  if (prods.length===0 || totalKg===0) { document.getElementById('cot-resultados').style.display='none'; return; }
+  const totalGastos = subMXgtq + subGTgtq;
+  const totalCosto  = totalCompraGTQ + totalGastos;
 
-  const gpKg = totalKg>0 ? totalGastos/totalKg : 0;
-  const rows = prods.map((p,idx) => {
-    const pctGasEl  = document.getElementById('cot-p-pct-gas-'+p.i);
-    const pctFijoEl = document.getElementById('cot-p-pct-fijo-'+p.i);
-    const pctGas    = (parseFloat(pctGasEl?.value)||(totalKg>0?p.kgT/totalKg*100:0))/100;
-    const pctFijo   = (parseFloat(pctFijoEl?.value)||0)/100;
-    const gastosP   = totalGastos*pctGas;
-    const costoFijoQ = p.sGTQ * pctFijo;  // % sobre costo del producto
-    const costoTot  = p.sGTQ+gastosP;
-    const costoConFijo = costoTot + costoFijoQ;
-    const costoUd   = p.qty>0  ? costoConFijo/p.qty  : 0;
-    const costoKg   = p.kgT>0  ? costoConFijo/p.kgT  : 0;
-    const costoLb   = p.lbsT>0 ? costoConFijo/p.lbsT : 0;
-    const cfqEl  = document.getElementById('cot-p-costo-fijo-q-'+p.i);
-    const ctfEl  = document.getElementById('cot-p-costo-total-fijo-'+p.i);
-    if (cfqEl)  cfqEl.value  = costoFijoQ > 0 ? 'Q '+costoFijoQ.toFixed(2) : '';
-    if (ctfEl)  ctfEl.value  = costoConFijo > 0 ? 'Q '+costoConFijo.toFixed(2) : '';
-    return { ...p, pctGas:pctGas*100, pctFijo:pctFijo*100, gastosP, costoFijoQ, costoTot, costoConFijo, costoUd, costoKg, costoLb, color:COT_COLORS[idx%COT_COLORS.length] };
+  set('cot-sub-mx-mxn',    '$ ' + subMXmxn.toFixed(2));
+  set('cot-sub-mx-gtq',    'Q ' + subMXgtq.toFixed(2));
+  set('cot-sub-gt-gtq',    'Q ' + subGTgtq.toFixed(2));
+  set('cot-total-gastos',  'Q ' + totalGastos.toFixed(2));
+  set('cot-total-compra',  'Q ' + totalCompraGTQ.toFixed(2));
+  set('cot-total-total',   'Q ' + totalCosto.toFixed(2));
+
+  if (prods.length === 0 || totalCompraGTQ === 0) {
+    document.getElementById('cot-resultados').style.display = 'none';
+    return;
+  }
+
+  const rows = prods.map((p, idx) => {
+    const pctGasEl  = document.getElementById('cot-p-pct-gas-'  + p.i);
+    const pctFijoEl = document.getElementById('cot-p-pct-fijo-' + p.i);
+
+    // % gastos: lo que el usuario puso, o el auto calculado
+    let pctGasVal;
+    if (pctGasEl && pctGasEl._userEdited) {
+      pctGasVal = parseFloat(pctGasEl.value) || 0;
+    } else {
+      pctGasVal = p.esPorUnidad
+        ? (totalCompraParaPct > 0 ? p.sGTQ / totalCompraParaPct * 100 : 0)
+        : (totalKg > 0 ? p.kgT / totalKg * 100 : 0);
+    }
+    const pctGas  = pctGasVal / 100;
+    const pctFijo = (parseFloat(pctFijoEl?.value) || 0) / 100;
+
+    const gastosP    = totalGastos * pctGas;
+    const costoFijoQ = p.sGTQ * pctFijo;
+    const costoTot   = p.sGTQ + gastosP;                    // sin % fijo
+    const costoConFijo = costoTot + costoFijoQ;             // con % fijo
+
+    // ── BUG 2 + 3 FIX: costo por unidad/kg/lb ────────────────────
+    const costoUd  = p.qty  > 0 ? costoConFijo / p.qty  : 0;
+    const costoKg  = p.kgT  > 0 ? costoConFijo / p.kgT  : 0;  // 0 si es por unidad
+    const costoLb  = p.lbsT > 0 ? costoConFijo / p.lbsT : 0;  // 0 si es por unidad
+
+    // ── BUG 3 FIX: última columna era costoLb en vez de costoConFijo/lbsT ──
+    // Para unidades: mostrar costo/ud en lugar de costo/lb
+    const costoLbConFijo = p.lbsT > 0 ? costoConFijo / p.lbsT : (p.qty > 0 ? costoConFijo / p.qty : 0);
+
+    const cfqEl = document.getElementById('cot-p-costo-fijo-q-'  + p.i);
+    const ctfEl = document.getElementById('cot-p-costo-total-fijo-' + p.i);
+    if (cfqEl) cfqEl.value = costoFijoQ > 0 ? 'Q ' + costoFijoQ.toFixed(2) : '';
+    if (ctfEl) ctfEl.value = costoConFijo > 0 ? 'Q ' + costoConFijo.toFixed(2) : '';
+
+    return { ...p, pctGas: pctGasVal, pctFijo: pctFijo * 100, gastosP, costoFijoQ, costoTot, costoConFijo, costoUd, costoKg, costoLb, costoLbConFijo, color: COT_COLORS[idx % COT_COLORS.length] };
   });
 
-  document.getElementById('cot-resultados')._computed = { rows, totalKg, totalLbs, totalBultos, totalCompraGTQ, totalGastos, totalCosto, tc, subMX:subMXgtq, subGT:subGTgtq };
-
+  // Guardar en elemento para cotCalcVenta
+  document.getElementById('cot-resultados')._computed = { rows, totalKg, totalLbs, totalBultos, totalCompraGTQ, totalGastos, totalCosto, tc, subMX: subMXgtq, subGT: subGTgtq };
   document.getElementById('cot-resultados').style.display = 'block';
+
+  // ── BUG 3 FIX: tabla de resultados con columnas correctas ────────
   document.getElementById('cot-res-tabla').innerHTML =
     '<table style="width:100%;font-size:.72rem;"><thead><tr>' +
     '<th>Producto</th><th>Uds</th><th>KG</th><th>LBS</th><th>%gastos</th><th>Compra Q</th><th>Gastos Q</th>' +
-    '<th style="background:rgba(0,217,139,.1);">Costo tot Q</th><th style="background:rgba(0,217,139,.12);">Costo/ud Q</th>' +
-    '<th style="background:rgba(74,158,255,.1);">Costo/kg Q</th><th style="background:rgba(74,158,255,.15);">Costo/lb Q</th><th>% Fijo</th><th style="background:rgba(160,120,255,.1);">Costo+Fijo/lb Q</th>' +
+    '<th style="background:rgba(0,217,139,.1);">Costo tot Q</th>' +
+    '<th style="background:rgba(0,217,139,.12);">Costo/ud Q</th>' +
+    '<th style="background:rgba(74,158,255,.1);">Costo/kg Q</th>' +
+    '<th style="background:rgba(74,158,255,.15);">Costo/lb Q</th>' +
+    '<th>% Fijo</th>' +
+    '<th style="background:rgba(160,120,255,.1);">Costo+Fijo/lb Q</th>' +
     '</tr></thead><tbody>' +
-    rows.map(r =>
-      '<tr><td><span style="display:inline-block;width:7px;height:7px;background:'+r.color+';border-radius:50%;margin-right:4px;"></span><strong>'+r.nom+'</strong></td>' +
-      '<td>'+r.qty+'</td><td>'+r.kgT.toFixed(1)+'</td><td>'+r.lbsT.toFixed(1)+'</td>' +
-      '<td style="color:var(--warn);">'+r.pctGas.toFixed(1)+'%</td>' +
-      '<td>Q '+r.sGTQ.toFixed(2)+'</td><td style="color:var(--warn);">Q '+r.gastosP.toFixed(2)+'</td>' +
-      '<td style="background:rgba(0,217,139,.06);font-weight:700;">Q '+r.costoTot.toFixed(2)+'</td>' +
-      '<td style="background:rgba(0,217,139,.1);color:var(--acc);font-weight:700;">Q '+r.costoUd.toFixed(4)+'</td>' +
-      '<td style="background:rgba(74,158,255,.08);color:var(--info);">Q '+r.costoKg.toFixed(4)+'</td>' +
-      '<td style="background:rgba(74,158,255,.12);color:var(--info);">Q '+r.costoLb.toFixed(4)+'</td>' +
-      '<td style="color:var(--muted2);">'+r.pctFijo.toFixed(1)+'%</td>' +
-      '<td style="background:rgba(160,120,255,.12);color:#a078ff;font-weight:700;">Q '+r.costoLb.toFixed(4)+'</td></tr>'
-    ).join('') + '</tbody></table>';
+    rows.map(r => {
+      const kgStr  = r.esPorUnidad ? '<span style="color:var(--muted2);font-size:.65rem;">—</span>'   : r.kgT.toFixed(1);
+      const lbsStr = r.esPorUnidad ? '<span style="color:var(--muted2);font-size:.65rem;">—</span>'   : r.lbsT.toFixed(1);
+      const kgCStr = r.esPorUnidad ? '<span style="color:var(--muted2);font-size:.65rem;">N/A</span>' : 'Q ' + r.costoKg.toFixed(4);
+      const lbCStr = r.esPorUnidad ? '<span style="color:var(--muted2);font-size:.65rem;">N/A</span>' : 'Q ' + r.costoLb.toFixed(4);
+      const lbFStr = r.esPorUnidad
+        ? '<span style="color:var(--muted2);font-size:.65rem;">Q ' + r.costoLbConFijo.toFixed(4) + '/ud</span>'
+        : 'Q ' + r.costoLbConFijo.toFixed(4);
+      return '<tr>' +
+        '<td><span style="display:inline-block;width:7px;height:7px;background:' + r.color + ';border-radius:50%;margin-right:4px;"></span><strong>' + r.nom + '</strong>' +
+        (r.esPorUnidad ? ' <span style="font-size:.6rem;color:var(--info);">(ud)</span>' : '') + '</td>' +
+        '<td>' + r.qty + '</td>' +
+        '<td>' + kgStr + '</td>' +
+        '<td>' + lbsStr + '</td>' +
+        '<td style="color:var(--warn);">' + r.pctGas.toFixed(1) + '%</td>' +
+        '<td>Q ' + r.sGTQ.toFixed(2) + '</td>' +
+        '<td style="color:var(--warn);">Q ' + r.gastosP.toFixed(2) + '</td>' +
+        '<td style="background:rgba(0,217,139,.06);font-weight:700;">Q ' + r.costoTot.toFixed(2) + '</td>' +
+        '<td style="background:rgba(0,217,139,.1);color:var(--acc);font-weight:700;">Q ' + r.costoUd.toFixed(4) + '</td>' +
+        '<td style="background:rgba(74,158,255,.08);color:var(--info);">' + kgCStr + '</td>' +
+        '<td style="background:rgba(74,158,255,.12);color:var(--info);">' + lbCStr + '</td>' +
+        '<td style="color:var(--muted2);">' + r.pctFijo.toFixed(1) + '%</td>' +
+        '<td style="background:rgba(160,120,255,.12);color:#a078ff;font-weight:700;">' + lbFStr + '</td>' +
+        '</tr>';
+    }).join('') + '</tbody>' +
+    // Fila de totales
+    '<tfoot><tr style="background:var(--s1);font-weight:700;border-top:2px solid var(--br);">' +
+    '<td>TOTALES</td>' +
+    '<td>' + rows.reduce((s,r)=>s+r.qty,0).toFixed(0) + '</td>' +
+    '<td>' + (totalKg > 0 ? totalKg.toFixed(1) : '—') + '</td>' +
+    '<td>' + (totalLbs > 0 ? totalLbs.toFixed(1) : '—') + '</td>' +
+    '<td>' + (rows.reduce((s,r)=>s+r.pctGas,0)).toFixed(1) + '%</td>' +
+    '<td>Q ' + totalCompraGTQ.toFixed(2) + '</td>' +
+    '<td>Q ' + totalGastos.toFixed(2) + '</td>' +
+    '<td style="background:rgba(0,217,139,.1);">Q ' + totalCosto.toFixed(2) + '</td>' +
+    '<td colspan="5"></td>' +
+    '</tr></tfoot>' +
+    '</table>';
 
-  if (cotTipo==='terceros') cotCalcVenta();
+  if (cotTipo === 'terceros') cotCalcVenta();
 }
 
 function cotCalcVenta() {
