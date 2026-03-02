@@ -809,7 +809,7 @@ tr:hover td{background:var(--green-pale);}
 <div style="font-size:2rem;margin-bottom:6px;">🌿</div>
 <div style="font-family:var(--fh);font-size:1.3rem;font-weight:700;color:var(--acc);">AJÚA</div>
 <div style="font-size:.72rem;color:var(--muted2);margin-top:3px;">Sistema de Control Interno</div>
-<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 01/03/2026 21:37 GT — build 5 · carga masiva Excel</div>
+<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 01/03/2026 22:55 GT — build 6 · carga masiva en empleados, limpiar TODO removido</div>
 </div>
 <div style="margin-bottom:14px;">
 <label style="font-size:.68rem;color:var(--muted2);display:block;margin-bottom:5px;">Usuario</label>
@@ -2539,29 +2539,6 @@ tr:hover td{background:var(--green-pale);}
   </div>
 </div>
 
-<!-- ══ CARGA MASIVA EXCEL ══ -->
-<div class="card" style="margin-bottom:14px;">
-  <div class="ct">📊 Carga Masiva por Excel</div>
-  <div style="font-size:.78rem;color:var(--muted);margin-bottom:14px;line-height:1.6;">
-    Carga empleados, usuarios, conductores, clientes, productos y presentaciones desde el archivo Excel de plantilla.
-    Los registros existentes <strong>no se borran</strong> — solo se agregan los nuevos. Si un nombre ya existe, se actualiza.
-  </div>
-
-  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
-    <a id="bulk-download-btn" href="#" onclick="bulkDownloadTemplate(event)"
-       style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:var(--green-deep);color:var(--cream);border-radius:4px;font-weight:700;font-size:.82rem;text-decoration:none;font-family:var(--fh);">
-      ⬇ Descargar Plantilla Excel
-    </a>
-    <label style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:var(--orange);color:#000;border-radius:4px;font-weight:700;font-size:.82rem;cursor:pointer;font-family:var(--fh);">
-      📂 Cargar Excel con Datos
-      <input type="file" accept=".xlsx,.xls" style="display:none;" onchange="bulkImportExcel(this)">
-    </label>
-  </div>
-
-  <div id="bulk-progress" style="display:none;margin-top:10px;"></div>
-  <div id="bulk-result"   style="display:none;margin-top:10px;"></div>
-</div>
-
 <div class="tabs">
 <div class="tab active" onclick="invConfigTab('productos',this)">🥬 Productos</div>
 <div class="tab" onclick="invConfigTab('presentaciones',this)">📐 Presentaciones</div>
@@ -3239,6 +3216,30 @@ tr:hover td{background:var(--green-pale);}
 </div>
 <div class="sec" id="sec-empleados-db">
 <div class="ph"><h1>Base de Empleados</h1><p>Registro global — los responsables disponibles en todos los módulos se gestionan aquí</p></div>
+
+<!-- ══ CARGA MASIVA — visible y accesible ══ -->
+<div class="card" style="margin-bottom:14px;border:2px solid var(--orange);background:rgba(242,104,34,.04);">
+  <div class="ct" style="color:var(--orange);">📊 Carga Masiva por Excel — Empleados, Usuarios, Clientes, Conductores, Productos</div>
+  <div style="font-size:.78rem;color:var(--muted);margin-bottom:14px;line-height:1.6;">
+    Carga múltiples registros de una sola vez desde el archivo Excel de plantilla.<br>
+    <strong>Los registros existentes NO se borran</strong> — solo se agregan nuevos. Si el nombre ya existe, se actualiza.
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+    <a href="/AJUA_CargaMasiva.xlsx" download="AJUA_CargaMasiva.xlsx"
+       style="display:inline-flex;align-items:center;gap:6px;padding:9px 18px;background:var(--green-deep);color:var(--cream);border-radius:4px;font-weight:700;font-size:.82rem;text-decoration:none;font-family:var(--fh);">
+      ⬇ Descargar Plantilla Excel
+    </a>
+    <label style="display:inline-flex;align-items:center;gap:6px;padding:9px 18px;background:var(--orange);color:#fff;border-radius:4px;font-weight:700;font-size:.82rem;cursor:pointer;font-family:var(--fh);">
+      📂 Cargar Excel Completado
+      <input type="file" accept=".xlsx,.xls" style="display:none;" onchange="bulkImportExcel(this)">
+    </label>
+  </div>
+  <div style="font-size:.72rem;color:var(--muted);">
+    📋 El Excel incluye hojas para: Empleados · Usuarios · Conductores/Pilotos · Clientes · Productos · Presentaciones
+  </div>
+  <div id="bulk-progress" style="display:none;margin-top:10px;"></div>
+  <div id="bulk-result"   style="display:none;margin-top:10px;"></div>
+</div>
 <div class="card">
 <div class="ct">Agregar Empleado</div>
 <div class="fgrid g3">
@@ -3456,17 +3457,14 @@ tr:hover td{background:var(--green-pale);}
 <div class="sec" id="sec-usuarios">
 <div class="ph"><h1>Usuarios y Accesos</h1><p>Crea empleados como usuarios, asigna roles y controla qué módulos puede ver cada uno</p></div>
 <div style="background:rgba(255,56,88,.06);border:1px solid rgba(255,56,88,.25);border-radius:6px;padding:16px;margin-bottom:16px;">
-<div style="font-size:.62rem;color:var(--danger);font-weight:700;letter-spacing:.08em;margin-bottom:8px;">⚠ ZONA DE MANTENIMIENTO</div>
+<div style="font-size:.62rem;color:var(--danger);font-weight:700;letter-spacing:.08em;margin-bottom:8px;">⚠ ZONA DE MANTENIMIENTO — Solo Super Administrador</div>
 <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
 <div style="flex:1;font-size:.72rem;color:var(--muted2);">
-        Limpia todos los registros operativos para empezar de cero. Los usuarios y configuración de productos se conservan.
-        <strong style="color:var(--danger);">Esta acción no se puede deshacer.</strong>
+        Limpia registros operativos para empezar de cero. Usuarios y configuración se conservan.
+        <strong style="color:var(--danger);">Guarda un snapshot automático antes de ejecutar.</strong>
 </div>
 <button class="btn bo" onclick="limpiarBaseOperativa()" style="border-color:var(--danger);color:var(--danger);white-space:nowrap;">
         🗑 Limpiar datos operativos
-      </button>
-<button class="btn bo" onclick="limpiarTodo()" style="border-color:var(--danger);color:var(--danger);white-space:nowrap;">
-        💣 Limpiar TODO (incluye config)
       </button>
 </div>
 </div>
