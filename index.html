@@ -812,7 +812,7 @@ tr:hover td{background:var(--green-pale);}
 <div style="font-size:2rem;margin-bottom:6px;">🌿</div>
 <div style="font-family:var(--fh);font-size:1.3rem;font-weight:700;color:var(--acc);">AJÚA</div>
 <div style="font-size:.72rem;color:var(--muted2);margin-top:3px;">Sistema de Control Interno</div>
-<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 02/03/2026 — build 12 · Fix bodega: dropdowns productor/proveedor + confirmarRecepcion + layout</div>
+<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 02/03/2026 — build 13 · Fix stock/trazabilidad/walmart: lbsTotal, resolveIdTraz, isalida auto-link</div>
 </div>
 <div style="margin-bottom:14px;">
 <label style="font-size:.68rem;color:var(--muted2);display:block;margin-bottom:5px;">Usuario</label>
@@ -5297,8 +5297,71 @@ function pwGuardarCierre() {
   const totalRechazadas= rec.rubros.reduce((s,r)=>s+(r.cajasRechazadas||0),0);
   rec.resumen = { totalCajas, totalAceptadas, totalRechazadas };
 
+  // ── AUTO-CREATE isalida record so inventory is updated ────────────
+  invEnsureDB();
+  if (!DB.isalidas) DB.isalidas = [];
+  // Only create if not already linked
+  const yaVinculado = DB.isalidas.some(s => s.pedidoWalmartId === rec.id);
+  if (!yaVinculado) {
+    const lineas = rec.rubros
+      .filter(r => (r.cajasAceptadas||0) > 0)
+      .map(r => {
+        const prod = DB.iproductos?.find(p =>
+          p.nombre?.toUpperCase().includes(r.descripcion?.toUpperCase()?.split(' ')[0]) ||
+          r.descripcion?.toUpperCase().includes(p.nombre?.toUpperCase())
+        );
+        const pres = (DB.ipresentaciones||[]).find(p =>
+          p.productoId === prod?.id || p.nombre?.toUpperCase().includes(r.descripcion?.toUpperCase()?.split(' ')[0])
+        );
+        const lbsBulto = pres?.lbsBulto || 0;
+        const totalLbs = r.cajasAceptadas * lbsBulto;
+        return {
+          productoId:        prod?.id || '',
+          productoNombre:    r.descripcion || '',
+          presentacionId:    pres?.id || '',
+          presentacionNombre: pres?.nombre || r.descripcion || '',
+          bultos:            r.cajasAceptadas,
+          lbsBulto,
+          totalLbs,
+          precio:            r.precioUnit || 0,
+          totalNeto:         (r.cajasAceptadas*(r.precioUnit||0))/1.12,
+          totalIVA:          (r.cajasAceptadas*(r.precioUnit||0))/1.12*0.12,
+          totalConIVA:       r.cajasAceptadas*(r.precioUnit||0),
+          totalRetencion:    (r.cajasAceptadas*(r.precioUnit||0))/1.12*0.12*0.80,
+          totalACobrar:      r.cajasAceptadas*(r.precioUnit||0) - (r.cajasAceptadas*(r.precioUnit||0))/1.12*0.12*0.80,
+        };
+      });
+    if (lineas.length) {
+      const totalLbs    = lineas.reduce((s,l)=>s+(l.totalLbs||0),0);
+      const totalConIVA = lineas.reduce((s,l)=>s+(l.totalConIVA||0),0);
+      DB.isalidas.unshift({
+        id: uid(), ts: now(),
+        fecha:          rec.fechaEntrega || today(),
+        tipo:           'walmart',
+        pedidoWalmartId: rec.id,
+        clienteId:      'walmart-gt',
+        clienteNombre:  'Walmart Guatemala',
+        clienteNit:     '1926272',
+        oc:             rec.oc || '',
+        obs:            'Auto-generado desde cierre pedido Walmart',
+        albaranFoto:    rec.albaranDoc || null,
+        docEdiwin:      !!(rec.ediwinDoc),
+        lineas, totalLbs,
+        totalNeto:      lineas.reduce((s,l)=>s+(l.totalNeto||0),0),
+        totalIVA:       lineas.reduce((s,l)=>s+(l.totalIVA||0),0),
+        totalConIVA,
+        totalRetencion: lineas.reduce((s,l)=>s+(l.totalRetencion||0),0),
+        totalACobrar:   lineas.reduce((s,l)=>s+(l.totalACobrar||0),0),
+        totalQ:         totalConIVA,
+      });
+    }
+  }
+  // ──────────────────────────────────────────────────────────────────
+
   save(); pwRenderLista(); pwRenderCalendario();
-  toast(hayRechazo ? '⚠️ Pedido cerrado con '+totalRechazadas+' cajas rechazadas' : '✅ Pedido cerrado — '+totalAceptadas+' cajas aceptadas al 100%');
+  try { renderInvStock(); } catch(e) {}
+  try { renderSal(); } catch(e) {}
+  toast(hayRechazo ? '⚠️ Pedido cerrado con '+totalRechazadas+' cajas rechazadas — inventario actualizado' : '✅ Pedido cerrado — '+totalAceptadas+' cajas · inventario actualizado');
   pwTab('lista', document.getElementById('pw-tab-lista'));
   document.getElementById('pw-tab-form').style.display = 'none';
 }
@@ -12245,25 +12308,21 @@ function invGetStock() {
   // Helper: resolve any productoId (UUID or name) to a canonical ID
   const resolveId = (id, nombre) => {
     if (!id) return nombre || 'desconocido';
-    // Is it a real product in DB?
     let prod = DB.iproductos.find(p => p.id === id);
     if (prod) return prod.id;
-    // Maybe id is actually a name (legacy from cotizador)
     prod = DB.iproductos.find(p => p.nombre?.toUpperCase() === id?.toUpperCase());
     if (prod) return prod.id;
-    // Try by nombre
     if (nombre) {
       prod = DB.iproductos.find(p => p.nombre?.toUpperCase() === nombre?.toUpperCase());
       if (prod) return prod.id;
     }
-    return id; // fallback to whatever it is
+    return id;
   };
 
   const ensureEntry = (rawId, nombre) => {
     const id = resolveId(rawId, nombre);
     if (!stock[id]) {
       const prod = DB.iproductos.find(p => p.id === id) || { id, nombre: nombre || id };
-      // Auto-detect unit product: explicit flag OR all presentations have lbsBulto=0
       const presForProd = (DB.ipresentaciones||[]).filter(pr => pr.productoId === id);
       const allZeroLbs  = presForProd.length > 0 && presForProd.every(pr => !pr.lbsBulto || pr.lbsBulto === 0);
       const esUnidad    = prod.unidadCompra === 'unidad' || prod.unidadCompra === 'pza' || allZeroLbs;
@@ -12274,23 +12333,26 @@ function invGetStock() {
     return id;
   };
 
-  // Deduplicate ientradas by cotizacionId+productoId (prevent double-counting)
+  // FIX: Read all possible lbs field names from ientradas
+  const getLbsEntrada = (r) =>
+    r.lbsNeto || r.lbsBruto || r.lbsTotal ||
+    (r.kgTotal ? r.kgTotal * 2.20462 : 0) || 0;
+
+  // Deduplicate ientradas by cotizacionId+productoId
   const seenCot = new Set();
   (DB.ientradas || []).forEach(r => {
     const dedupeKey = r.source === 'cotizador' ? (r.cotizacionId + '|' + (r.productoNombre||r.productoId)) : null;
     if (dedupeKey) {
-      if (seenCot.has(dedupeKey)) return; // skip duplicate
+      if (seenCot.has(dedupeKey)) return;
       seenCot.add(dedupeKey);
     }
     const id = ensureEntry(r.productoId, r.productoNombre);
     const prod = DB.iproductos.find(p => p.id === id);
     const esPorUnidad = prod?.unidadCompra === 'unidad' || prod?.unidadCompra === 'pza';
     if (esPorUnidad) {
-      // Track by units, not lbs
       stock[id].unidadesEntrada = (stock[id].unidadesEntrada || 0) + (r.bultos || 0);
-      stock[id].lbsEntrada      += 0; // no lbs tracking for unit products
     } else {
-      stock[id].lbsEntrada      += r.lbsNeto || r.lbsBruto || 0;
+      stock[id].lbsEntrada += getLbsEntrada(r);
     }
     stock[id].bultosEntrada += r.bultos  || 0;
     stock[id].mermaEntrada  += r.mermaLbs || 0;
@@ -12307,7 +12369,6 @@ function invGetStock() {
         stock[id].lbsSalida += l.totalLbs || 0;
       }
       stock[id].bultosSalida += l.bultos || 0;
-      // esPorUnidad already set in ensureEntry, no need to update
     });
   });
 
@@ -12354,10 +12415,11 @@ function renderInvMovs() {
   // Entradas
   (DB.ientradas||[]).forEach(r => {
     if (filtProd && r.productoId !== filtProd && r.productoNombre !== filtProd) return;
+    const lbs = r.lbsNeto || r.lbsBruto || r.lbsTotal || (r.kgTotal ? r.kgTotal*2.20462 : 0) || 0;
     movs.push({
       fecha: r.fecha, tipo: 'entrada', canal: r.source==='cotizador'?'Cotizador':'Manual',
       producto: r.productoNombre, entidad: r.proveedorNombre||r.cotizacionNombre||'—',
-      bultos: r.bultos||0, lbs: r.lbsNeto||r.lbsBruto||0,
+      bultos: r.bultos||0, lbs,
       doc: r.duca||r.factProd||'—', signo: '+'
     });
   });
@@ -12477,12 +12539,13 @@ function renderInvStock() {
 
   (DB.ientradas || []).forEach(r => {
     if (filProd && r.productoId !== filProd) return;
+    const lbs = r.lbsNeto || r.lbsBruto || r.lbsTotal || (r.kgTotal ? r.kgTotal*2.20462 : 0) || 0;
     allMovs.push({
       fecha: r.fecha, tipo: 'entrada',
       productoId: r.productoId, productoNombre: r.productoNombre,
-      entidad: r.origen || 'Importación',
+      entidad: r.proveedorNombre || r.origen || r.cotizacionNom || 'Importación',
       bultos: r.bultos || 0,
-      lbs: r.lbsBruto || 0,
+      lbs,
       doc: r.duca || r.cotRef || '—',
       canal: '📥 Ingreso',
     });
@@ -12636,6 +12699,20 @@ function buscarTraz() {
   const hasta  = v('traz-hasta');
   const cont   = document.getElementById('traz-result');
 
+  // Local resolve helper (was missing — caused silent JS error)
+  const resolveIdTraz = (id, nombre) => {
+    if (!id && !nombre) return '';
+    if (id) {
+      const p = DB.iproductos?.find(p => p.id === id);
+      if (p) return p.id;
+    }
+    if (nombre) {
+      const p = DB.iproductos?.find(p => p.nombre?.toUpperCase() === nombre?.toUpperCase());
+      if (p) return p.id;
+    }
+    return id || nombre || '';
+  };
+
   // Gather entradas
   let entradas = (DB.ientradas||[]).filter(r =>
     (!prodId || r.productoId === prodId) &&
@@ -12700,10 +12777,15 @@ function buscarTraz() {
       '<div style="overflow-x:auto;"><table><thead><tr><th>Fecha</th><th>Producto</th><th>Bultos</th><th>LBS neto</th><th>Merma</th><th>① Fact.Prod.</th><th>② Fact.MX</th><th>③ DUCA</th></tr></thead><tbody>' +
       entradas.map(r=>'<tr>'+
         '<td>'+r.fecha+'</td><td style="font-size:.72rem;">'+r.productoNombre+'</td>'+
-        '<td>'+(r.bultos||'—')+'</td><td style="color:var(--acc);font-weight:700;">'+(r.lbsNeto?.toFixed(1)||'—')+'</td>'+
+        '<td>'+(r.bultos||'—')+'</td>'+
+        '<td style="color:var(--acc);font-weight:700;">'+(r.lbsNeto||r.lbsBruto||r.lbsTotal||(r.kgTotal?r.kgTotal*2.20462:0)||0).toFixed(1)+' lbs</td>'+
         '<td style="color:var(--warn);">'+(r.mermaLbs>0?r.mermaLbs.toFixed(1)+' ('+r.pctMerma?.toFixed(1)+'%)':'—')+'</td>'+
-        '<td style="font-size:.68rem;">'+(r.factProd?'<span style="color:var(--acc);">✓ '+r.factProd+'</span>':'<span style="color:var(--danger);">✗</span>')+'</td>'+
-        '<td style="font-size:.68rem;">'+(r.factMx?'<span style="color:var(--acc);">✓ '+r.factMx+'</span>':'<span style="color:var(--danger);">✗</span>')+'</td>'+
+        '<td style="font-size:.68rem;">'+(
+          (r.factProd||r.factProductor)?'<span style="color:var(--acc);">✓ '+(r.factProd||r.factProductor)+'</span>':'<span style="color:var(--danger);">✗</span>'
+        )+'</td>'+
+        '<td style="font-size:.68rem;">'+(
+          (r.factMx||r.factProveedor)?'<span style="color:var(--acc);">✓ '+(r.factMx||r.factProveedor)+'</span>':'<span style="color:var(--danger);">✗</span>'
+        )+'</td>'+
         '<td style="font-size:.68rem;">'+(r.duca?'<span style="color:var(--acc);">✓ '+r.duca+'</span>':'<span style="color:var(--danger);">✗</span>')+'</td>'+
       '</tr>').join('')+
       '</tbody></table></div></div>';
