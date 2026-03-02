@@ -2013,6 +2013,7 @@ tr:hover td{background:var(--green-pale);}
   </table>
 </div>
 </div>
+<div class="sec" id="sec-pedidos-walmart">
 <div class="ph">
   <div class="ph-left">
     <h1>📋 Pedidos Walmart</h1>
@@ -2151,6 +2152,7 @@ tr:hover td{background:var(--green-pale);}
 </div>
 </div>
 
+</div>
 <div class="sec" id="sec-inv-salida">
 <div class="ph"><h1>Ventas Walmart</h1><p>Carga el PDF Ediwin — la IA extrae cliente, productos, cantidades y OC · IVA + retención 80% calculados automáticamente</p></div>
 <div class="card">
@@ -3668,27 +3670,6 @@ tr:hover td{background:var(--green-pale);}
   </div>
 </div>
 </div>
-<div id="toast"></div>
-
-<!-- Firebase Config Modal (shown on first run) -->
-<div id="fb-config-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;">
-  <div style="background:var(--s1);border-radius:14px;padding:28px;max-width:480px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.4);">
-    <div style="font-family:var(--fh);font-size:1.2rem;font-weight:800;color:var(--green-deep);margin-bottom:6px;">☁️ Conectar a Firebase</div>
-    <div style="font-size:.8rem;color:var(--muted);margin-bottom:18px;">Pega aquí tu configuración de Firebase para activar la base de datos en la nube. Los datos existentes se subirán automáticamente.</div>
-    <div class="fg"><label>API Key</label><input id="fb-api-key" placeholder="AIzaSy..."></div>
-    <div class="fg" style="margin-top:8px;"><label>Auth Domain</label><input id="fb-auth-domain" placeholder="tu-proyecto.firebaseapp.com"></div>
-    <div class="fg" style="margin-top:8px;"><label>Project ID</label><input id="fb-project-id" placeholder="tu-proyecto"></div>
-    <div class="fg" style="margin-top:8px;"><label>App ID</label><input id="fb-app-id" placeholder="1:123:web:abc..."></div>
-    <div style="margin-top:16px;display:flex;gap:10px;">
-      <button class="btn bp" onclick="fbSaveConfig()" style="flex:1;">✅ Conectar</button>
-      <button class="btn bo bsm" onclick="fbSkipConfig()">Usar sin nube →</button>
-    </div>
-    <div style="margin-top:12px;font-size:.7rem;color:var(--muted);text-align:center;">
-      ¿No tienes Firebase? <a href="https://console.firebase.google.com" target="_blank" style="color:var(--orange);">Créalo gratis aquí</a> · tarda 3 minutos
-    </div>
-  </div>
-</div>
-
 
 
 
@@ -3959,7 +3940,7 @@ const AUTH_ROLES = {
 const AUTH_ALL_MODULES = [
   'dashboard','transporte-limpieza','despacho','bodega-limpieza','fumigacion','roedores',
   'capacitacion','empleados-enfermos','acceso-lavado','visitas','vidrio','basculas',
-  'lavado-prod','inv-stock','inv-entrada','inv-cotizador','maquila','inv-salida',
+  'lavado-prod','inv-stock','inv-entrada','inv-cotizador','maquila','gastos-diarios','inv-salida',
   'ventas-gt','ventas-int','reporte','inv-trazabilidad','inv-config',
   'proveedores','pedidos-walmart','empleados-db','usuarios',
 ];
@@ -3971,7 +3952,7 @@ const AUTH_ROLE_DEFAULTS = {
   supervisor: AUTH_ALL_MODULES.filter(m => m !== 'usuarios'),
   operador:   ['dashboard','transporte-limpieza','despacho','bodega-limpieza','roedores',
                'capacitacion','empleados-enfermos','acceso-lavado','visitas','vidrio',
-               'basculas','lavado-prod'],
+               'basculas','lavado-prod','gastos-diarios'],
 };
 
 // ── Ensure default admin exists ───────────────────────────────────
@@ -4157,7 +4138,7 @@ const AUTH_MODULO_LABELS = {
   'capacitacion':'Capacitación','empleados-enfermos':'Empleados Enfermos','acceso-lavado':'Acceso y Lavado',
   'visitas':'Visitas','vidrio':'Vidrio y Plástico','basculas':'Básculas',
   'lavado-prod':'Lavado Producto','inv-stock':'Inventario Stock','inv-entrada':'Ingresos Bodega',
-  'inv-cotizador':'Cotizador','maquila':'Gastos Generales','inv-salida':'Despachos',
+  'inv-cotizador':'Cotizador','maquila':'Gastos Generales','gastos-diarios':'Gastos Diarios','inv-salida':'Despachos',
   'ventas-gt':'Ventas GT','ventas-int':'Ventas Int.','reporte':'Reportes',
   'inv-trazabilidad':'Trazabilidad','inv-config':'Config Inventario',
   'proveedores':'Proveedores','pedidos-walmart':'Pedidos Walmart',
