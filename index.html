@@ -809,7 +809,7 @@ tr:hover td{background:var(--green-pale);}
 <div style="font-size:2rem;margin-bottom:6px;">🌿</div>
 <div style="font-family:var(--fh);font-size:1.3rem;font-weight:700;color:var(--acc);">AJÚA</div>
 <div style="font-size:.72rem;color:var(--muted2);margin-top:3px;">Sistema de Control Interno</div>
-<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 01/03/2026 22:55 GT — build 6 · carga masiva en empleados, limpiar TODO removido</div>
+<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 01/03/2026 23:26 GT — build 7 · gastos diarios · nómina desde acceso · excel red/granel</div>
 </div>
 <div style="margin-bottom:14px;">
 <label style="font-size:.68rem;color:var(--muted2);display:block;margin-bottom:5px;">Usuario</label>
@@ -900,6 +900,7 @@ tr:hover td{background:var(--green-pale);}
 <div class="ni" onclick="show('inv-stock',this)"><span class="ico">📊</span>Stock en Tiempo Real</div>
 <div class="ni" onclick="show('inv-entrada',this)"><span class="ico">📥</span>Ingresos a Bodega</div>
 <div class="ni" onclick="show('maquila',this)"><span class="ico">⚙️</span>Gastos Generales</div>
+<div class="ni" onclick="show('gastos-diarios',this)"><span class="ico">💸</span>Gastos Diarios</div>
 <div class="ni" onclick="show('pedidos-walmart',this)"><span class="ico">📋</span>Pedidos Walmart</div>
 <div class="ni" onclick="show('inv-salida',this)"><span class="ico">📦</span>Ventas Walmart</div>
 <div class="ni" onclick="show('ventas-gt',this)"><span class="ico">📤</span>Despachos — Locales GT</div>
@@ -1514,6 +1515,19 @@ tr:hover td{background:var(--green-pale);}
 <button class="btn bo" onclick="printSec('sec-acceso-lavado')">🖨 Imprimir</button>
 </div>
 </div>
+
+<!-- Nómina automática desde acceso -->
+<div class="card" style="margin-bottom:14px;background:rgba(0,168,107,.06);border:1.5px solid rgba(0,168,107,.25);">
+  <div class="ct" style="color:var(--green-deep);">👷 Calcular Nómina desde Asistencia</div>
+  <div style="font-size:.78rem;color:var(--muted);margin-bottom:12px;line-height:1.6;">
+    Cuenta automáticamente los días que cada empleado apareció en el registro de acceso y calcula el pago total del período.
+  </div>
+  <div class="fgrid g2" style="margin-bottom:12px;">
+    <div class="fg"><label>Desde</label><input type="date" id="nom-desde"></div>
+    <div class="fg"><label>Hasta</label><input type="date" id="nom-hasta"></div>
+  </div>
+  <button class="btn bp" onclick="nomAbrir()">👷 Ver Nómina del Período</button>
+</div>
 <div class="tw">
 <div class="twh">
 <span class="twt">Historial de Turnos</span>
@@ -1872,7 +1886,133 @@ tr:hover td{background:var(--green-pale);}
 </div>
 
 </div>
-<div class="sec" id="sec-pedidos-walmart">
+<div class="sec" id="sec-gastos-diarios">
+<div class="ph"><h1>💸 Gastos Diarios</h1><p>Registro de gastos operativos por día — gasolina, basura, mantenimiento, servicios. Reporte semanal y mensual acumulado.</p></div>
+
+<!-- Formulario nuevo gasto -->
+<div class="card" style="margin-bottom:14px;">
+  <div class="ct">➕ Registrar Gasto</div>
+  <div class="fgrid g3" style="margin-bottom:12px;">
+    <div class="fg">
+      <label>Fecha *</label>
+      <input type="date" id="gd-fecha">
+    </div>
+    <div class="fg">
+      <label>Categoría *</label>
+      <select id="gd-cat">
+        <option value="">— Seleccionar —</option>
+        <option value="combustible">⛽ Combustible / Gasolina</option>
+        <option value="basura">🗑 Recolección de Basura</option>
+        <option value="limpieza">🧹 Productos de Limpieza</option>
+        <option value="mantenimiento">🔧 Mantenimiento / Reparación</option>
+        <option value="servicios">💡 Servicios (agua, luz, teléfono)</option>
+        <option value="seguridad">🔒 Seguridad</option>
+        <option value="transporte">🚛 Transporte / Flete</option>
+        <option value="papeleria">📄 Papelería y Oficina</option>
+        <option value="alimentacion">🍽 Alimentación Personal</option>
+        <option value="bancario">🏦 Gasto Bancario / Comisión</option>
+        <option value="otro">📋 Otro</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label>Monto (Q) *</label>
+      <input type="number" id="gd-monto" placeholder="0.00" step="0.01" min="0">
+    </div>
+  </div>
+  <div class="fgrid g2" style="margin-bottom:12px;">
+    <div class="fg">
+      <label>Proveedor / Descripción</label>
+      <input type="text" id="gd-desc" placeholder="Ej. Gasolinera Puma, Camión de basura municipal...">
+    </div>
+    <div class="fg">
+      <label>Método de pago</label>
+      <select id="gd-metodo">
+        <option value="efectivo">💵 Efectivo</option>
+        <option value="banco">🏦 Transferencia / Banco</option>
+        <option value="tarjeta">💳 Tarjeta</option>
+        <option value="cheque">📝 Cheque</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Foto boleta -->
+  <div style="background:var(--s2);border:1px solid var(--br);border-radius:6px;padding:12px;margin-bottom:12px;">
+    <div style="font-size:.72rem;color:var(--muted2);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">📷 Foto de Boleta / Comprobante (opcional)</div>
+    <div style="display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap;">
+      <div id="gd-foto-preview" style="width:90px;height:90px;background:var(--s1);border:2px dashed var(--br);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;cursor:pointer;flex-shrink:0;" onclick="document.getElementById('gd-foto-input').click()">🧾</div>
+      <div style="flex:1;min-width:140px;">
+        <label class="btn bo bsm" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+          📷 Tomar / Cargar foto
+          <input type="file" id="gd-foto-input" accept="image/*" capture="environment" style="display:none;" onchange="gdLoadFoto(this)">
+        </label>
+        <div style="font-size:.68rem;color:var(--muted2);margin-top:6px;">Toma foto de la boleta, recibo o comprobante bancario.<br>Se guarda junto al gasto para auditoría.</div>
+        <button id="gd-foto-clear" class="btn bo bsm" style="display:none;margin-top:6px;border-color:var(--danger);color:var(--danger);font-size:.65rem;" onclick="gdClearFoto()">✕ Quitar foto</button>
+      </div>
+    </div>
+  </div>
+
+  <input type="hidden" id="gd-edit-id">
+  <div class="fa">
+    <button class="btn bp" onclick="gdSave()">💾 Guardar Gasto</button>
+    <button class="btn bo" id="gd-cancel-btn" style="display:none;" onclick="gdCancelEdit()">✕ Cancelar</button>
+  </div>
+</div>
+
+<!-- Filtros y resumen -->
+<div class="card" style="margin-bottom:14px;">
+  <div class="ct">📊 Reporte Acumulado</div>
+  <div class="fgrid g3" style="margin-bottom:12px;">
+    <div class="fg">
+      <label>Ver por</label>
+      <select id="gd-filtro-tipo" onchange="gdRender()">
+        <option value="semana">Esta semana</option>
+        <option value="mes">Este mes</option>
+        <option value="todo">Todo el historial</option>
+        <option value="personalizado">Rango personalizado</option>
+      </select>
+    </div>
+    <div class="fg" id="gd-filtro-desde-wrap" style="display:none;">
+      <label>Desde</label>
+      <input type="date" id="gd-filtro-desde" onchange="gdRender()">
+    </div>
+    <div class="fg" id="gd-filtro-hasta-wrap" style="display:none;">
+      <label>Hasta</label>
+      <input type="date" id="gd-filtro-hasta" onchange="gdRender()">
+    </div>
+  </div>
+
+  <!-- Tarjetas de totales por categoría -->
+  <div id="gd-resumen-cats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;"></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;border-top:2px solid var(--green-deep);padding-top:10px;margin-bottom:4px;">
+    <span style="font-weight:800;font-size:.95rem;color:var(--green-deep);">TOTAL PERÍODO</span>
+    <span id="gd-total-periodo" style="font-weight:800;font-size:1.1rem;color:var(--green-deep);">Q 0.00</span>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:10px;">
+    <button class="btn bo bsm" onclick="gdExportExcel()">⬇ Excel</button>
+  </div>
+</div>
+
+<!-- Tabla de gastos -->
+<div class="tw">
+  <div class="twh">
+    <span class="twt">Detalle de Gastos</span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Categoría</th>
+        <th>Descripción</th>
+        <th>Método</th>
+        <th style="text-align:right;">Monto</th>
+        <th>Boleta</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="gd-tbody"></tbody>
+  </table>
+</div>
+</div>
 <div class="ph">
   <div class="ph-left">
     <h1>📋 Pedidos Walmart</h1>
@@ -5353,6 +5493,395 @@ function startAutoBackup() {
   }, 60 * 60 * 1000);
 }
 
+// ════════════════════════════════════════════════════════════════════
+// 💸 GASTOS DIARIOS
+// ════════════════════════════════════════════════════════════════════
+
+const GD_CATS = {
+  combustible:  { label: 'Combustible',    ico: '⛽' },
+  basura:       { label: 'Basura',          ico: '🗑' },
+  limpieza:     { label: 'Limpieza',        ico: '🧹' },
+  mantenimiento:{ label: 'Mantenimiento',   ico: '🔧' },
+  servicios:    { label: 'Servicios',       ico: '💡' },
+  seguridad:    { label: 'Seguridad',       ico: '🔒' },
+  transporte:   { label: 'Transporte',      ico: '🚛' },
+  papeleria:    { label: 'Papelería',       ico: '📄' },
+  alimentacion: { label: 'Alimentación',    ico: '🍽' },
+  bancario:     { label: 'Gasto Bancario',  ico: '🏦' },
+  otro:         { label: 'Otro',            ico: '📋' },
+};
+
+let _gdFotoData = null;
+
+function gdInitFecha() {
+  const fi = document.getElementById('gd-fecha');
+  if (fi && !fi.value) {
+    const gt = new Date(Date.now() - 6*3600000);
+    fi.value = gt.toISOString().split('T')[0];
+  }
+  const ft = document.getElementById('gd-filtro-tipo');
+  if (ft) ft.value = 'semana';
+  gdToggleFiltroPersonal();
+}
+
+function gdToggleFiltroPersonal() {
+  const tipo = document.getElementById('gd-filtro-tipo')?.value;
+  const show = tipo === 'personalizado';
+  ['gd-filtro-desde-wrap','gd-filtro-hasta-wrap'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = show ? '' : 'none';
+  });
+}
+// hook filtro tipo
+document.addEventListener('DOMContentLoaded', () => {
+  const ft = document.getElementById('gd-filtro-tipo');
+  if (ft) ft.addEventListener('change', () => { gdToggleFiltroPersonal(); gdRender(); });
+});
+
+function gdLoadFoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    _gdFotoData = e.target.result;
+    const prev = document.getElementById('gd-foto-preview');
+    if (prev) prev.innerHTML = `<img src="${_gdFotoData}" style="width:100%;height:100%;object-fit:cover;border-radius:4px;">`;
+    const clr = document.getElementById('gd-foto-clear');
+    if (clr) clr.style.display = 'inline-flex';
+  };
+  reader.readAsDataURL(file);
+}
+
+function gdClearFoto() {
+  _gdFotoData = null;
+  const prev = document.getElementById('gd-foto-preview');
+  if (prev) prev.innerHTML = '🧾';
+  const clr = document.getElementById('gd-foto-clear');
+  if (clr) clr.style.display = 'none';
+  const inp = document.getElementById('gd-foto-input');
+  if (inp) inp.value = '';
+}
+
+function gdSave() {
+  if (!DB.gastosDiarios) DB.gastosDiarios = [];
+  const fecha  = document.getElementById('gd-fecha')?.value;
+  const cat    = document.getElementById('gd-cat')?.value;
+  const monto  = parseFloat(document.getElementById('gd-monto')?.value) || 0;
+  const desc   = document.getElementById('gd-desc')?.value.trim() || '';
+  const metodo = document.getElementById('gd-metodo')?.value || 'efectivo';
+  const editId = document.getElementById('gd-edit-id')?.value;
+
+  if (!fecha) { toast('⚠ Ingrese la fecha', true); return; }
+  if (!cat)   { toast('⚠ Seleccione categoría', true); return; }
+  if (!monto) { toast('⚠ Ingrese el monto', true); return; }
+
+  const rec = { fecha, cat, monto, desc, metodo, foto: _gdFotoData || null };
+
+  if (editId) {
+    const idx = DB.gastosDiarios.findIndex(g => g.id === editId);
+    if (idx >= 0) {
+      Object.assign(DB.gastosDiarios[idx], rec);
+      toast('✓ Gasto actualizado');
+    }
+    gdCancelEdit();
+  } else {
+    DB.gastosDiarios.unshift({ id: uid(), ts: now(), ...rec });
+    toast('✓ Gasto registrado');
+  }
+
+  // Reset form
+  document.getElementById('gd-cat').value   = '';
+  document.getElementById('gd-monto').value = '';
+  document.getElementById('gd-desc').value  = '';
+  gdClearFoto();
+  save();
+  gdRender();
+}
+
+function gdEdit(id) {
+  const g = (DB.gastosDiarios||[]).find(g => g.id === id);
+  if (!g) return;
+  document.getElementById('gd-edit-id').value  = g.id;
+  document.getElementById('gd-fecha').value    = g.fecha;
+  document.getElementById('gd-cat').value      = g.cat;
+  document.getElementById('gd-monto').value    = g.monto;
+  document.getElementById('gd-desc').value     = g.desc || '';
+  document.getElementById('gd-metodo').value   = g.metodo || 'efectivo';
+  if (g.foto) {
+    _gdFotoData = g.foto;
+    const prev = document.getElementById('gd-foto-preview');
+    if (prev) prev.innerHTML = `<img src="${g.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:4px;">`;
+    const clr = document.getElementById('gd-foto-clear');
+    if (clr) clr.style.display = 'inline-flex';
+  }
+  const cancelBtn = document.getElementById('gd-cancel-btn');
+  if (cancelBtn) cancelBtn.style.display = '';
+  document.getElementById('gd-fecha').scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+function gdCancelEdit() {
+  document.getElementById('gd-edit-id').value = '';
+  document.getElementById('gd-cat').value     = '';
+  document.getElementById('gd-monto').value   = '';
+  document.getElementById('gd-desc').value    = '';
+  gdClearFoto();
+  const cancelBtn = document.getElementById('gd-cancel-btn');
+  if (cancelBtn) cancelBtn.style.display = 'none';
+}
+
+function gdDel(id) {
+  if (!confirm('¿Eliminar este gasto?')) return;
+  DB.gastosDiarios = (DB.gastosDiarios||[]).filter(g => g.id !== id);
+  save(); gdRender(); toast('Gasto eliminado');
+}
+
+function gdGetRango() {
+  const tipo = document.getElementById('gd-filtro-tipo')?.value || 'semana';
+  const gt   = new Date(Date.now() - 6*3600000);
+  const hoy  = gt.toISOString().split('T')[0];
+
+  if (tipo === 'semana') {
+    const dow = gt.getDay(); // 0=dom
+    const lunes = new Date(gt); lunes.setDate(gt.getDate() - ((dow+6)%7));
+    const sab   = new Date(lunes); sab.setDate(lunes.getDate() + 6);
+    return { desde: lunes.toISOString().split('T')[0], hasta: sab.toISOString().split('T')[0], label: 'Esta semana' };
+  }
+  if (tipo === 'mes') {
+    const desde = hoy.slice(0,7) + '-01';
+    const hasta = new Date(gt.getFullYear(), gt.getMonth()+1, 0).toISOString().split('T')[0];
+    return { desde, hasta, label: 'Este mes' };
+  }
+  if (tipo === 'personalizado') {
+    const desde = document.getElementById('gd-filtro-desde')?.value || '';
+    const hasta = document.getElementById('gd-filtro-hasta')?.value || hoy;
+    return { desde, hasta, label: `${desde} → ${hasta}` };
+  }
+  return { desde: '2000-01-01', hasta: '2099-12-31', label: 'Todo el historial' };
+}
+
+function gdRender() {
+  if (!DB.gastosDiarios) DB.gastosDiarios = [];
+  const { desde, hasta } = gdGetRango();
+  const filtrados = DB.gastosDiarios.filter(g => g.fecha >= desde && g.fecha <= hasta)
+    .sort((a,b) => b.fecha.localeCompare(a.fecha));
+
+  const total = filtrados.reduce((s,g) => s + (g.monto||0), 0);
+  document.getElementById('gd-total-periodo').textContent = 'Q ' + total.toFixed(2);
+
+  // Totales por categoría
+  const porCat = {};
+  filtrados.forEach(g => { porCat[g.cat] = (porCat[g.cat]||0) + (g.monto||0); });
+  const catsEl = document.getElementById('gd-resumen-cats');
+  if (catsEl) {
+    catsEl.innerHTML = Object.entries(porCat)
+      .sort((a,b) => b[1]-a[1])
+      .map(([cat, tot]) => {
+        const info = GD_CATS[cat] || { label: cat, ico: '📋' };
+        return `<div style="background:var(--s2);border:1px solid var(--br);border-radius:6px;padding:8px 12px;min-width:110px;">
+          <div style="font-size:.9rem;">${info.ico}</div>
+          <div style="font-size:.68rem;color:var(--muted2);margin-top:2px;">${info.label}</div>
+          <div style="font-size:.88rem;font-weight:700;color:var(--green-deep);">Q ${tot.toFixed(2)}</div>
+        </div>`;
+      }).join('');
+  }
+
+  // Tabla
+  const tb = document.getElementById('gd-tbody');
+  if (!tb) return;
+  if (!filtrados.length) {
+    tb.innerHTML = '<tr><td colspan="7"><div class="empty">Sin gastos en este período</div></td></tr>';
+    return;
+  }
+  tb.innerHTML = filtrados.map(g => {
+    const info = GD_CATS[g.cat] || { label: g.cat, ico: '📋' };
+    const metMap = { efectivo:'💵 Efectivo', banco:'🏦 Banco', tarjeta:'💳 Tarjeta', cheque:'📝 Cheque' };
+    const fotoBtn = g.foto
+      ? `<button class="btn bo bsm" style="font-size:.65rem;" onclick="gdVerFoto('${g.id}')">🧾 Ver</button>`
+      : '<span style="color:var(--muted2);font-size:.68rem;">—</span>';
+    return `<tr>
+      <td>${g.fecha}</td>
+      <td><span class="chip cb">${info.ico} ${info.label}</span></td>
+      <td style="font-size:.78rem;">${g.desc || '—'}</td>
+      <td style="font-size:.72rem;">${metMap[g.metodo]||g.metodo||'—'}</td>
+      <td style="text-align:right;font-weight:700;color:var(--green-deep);">Q ${(g.monto||0).toFixed(2)}</td>
+      <td>${fotoBtn}</td>
+      <td style="white-space:nowrap;">
+        <button class="btn bo bsm" onclick="gdEdit('${g.id}')" style="font-size:.65rem;">✏</button>
+        <button class="btn bo bsm" onclick="gdDel('${g.id}')" style="font-size:.65rem;border-color:var(--danger);color:var(--danger);">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function gdVerFoto(id) {
+  const g = (DB.gastosDiarios||[]).find(g => g.id === id);
+  if (!g || !g.foto) return;
+  const w = window.open('', '_blank', 'width=700,height=600');
+  w.document.write(`<html><body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;height:100vh;">
+    <img src="${g.foto}" style="max-width:100%;max-height:100%;object-fit:contain;">
+  </body></html>`);
+}
+
+function gdExportExcel() {
+  const { desde, hasta, label } = gdGetRango();
+  const filtrados = (DB.gastosDiarios||[])
+    .filter(g => g.fecha >= desde && g.fecha <= hasta)
+    .sort((a,b) => b.fecha.localeCompare(a.fecha));
+  if (!filtrados.length) { toast('⚠ Sin datos en el período', true); return; }
+  let csv = '\uFEFF' + 'Fecha,Categoría,Descripción,Método de Pago,Monto (Q)\n';
+  filtrados.forEach(g => {
+    const info = GD_CATS[g.cat] || { label: g.cat };
+    const metMap = { efectivo:'Efectivo', banco:'Banco/Transferencia', tarjeta:'Tarjeta', cheque:'Cheque' };
+    csv += [g.fecha, info.label, g.desc||'', metMap[g.metodo]||g.metodo||'', (g.monto||0).toFixed(2)]
+      .map(v => '"'+String(v).replace(/"/g,'""')+'"').join(',') + '\n';
+  });
+  const total = filtrados.reduce((s,g)=>s+(g.monto||0),0);
+  csv += `"","","","TOTAL","${total.toFixed(2)}"\n`;
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(blob),
+    download: `GastosDiarios_${label.replace(/[^a-zA-Z0-9]/g,'_')}_${new Date().toISOString().split('T')[0]}.csv`
+  });
+  a.click();
+  toast('✅ Excel descargado');
+}
+
+// ════════════════════════════════════════════════════════════════════
+// 👷 NÓMINA DESDE ACCESO — calcular días trabajados automáticamente
+// ════════════════════════════════════════════════════════════════════
+
+function nomCalcDias(empId, desde, hasta) {
+  // Cuenta días únicos en que el empleado aparece en DB.al dentro del rango
+  const dias = new Set();
+  (DB.al||[]).forEach(turno => {
+    if (!turno.fecha || turno.fecha < desde || turno.fecha > hasta) return;
+    const participantes = turno.empleados || [];
+    const estaPresente = participantes.some(e => e.id === empId || e.empleadoId === empId);
+    if (estaPresente) dias.add(turno.fecha);
+  });
+  return dias.size;
+}
+
+function nomGetResumen(desde, hasta) {
+  // Retorna array con días trabajados por empleado en el rango
+  const activos = (DB.empleados||[]).filter(e => e.estado === 'activo');
+  return activos.map(emp => {
+    const dias = nomCalcDias(emp.id, desde, hasta);
+    return {
+      id: emp.id, nombre: emp.nombre, cargo: emp.cargo || '—',
+      roles: (emp.roles||[]).join(', '),
+      diasTrabajados: dias,
+      salarioDia: emp.salarioDia || 0,
+      totalPago: dias * (emp.salarioDia || 0),
+    };
+  }).filter(e => e.diasTrabajados > 0);
+}
+
+function nomMostrarModal(desde, hasta) {
+  const resumen = nomGetResumen(desde, hasta);
+  if (!resumen.length) {
+    toast('⚠ Sin registros de acceso en ese período', true); return;
+  }
+  const total = resumen.reduce((s,e) => s + e.totalPago, 0);
+  const rows = resumen.map(e => `
+    <tr>
+      <td style="padding:5px 8px;">${e.nombre}</td>
+      <td style="padding:5px 8px;color:var(--muted2);font-size:.75rem;">${e.cargo}</td>
+      <td style="padding:5px 8px;text-align:center;font-weight:700;">${e.diasTrabajados}</td>
+      <td style="padding:5px 8px;text-align:right;">
+        <input type="number" value="${e.salarioDia||0}" step="1" min="0"
+          style="width:80px;text-align:right;font-size:.78rem;padding:3px 6px;border:1px solid var(--br);border-radius:3px;background:var(--s2);"
+          onchange="nomUpdateSalarioDia('${e.id}', this.value, '${desde}', '${hasta}')">
+      </td>
+      <td style="padding:5px 8px;text-align:right;font-weight:700;color:var(--green-deep);" id="nom-total-${e.id}">
+        Q ${e.totalPago.toFixed(2)}
+      </td>
+    </tr>`).join('');
+
+  const modal = document.createElement('div');
+  modal.id = 'nom-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;';
+  modal.innerHTML = `
+    <div style="background:var(--bg);border-radius:8px;padding:20px;max-width:700px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.3);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div>
+          <div style="font-family:var(--fh);font-weight:700;font-size:1rem;">👷 Nómina del Período</div>
+          <div style="font-size:.72rem;color:var(--muted2);">${desde} → ${hasta} · Días contados desde Control de Acceso</div>
+        </div>
+        <button onclick="document.getElementById('nom-modal').remove()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--muted2);">✕</button>
+      </div>
+      <div style="background:var(--s2);border-radius:6px;overflow:hidden;margin-bottom:14px;">
+        <table style="width:100%;border-collapse:collapse;font-size:.8rem;">
+          <thead>
+            <tr style="background:var(--s1);">
+              <th style="padding:7px 8px;text-align:left;">Empleado</th>
+              <th style="padding:7px 8px;text-align:left;">Cargo</th>
+              <th style="padding:7px 8px;text-align:center;">Días</th>
+              <th style="padding:7px 8px;text-align:right;">Q/día</th>
+              <th style="padding:7px 8px;text-align:right;">Total</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;border-top:2px solid var(--green-deep);padding-top:10px;margin-bottom:14px;">
+        <span style="font-weight:800;font-size:.95rem;">TOTAL NÓMINA</span>
+        <span id="nom-grand-total" style="font-weight:800;font-size:1.1rem;color:var(--green-deep);">Q ${total.toFixed(2)}</span>
+      </div>
+      <div style="font-size:.7rem;color:var(--muted2);margin-bottom:12px;">
+        💡 Ajusta el salario por día si no está configurado. Se guardará en el perfil del empleado.
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn bp" onclick="nomExportExcel('${desde}','${hasta}')">⬇ Descargar Excel</button>
+        <button class="btn bo" onclick="document.getElementById('nom-modal').remove()">Cerrar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+function nomUpdateSalarioDia(empId, val, desde, hasta) {
+  const salario = parseFloat(val) || 0;
+  const emp = (DB.empleados||[]).find(e => e.id === empId);
+  if (emp) { emp.salarioDia = salario; save(); }
+  // Actualizar total en la fila
+  const dias = nomCalcDias(empId, desde, hasta);
+  const totalEl = document.getElementById('nom-total-' + empId);
+  if (totalEl) totalEl.textContent = 'Q ' + (dias * salario).toFixed(2);
+  // Actualizar gran total
+  const resumen = nomGetResumen(desde, hasta);
+  const total = resumen.reduce((s,e) => s + e.totalPago, 0);
+  const gt = document.getElementById('nom-grand-total');
+  if (gt) gt.textContent = 'Q ' + total.toFixed(2);
+}
+
+function nomExportExcel(desde, hasta) {
+  const resumen = nomGetResumen(desde, hasta);
+  if (!resumen.length) return;
+  let csv = '\uFEFF' + `Nómina ${desde} a ${hasta}\n`;
+  csv += 'Empleado,Cargo,Roles,Días Trabajados,Salario/Día (Q),Total (Q)\n';
+  resumen.forEach(e => {
+    csv += [e.nombre, e.cargo, e.roles, e.diasTrabajados, e.salarioDia.toFixed(2), e.totalPago.toFixed(2)]
+      .map(v => '"'+String(v).replace(/"/g,'""')+'"').join(',') + '\n';
+  });
+  const total = resumen.reduce((s,e)=>s+e.totalPago,0);
+  csv += `"","","","","TOTAL","${total.toFixed(2)}"\n`;
+  const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const a = Object.assign(document.createElement('a'),{
+    href:URL.createObjectURL(blob),
+    download:`Nomina_${desde}_${hasta}.csv`
+  });
+  a.click();
+  toast('✅ Excel de nómina descargado');
+}
+
+function nomAbrir() {
+  const desde = document.getElementById('nom-desde')?.value;
+  const hasta  = document.getElementById('nom-hasta')?.value;
+  if (!desde || !hasta) { toast('⚠ Selecciona el rango de fechas', true); return; }
+  if (desde > hasta) { toast('⚠ La fecha desde debe ser menor que hasta', true); return; }
+  nomMostrarModal(desde, hasta);
+}
+
 function showSnapshots() {
   const panel = document.getElementById('snapshots-panel');
   if (!panel) return;
@@ -5416,7 +5945,8 @@ const DB_DEFAULT = {tl:[],dt:[],bl:[],fum:[],rod:[],cap:[],ee:[],al:[],vis:[],vp
   iproductos:[],ipresentaciones:[],iclientes:[],ientradas:[],isalidas:[],cotizaciones:[],
   proveedores:[],vgtVentas:[],vintVentas:[],maquila:[],usuarios:[],
   pedidosWalmart:[],clientes:[],conductores:[],empleados:[],
-  gastosSemanales:[]};  // weekly expense records
+  gastosSemanales:[],
+  gastosDiarios:[]};  // gastos diarios con foto de boleta
 
 let DB = JSON.parse(JSON.stringify(DB_DEFAULT));
 
@@ -5748,6 +6278,9 @@ function show(id,el){closeNavOnMobile();
         invEnsureDB(); renderIprod(); renderIpres(); renderIcli(); invConfigTab('productos', null); break;
       case 'maquila':
         invEnsureDB(); maqInit(); break;
+      case 'gastos-diarios':
+        if (!DB.gastosDiarios) DB.gastosDiarios = [];
+        gdInitFecha(); gdRender(); break;
       case 'pedidos-walmart':
         invEnsureDB(); pwInit(); break;
       case 'ventas-gt':
