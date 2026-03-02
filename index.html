@@ -752,6 +752,29 @@ tr:hover td{background:var(--green-pale);}
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="AJÚA BPM">
   <link rel="apple-touch-icon" href="icon-192.png">
+<!-- ══ CACHE BUSTER — corre primero, mata SW viejo ══ -->
+<script>
+(function() {
+  // Si hay un SW viejo con caché v1, lo elimina inmediatamente
+  if ('serviceWorker' in navigator && 'caches' in window) {
+    caches.keys().then(keys => {
+      keys.forEach(k => {
+        if (k !== 'ajua-bpm-prod-v2') {
+          console.log('[CACHE BUSTER] Eliminando caché viejo:', k);
+          caches.delete(k);
+        }
+      });
+    });
+    // Forzar que el nuevo SW tome control ahora
+    navigator.serviceWorker.getRegistrations().then(regs => {
+      regs.forEach(reg => {
+        if (reg.waiting) reg.waiting.postMessage('skipWaiting');
+        reg.update(); // Chequear si hay SW nuevo
+      });
+    });
+  }
+})();
+</script>
 <!-- Firebase ESM — v10.12 con persistencia moderna -->
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
@@ -786,7 +809,7 @@ tr:hover td{background:var(--green-pale);}
 <div style="font-size:2rem;margin-bottom:6px;">🌿</div>
 <div style="font-family:var(--fh);font-size:1.3rem;font-weight:700;color:var(--acc);">AJÚA</div>
 <div style="font-size:.72rem;color:var(--muted2);margin-top:3px;">Sistema de Control Interno</div>
-<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 01/03/2026 — build 2 · fix Firebase</div>
+<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 01/03/2026 20:49 GT — build 3 · fix merge Firebase</div>
 </div>
 <div style="margin-bottom:14px;">
 <label style="font-size:.68rem;color:var(--muted2);display:block;margin-bottom:5px;">Usuario</label>
@@ -5272,26 +5295,17 @@ async function initFirebase(firebaseConfig) {
       const cloud = snap.data();
       console.log('✅ Firebase: documento encontrado —', Object.keys(cloud).length, 'colecciones');
 
-      // ── Merge inteligente: cloud gana SIEMPRE ──────────────────
-      // Nunca dejar que arrays vacíos locales destruyan datos de cloud
-      const merged = Object.assign({}, DB_DEFAULT);
-      Object.keys(DB_DEFAULT).forEach(k => {
-        const cv = cloud[k];
-        const lv = DB[k]; // localStorage data (puede ser vacío si es nuevo dispositivo)
-        if (cv !== undefined) {
-          // Cloud tiene el dato — siempre usar cloud
-          merged[k] = cv;
-        } else if (lv !== undefined) {
-          // Cloud no tiene este key — usar local como fallback
-          merged[k] = lv;
-        }
-        // Si ninguno tiene dato, queda DB_DEFAULT (array vacío)
-      });
-      DB = merged;
+      // ── Merge: cloud es la fuente de verdad COMPLETA ────────────
+      // CRÍTICO: usar Object.keys(cloud) NO Object.keys(DB_DEFAULT)
+      // El viejo código ignoraba silenciosamente cualquier campo de Firebase
+      // que no estuviera en DB_DEFAULT (calibraciones, gastoSemanales, etc.)
+      DB = Object.assign({}, DB_DEFAULT, cloud);
       localStorage.setItem(DB_KEY, JSON.stringify(DB));
-      console.log('✅ DB cargada desde cloud. Empleados:', (DB.empleados||[]).length,
-                  '| Usuarios:', (DB.usuarios||[]).length,
-                  '| Cotizaciones:', (DB.cotizaciones||[]).length);
+      const counts = Object.entries(DB)
+        .filter(([,v]) => Array.isArray(v))
+        .map(([k,v]) => `${k}:${v.length}`)
+        .join(' | ');
+      console.log('✅ DB cargada desde Firebase:', counts);
     } else {
       // Documento NO existe en Firestore
       const hasData = Object.values(DB).some(v => Array.isArray(v) && v.length > 0);
@@ -5306,15 +5320,35 @@ async function initFirebase(firebaseConfig) {
     _fbReady = true;
     // ── authEnsureDB DESPUÉS de cargar cloud ──────────────────────
     try { authEnsureDB(); } catch(e) {}
+    // Si ya hay sesión activa, re-validarla con datos reales de Firebase
+    // (puede haber hecho login antes de que Firebase cargara)
+    if (AUTH_SESSION) {
+      const user = (DB.usuarios||[]).find(u => u.id === AUTH_SESSION.id && u.activo !== false);
+      if (user) {
+        AUTH_SESSION = { id: user.id, nombre: user.nombre, rol: user.rol, modulos: user.modulos || [] };
+      }
+    }
 
     // ── Refrescar toda la UI con datos cloud ──────────────────────
     try { renderAll(); } catch(e) { console.error('renderAll:', e); }
+    // Re-render en cascada para asegurar que TODO se actualice
     setTimeout(() => {
+      try { renderAll(); } catch(e) {}
       try { populateAllRespSelects(); } catch(e) {}
       try { alBuildEmpTable();        } catch(e) {}
       try { capBuildAsistentesList(); } catch(e) {}
       try { eePopulateSelect();       } catch(e) {}
-    }, 150);
+      try { renderUsuarios();         } catch(e) {}
+      try { renderInvAll();           } catch(e) {}
+      try { updateDash();             } catch(e) {}
+      try { populateProvSelects();    } catch(e) {}
+      try { populateCotSelects();     } catch(e) {}
+    }, 300);
+    // Segundo render para garantizar — algunos renders dependen de otros
+    setTimeout(() => {
+      try { renderAll(); } catch(e) {}
+      try { populateAllRespSelects(); } catch(e) {}
+    }, 800);
 
     // ── Listener en tiempo real ───────────────────────────────────
     onSnapshot(docRef, (snap) => {

@@ -1,5 +1,6 @@
-// AJÚA BPM — Service Worker v1.1 — Production
-const CACHE_NAME = 'ajua-bpm-prod-v1';
+// AJÚA BPM — Service Worker v2.0 — 01/03/2026 20:49 GT
+// CACHE BUMP: v1 → v2 para forzar eliminación del caché viejo
+const CACHE_NAME = 'ajua-bpm-prod-v2';
 const OFFLINE_URL = '/';
 
 const PRECACHE = [
@@ -14,14 +15,18 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(PRECACHE))
-      .then(() => self.skipWaiting())
+      .then(() => self.skipWaiting()) // Activa inmediatamente sin esperar
   );
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      // Elimina TODOS los caches anteriores (v1, v1.1, etc.)
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => {
+        console.log('[SW] Eliminando caché viejo:', k);
+        return caches.delete(k);
+      }))
     ).then(() => self.clients.claim())
   );
 });
@@ -33,6 +38,27 @@ self.addEventListener('fetch', event => {
       event.request.url.includes('gstatic') ||
       event.request.url.includes('googleapis')) return;
 
+  // Para index.html y navegación: SIEMPRE ir a red primero, caché como fallback
+  const isNavigation = event.request.mode === 'navigate' ||
+                       event.request.url.endsWith('/') ||
+                       event.request.url.endsWith('/index.html');
+
+  if (isNavigation) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request)) // Fallback a caché si sin internet
+    );
+    return;
+  }
+
+  // Para iconos y assets: caché primero (cambian poco)
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached;
