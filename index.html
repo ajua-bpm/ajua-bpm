@@ -771,7 +771,7 @@ tr:hover td{background:var(--green-pale);}
   if ('serviceWorker' in navigator && 'caches' in window) {
     caches.keys().then(keys => {
       keys.forEach(k => {
-        if (k !== 'ajua-bpm-prod-v2') {
+        if (k !== 'ajua-bpm-prod-v3') {
           console.log('[CACHE BUSTER] Eliminando caché viejo:', k);
           caches.delete(k);
         }
@@ -821,7 +821,7 @@ tr:hover td{background:var(--green-pale);}
 <div style="font-size:2rem;margin-bottom:6px;">🌿</div>
 <div style="font-family:var(--fh);font-size:1.3rem;font-weight:700;color:var(--acc);">AJÚA</div>
 <div style="font-size:.72rem;color:var(--muted2);margin-top:3px;">Sistema de Control Interno</div>
-<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 02/03/2026 — build 25 · traz fallback cotizacion + guard umbral fix· lavado: sin checkboxes por persona, presencia = cumplimiento</div>
+<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 03/03/2026 — build 26 · SW cache v3 + personal live desde DB.al</div>
 </div>
 <div style="margin-bottom:14px;">
 <label style="font-size:.68rem;color:var(--muted2);display:block;margin-bottom:5px;">Usuario</label>
@@ -13656,7 +13656,13 @@ function maqNuevaSemana() {
 // ── Personal rows from access control ────────────────────────────
 function maqBuildPersonalRows() {
   const inicio = document.getElementById('maq-semana-inicio')?.value || '';
-  const fin    = document.getElementById('maq-semana-fin')?.value    || '';
+  let fin = document.getElementById('maq-semana-fin')?.value || '';
+  // If hidden input not yet set, derive Saturday from Monday
+  if (!fin && inicio) {
+    const _fd = new Date(inicio + 'T12:00:00');
+    _fd.setDate(_fd.getDate() + 5);
+    fin = _fd.toISOString().split('T')[0];
+  }
   const rows   = [];
 
   // Build days of this week (Mon-Sat)
@@ -13731,6 +13737,20 @@ function maqRenderCuentas() {
     maqCuentas = JSON.parse(JSON.stringify(saved.cuentas || {}));
     if (document.getElementById('maq-lbs-proc'))
       document.getElementById('maq-lbs-proc').value = saved.lbsProc || 0;
+  }
+
+  // SIEMPRE reconstruir asistencia de personal desde DB.al (acceso y lavado = fuente de verdad)
+  // Preserva salario/anticipo guardados, pero refreshea qué días trabajó cada uno
+  {
+    const _fresh = maqBuildPersonalRows();
+    const _savedP = maqCuentas['personal'] || [];
+    maqCuentas['personal'] = _fresh.map(fr => {
+      const sr = _savedP.find(r => r.label === fr.label);
+      return Object.assign({}, fr, {
+        salarioSemanal: sr ? (sr.salarioSemanal || 0) : 0,
+        anticipo:       sr ? (sr.anticipo       || 0) : (fr.anticipo || 0),
+      });
+    });
   }
 
   let html = '';
