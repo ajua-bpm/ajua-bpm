@@ -811,7 +811,7 @@ if ('caches' in window) {
 <div style="font-size:2rem;margin-bottom:6px;">🌿</div>
 <div style="font-family:var(--fh);font-size:1.3rem;font-weight:700;color:var(--acc);">AJÚA</div>
 <div style="font-size:.72rem;color:var(--muted2);margin-top:3px;">Sistema de Control Interno</div>
-<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 03/03/2026 — build 29 · sin SW, sin reload forzado, recuperacion auto</div>
+<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 03/03/2026 — build 32 · proteccion datos Firebase</div>
 </div>
 <div style="margin-bottom:14px;">
 <label style="font-size:.68rem;color:var(--muted2);display:block;margin-bottom:5px;">Usuario</label>
@@ -4198,7 +4198,8 @@ function authEnsureDB() {
       activo:  true,
       ts:      new Date().toISOString(),
     });
-    save();
+    // 🛡️ SOLO localStorage — nunca escribir a Firebase en el init
+    try { localStorage.setItem(DB_KEY, JSON.stringify(DB)); } catch(e) {}
     return;
   }
 
@@ -4216,7 +4217,6 @@ function authEnsureDB() {
         : (AUTH_ROLE_DEFAULTS[u.rol] || []);
       changed = true;
     } else {
-      // Migrate old names
       const migrated = u.modulos.map(m => OLD_TO_NEW[m] || m);
       if (JSON.stringify(migrated) !== JSON.stringify(u.modulos)) {
         u.modulos = migrated;
@@ -4229,7 +4229,8 @@ function authEnsureDB() {
     }
     if (u.activo === undefined) { u.activo = true; changed = true; }
   });
-  if (changed) save();
+  // 🛡️ SOLO localStorage — Firebase solo recibe datos por acciones del usuario
+  if (changed) try { localStorage.setItem(DB_KEY, JSON.stringify(DB)); } catch(e) {}
   localStorage.setItem(AUTH_VER_KEY, String(AUTH_VERSION));
 }
 
@@ -5824,12 +5825,12 @@ function startAutoBackup() {
     snapSave();
     backupToFirebase();
   }, 2 * 60 * 1000);
-  // Luego cada hora
+  // Luego cada 5 minutos — protección real de datos
   setInterval(() => {
     snapSave();
     backupToFirebase();
     console.log('⏰ Auto-backup ejecutado:', new Date().toLocaleString('es-GT'));
-  }, 60 * 60 * 1000);
+  }, 5 * 60 * 1000);
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -6974,21 +6975,19 @@ function save() {
   const currentTotal = _dbTotalRecords(DB);
 
   // ══ GUARD 1: Nunca subir a Firebase antes de que cargue ══════════
-  // Si Firebase aún no terminó de leer, solo guardar local
-  // Esto previene el caso: nuevo dispositivo → DB vacía → save() → borra Firebase
   const canWriteFirebase = _fbReady;
 
   // ══ GUARD 2: Nunca subir menos datos de los que había ════════════
-  // Compara con el último snapshot local
+  // Compara contra el snapshot local más reciente
   let blockedByGuard = false;
   try {
     const snaps = snapList();
     if (snaps.length > 0) {
       const lastGoodTotal = _dbTotalRecords(snaps[0].data);
-      // Only block if DB was large (>50 records) AND current is < 30% of that.
-      // For small databases, never block — a single "gasto de agua" record is valid.
-      if (lastGoodTotal > 50 && currentTotal < lastGoodTotal * 0.3) {
-        console.error(`🚨 FIREBASE BLOQUEADO: actual(${currentTotal}) < 30% de snapshot(${lastGoodTotal})`);
+      // Bloquear si la DB actual tiene menos del 60% del último snapshot conocido
+      // (umbral más estricto — antes era 30% y solo con >50 registros)
+      if (lastGoodTotal > 10 && currentTotal < lastGoodTotal * 0.6) {
+        console.error(`🚨 FIREBASE BLOQUEADO: actual(${currentTotal}) < 60% de snapshot(${lastGoodTotal})`);
         blockedByGuard = true;
       }
     }
@@ -12923,6 +12922,40 @@ function renderInvMovs() {
     '</tr>'
   ).join('');
 }
+function invAbrirTrazModal(prodId) {
+  invEnsureDB();
+  const lotes = (DB.ientradas||[]).filter(r => r.productoId === prodId);
+  if (lotes.length === 0) {
+    // No lots registered — go to general trazabilidad
+    invAbrirTraz(prodId);
+    return;
+  }
+  if (lotes.length === 1) {
+    // Single lot — open modal directly
+    invVerTrazaLote(lotes[0].id);
+    return;
+  }
+  // Multiple lots — show picker modal
+  const safe = s => String(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const items = lotes.map(l => {
+    const lbs = (l.lbsNeto||l.lbsBruto||l.lbsTotal||(l.kgTotal?l.kgTotal*2.20462:0)||0).toFixed(0);
+    const tag = l.duca ? 'DUCA '+l.duca : l.cotRef ? l.cotRef : 'Lote '+l.fecha;
+    return '<button onclick="document.getElementById(\'traz-pick-overlay\').remove();invVerTrazaLote(\''+l.id+'\')" style="width:100%;text-align:left;padding:10px 14px;margin-bottom:6px;background:var(--s1);border:1.5px solid var(--br);border-radius:8px;cursor:pointer;font-size:.78rem;">' +
+      '<div style="font-weight:700;color:var(--green-deep);">' + safe(tag) + '</div>' +
+      '<div style="font-size:.68rem;color:var(--muted2);margin-top:2px;">' + l.fecha + ' · ' + lbs + ' lbs</div>' +
+    '</button>';
+  }).join('');
+  const html = '<div id="traz-pick-overlay" onclick="if(event.target===this)this.remove()" style="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9998;display:flex;align-items:center;justify-content:center;padding:16px;">' +
+    '<div style="background:var(--cream);border-radius:14px;padding:24px;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.4);">' +
+      '<div style="font-family:var(--fh);font-size:1rem;font-weight:800;color:var(--green-deep);margin-bottom:16px;">🔗 Seleccionar lote</div>' +
+      items +
+      '<button onclick="document.getElementById(\'traz-pick-overlay\').remove()" style="width:100%;padding:8px;background:none;border:1px solid var(--br);border-radius:6px;font-size:.75rem;color:var(--muted2);cursor:pointer;margin-top:4px;">Cancelar</button>' +
+    '</div></div>';
+  const ex = document.getElementById('traz-pick-overlay');
+  if (ex) ex.remove();
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
 function invAbrirTraz(prodId) {
   // Pre-fill trazabilidad and navigate to it
   show('inv-trazabilidad', document.querySelector('.ni[onclick*="inv-trazabilidad"]'));
@@ -13182,7 +13215,7 @@ function renderInvStock() {
         // Header row: product name + traza button
         '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">' +
           '<div style="font-family:var(--fh);font-size:.84rem;font-weight:800;line-height:1.3;color:var(--green-deep);">' + s.prod.nombre + '</div>' +
-          '<button onclick="invAbrirTraz(\''+s.prod.id+'\')" style="font-size:.58rem;padding:3px 8px;border:1px solid rgba(0,122,82,.3);border-radius:4px;background:rgba(0,122,82,.06);color:var(--acc);cursor:pointer;flex-shrink:0;margin-left:8px;white-space:nowrap;">🔗 Trazabilidad</button>' +
+          '<button onclick="invAbrirTrazModal(\''+s.prod.id+'\')" style="font-size:.58rem;padding:3px 8px;border:1px solid rgba(0,122,82,.3);border-radius:4px;background:rgba(0,122,82,.06);color:var(--acc);cursor:pointer;flex-shrink:0;margin-left:8px;white-space:nowrap;">🔗 Trazabilidad</button>' +
         '</div>' +
         // Big stock number
         '<div style="margin-bottom:8px;">' +
