@@ -767,23 +767,44 @@ tr:hover td{background:var(--green-pale);}
 <!-- ══ CACHE BUSTER — corre primero, mata SW viejo ══ -->
 <script>
 (function() {
-  // Si hay un SW viejo con caché v1, lo elimina inmediatamente
-  if ('serviceWorker' in navigator && 'caches' in window) {
-    caches.keys().then(keys => {
-      keys.forEach(k => {
-        if (k !== 'ajua-bpm-prod-v3') {
-          console.log('[CACHE BUSTER] Eliminando caché viejo:', k);
-          caches.delete(k);
-        }
-      });
-    });
-    // Forzar que el nuevo SW tome control ahora
+  // BUILD 27 — Cache nuclear reset
+  // Eliminar TODOS los SW registrados y TODOS los caches
+  // Esto garantiza que el navegador descargue siempre el index más reciente
+  const BUILD_TOKEN = 'ajua-build-27';
+  const alreadyCleared = sessionStorage.getItem(BUILD_TOKEN);
+
+  if ('serviceWorker' in navigator) {
+    // Dar de baja TODOS los service workers sin excepción
     navigator.serviceWorker.getRegistrations().then(regs => {
       regs.forEach(reg => {
-        if (reg.waiting) reg.waiting.postMessage('skipWaiting');
-        reg.update(); // Chequear si hay SW nuevo
+        console.log('[BUILD27] Unregistering SW:', reg.scope);
+        reg.unregister();
       });
     });
+  }
+
+  if ('caches' in window) {
+    // Borrar TODOS los caches sin excepción
+    caches.keys().then(keys => {
+      keys.forEach(k => {
+        console.log('[BUILD27] Deleting cache:', k);
+        caches.delete(k);
+      });
+    });
+  }
+
+  // Marcar que ya se limpió en esta sesión para no hacer reload infinito
+  if (!alreadyCleared) {
+    sessionStorage.setItem(BUILD_TOKEN, '1');
+    // Solo recargar si había SW activo (para que tome efecto el unregister)
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(regs => {
+        if (regs.length > 0) {
+          console.log('[BUILD27] SW encontrado — recargando para aplicar cambios');
+          setTimeout(() => window.location.reload(), 500);
+        }
+      });
+    }
   }
 })();
 </script>
