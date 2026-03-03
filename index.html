@@ -2371,8 +2371,6 @@ tr:hover td{background:var(--green-pale);}
   </div>
 </div>
 </div>
-
-</div>
 <div class="sec" id="sec-inv-salida">
 <div class="ph"><h1>Ventas Walmart</h1><p>Carga el PDF Ediwin — la IA extrae cliente, productos, cantidades y OC · IVA + retención 80% calculados automáticamente</p></div>
 <div class="card">
@@ -12230,13 +12228,30 @@ function salReadXML(input) {
         }
 
         // Buscar presentación que coincida
+        // PRIORIDAD 1: código UXC exacto (ej. "UXC_24" en el desc del FEL)
         let presMatch = null;
         if (prodMatch) {
-          presMatch = (DB.ipresentaciones||[]).find(pr =>
-            pr.productoId === prodMatch.id &&
-            (desc.toUpperCase().includes(pr.nombre.toUpperCase()) ||
-             pr.nombre.toUpperCase().includes(descUp.split(' ')[0]))
-          );
+          const uxcMatch = descUp.match(/UXC_(\d+)/);
+          if (uxcMatch) {
+            const uxcCode = uxcMatch[0]; // ej. "UXC_24"
+            presMatch = (DB.ipresentaciones||[]).find(pr =>
+              pr.productoId === prodMatch.id &&
+              pr.nombre.toUpperCase().includes(uxcCode)
+            );
+          }
+          if (!presMatch) {
+            // Fallback: descripción completa incluida en nombre de presentación
+            presMatch = (DB.ipresentaciones||[]).find(pr =>
+              pr.productoId === prodMatch.id &&
+              desc.toUpperCase().includes(pr.nombre.toUpperCase())
+            );
+          }
+          if (!presMatch) {
+            // Último recurso: primera presentación del producto
+            presMatch = (DB.ipresentaciones||[]).find(pr =>
+              pr.productoId === prodMatch.id
+            );
+          }
         }
 
         lineasCargadas.push({ n, desc, cant, precioConIVA, precioSinIVA, totalLinea, prodMatch, presMatch });
