@@ -1799,7 +1799,11 @@ if ('caches' in window) {
 </select>
 </div>
 <div class="fg"><label>Fecha de ingreso</label><input type="date" id="ine-fecha"></div>
-<div class="fg"><label>Origen / Proveedor</label><input id="ine-origen" placeholder="México, proveedor..."></div>
+<div class="fg"><label>Origen / País</label><input id="ine-origen" placeholder="México, Guatemala..."></div>
+</div>
+<div class="fgrid g2" style="margin-top:8px;">
+<div class="fg"><label>Productor (campo / finca)</label><input id="ine-productor" placeholder="Nombre del productor o finca"></div>
+<div class="fg"><label>Proveedor / Intermediario MX</label><input id="ine-proveedor" placeholder="Empresa o persona que vende"></div>
 </div>
 <div class="fgrid g3" style="margin-top:8px;">
 <div class="fg"><label>Bultos / Unidades recibidas</label><input type="number" id="ine-bultos" step="1" placeholder="0" oninput="ineCalcPesos()"></div>
@@ -1813,6 +1817,11 @@ if ('caches' in window) {
 </div>
 <div style="background:var(--s2);border:1px solid var(--br);border-radius:4px;padding:12px;margin-top:10px;">
 <div style="font-size:.6rem;color:var(--muted2);font-weight:700;letter-spacing:.08em;margin-bottom:8px;">DOCUMENTOS DE INGRESO</div>
+<div class="fgrid g3" style="margin-bottom:8px;">
+<div class="fg"><label style="font-size:.68rem;">No. Factura Productor</label><input id="ine-fact-prod" placeholder="FAC-0001"></div>
+<div class="fg"><label style="font-size:.68rem;">No. Factura Proveedor MX</label><input id="ine-fact-prov" placeholder="MX-0001"></div>
+<div class="fg"></div>
+</div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
 <div>
 <div style="font-size:.64rem;color:var(--muted2);margin-bottom:4px;">Factura / Doc. Proveedor MX</div>
@@ -11891,9 +11900,13 @@ function saveIne() {
   const rec = {
     id: uid(), ts: now(), fecha,
     tipo: 'entrada',
-    productoId:     prodId,
-    productoNombre: prod?.nombre || prodId,
-    origen:         v('ine-origen') || '',
+    productoId:      prodId,
+    productoNombre:  prod?.nombre || prodId,
+    origen:          v('ine-origen') || '',
+    productorNombre: v('ine-productor') || '',
+    proveedorNombre: v('ine-proveedor') || '',
+    factProductor:   v('ine-fact-prod') || '',
+    factProveedor:   v('ine-fact-prov') || '',
     bultos, kgBu,
     kgBruto:  kgTotal,
     lbsBruto,
@@ -11906,7 +11919,7 @@ function saveIne() {
   };
   DB.ientradas.unshift(rec);
 
-  ['ine-fecha','ine-bultos','ine-kgbu','ine-cxlb','ine-duca','ine-cot-ref','ine-obs','ine-origen'].forEach(id => set(id, ''));
+  ['ine-fecha','ine-bultos','ine-kgbu','ine-cxlb','ine-duca','ine-cot-ref','ine-obs','ine-origen','ine-productor','ine-proveedor','ine-fact-prod','ine-fact-prov'].forEach(id => set(id, ''));
   set('ine-prod', '');
   set('ine-lbs', '');
   ['ine-badge-prod','ine-badge-mx','ine-badge-duca'].forEach(id => {
@@ -12938,15 +12951,19 @@ function invVerTrazaLote(loteId) {
   const kgLote   = lbsLote / 2.20462;
   const safe     = s => String(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-  // Chain data — con fallback a cotización para datos históricos sin productorNombre
+  // Cotización como fuente de respaldo para datos históricos
   const cot = (DB.cotizaciones||[]).find(c => c.id === lote.cotizacionId);
-  const productor    = safe(lote.productorNombre || (cot?.bodegaInfo?.productorNombre) || (cot?.productorNombre) || '—');
-  const intermediario = safe(lote.proveedorNombre || lote.origen || (cot?.bodegaInfo?.proveedorNombre) || (cot?.proveedorNombre) || '—');
-  const duca         = safe(lote.duca || cot?.ducaInfo?.numero || cot?.duca || '—');
-  const fechaIngreso = safe(lote.fecha);
-  const bultos       = lote.bultos || '—';
 
-  // Destination sales after lot arrival date
+  const productor     = safe(lote.productorNombre || cot?.bodegaInfo?.productorNombre || cot?.productorNombre || '');
+  const proveedor     = safe(lote.proveedorNombre || lote.origen || cot?.bodegaInfo?.proveedorNombre || cot?.proveedorNombre || '');
+  const duca          = safe(lote.duca || cot?.ducaInfo?.numero || cot?.duca || '');
+  const factProductor = safe(lote.factProductor || lote.factProd || cot?.bodegaInfo?.factProductor || '');
+  const factProveedor = safe(lote.factProveedor || lote.factMx  || cot?.bodegaInfo?.factProveedor  || '');
+  const cotNom        = safe(lote.cotRef || cot?.nombre || '');
+  const cotId         = lote.cotizacionId || '';
+  const fechaFmt      = lote.fecha ? lote.fecha.split('-').reverse().join('/') : '—';
+
+  // Destinos de venta del producto después de la fecha del lote
   const destinos = [];
   const addDest = (arr, canal, getLineas, getCliente, getRef) => {
     (arr||[]).forEach(r => {
@@ -12960,86 +12977,171 @@ function invVerTrazaLote(loteId) {
       destinos.push({ fecha:r.fecha, canal, cliente:safe(getCliente(r)), lbs, ref:safe(getRef(r)) });
     });
   };
-  addDest(DB.isalidas,   '🏪 Walmart',     r=>r.lineas, r=>r.clienteNombre||'Walmart GT', r=>r.factura||r.oc||'—');
-  addDest(DB.vgtVentas,  '🛒 Local GT',    r=>r.lineas, r=>r.comprador||'—',              r=>r.numFactura||'—');
-  addDest(DB.vintVentas, '✈️ Exportación', r=>r.lineas, r=>r.comprador||r.pais||'—',      r=>r.porte||r.contenedorRef||'—');
+  addDest(DB.isalidas,   '🏪 Walmart',    r=>r.lineas, r=>r.clienteNombre||'Walmart GT',  r=>r.factura||r.oc||'—');
+  addDest(DB.vgtVentas,  '🛒 Local GT',   r=>r.lineas, r=>r.comprador||'—',               r=>r.numFactura||'—');
+  addDest(DB.vintVentas, '✈️ Export',     r=>r.lineas, r=>r.comprador||r.pais||'—',       r=>r.porte||r.contenedorRef||'—');
 
-  // ── Build modal ───────────────────────────────────────────────
+  const lbsVendidas = destinos.reduce((s,d)=>s+d.lbs, 0);
+  const lbsBodega   = Math.max(0, lbsLote - lbsVendidas);
+
+  // ── Helpers ───────────────────────────────────────────────────
   const chainNode = (icon, bg, role, name, detail, nameColor) =>
-    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">' +
-      '<div style="width:34px;height:34px;border-radius:50%;background:'+bg+';display:flex;align-items:center;justify-content:justify-content:center;font-size:.9rem;flex-shrink:0;text-align:center;line-height:34px;">'+icon+'</div>' +
+    '<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:10px;">' +
+      '<div style="width:36px;height:36px;border-radius:50%;background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;">'+icon+'</div>' +
       '<div style="flex:1;">' +
         '<div style="font-size:.57rem;color:var(--muted2);text-transform:uppercase;letter-spacing:.06em;">'+role+'</div>' +
-        '<div style="font-size:.8rem;font-weight:700;color:'+(nameColor||'var(--txt)')+';">'+name+'</div>' +
-        '<div style="font-size:.62rem;color:var(--muted2);">'+detail+'</div>' +
+        '<div style="font-size:.82rem;font-weight:700;color:'+(nameColor||'var(--txt)')+';">'+name+'</div>' +
+        '<div style="font-size:.63rem;color:var(--muted2);">'+detail+'</div>' +
       '</div>' +
     '</div>';
 
-  const arrow = '<div style="padding-left:17px;color:var(--muted2);font-size:.78rem;line-height:1;margin-bottom:10px;">↓</div>';
+  const arrow = '<div style="padding-left:18px;color:var(--muted2);font-size:.85rem;margin-bottom:10px;">↓</div>';
 
-  let html =
+  const docRow = (label, val) => {
+    const ok = val && val !== '—';
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--br);font-size:.75rem;">' +
+      '<span>' + label + '</span>' +
+      (ok
+        ? '<span style="color:var(--acc);font-weight:700;">✓ ' + val + '</span>'
+        : '<span style="color:var(--danger);">✗ No registrado</span>'
+      ) +
+    '</div>';
+  };
+
+  // ── Tab contents ──────────────────────────────────────────────
+
+  // TAB 1: Origen
+  const tabOrigen =
+    '<div style="background:var(--s1);border:1.5px solid var(--br);border-radius:8px;padding:16px;">' +
+      '<div style="font-size:.62rem;font-weight:700;color:var(--green-deep);letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px;">🌱 Cadena de Origen</div>' +
+      chainNode('🌾','rgba(0,122,82,.12)','Productor',
+        productor || '<span style="color:var(--muted2);font-style:italic;font-weight:400;">No registrado</span>',
+        'Origen del campo', 'var(--acc)') +
+      arrow +
+      chainNode('🤝','rgba(74,158,255,.12)','Intermediario / Proveedor MX',
+        proveedor || '<span style="color:var(--muted2);font-style:italic;font-weight:400;">No registrado</span>',
+        duca ? 'DUCA: ' + duca : 'Sin DUCA registrada', 'var(--info)') +
+      arrow +
+      chainNode('🏭','rgba(0,122,82,.12)','Recibido en bodega',
+        'AJÚA · Guatemala',
+        fechaFmt + ' · ' + (lote.bultos||'—') + ' bultos · ' + lbsLote.toFixed(0) + ' lbs', 'var(--green-deep)') +
+    '</div>';
+
+  // TAB 2: Documentos
+  const tabDocs =
+    '<div style="background:var(--s1);border:1.5px solid var(--br);border-radius:8px;padding:16px;">' +
+      '<div style="font-size:.62rem;font-weight:700;color:var(--green-deep);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px;">📄 Documentos del Lote</div>' +
+      docRow('DUCA', duca) +
+      docRow('Factura Productor', factProductor) +
+      docRow('Factura Proveedor MX', factProveedor) +
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:.75rem;">' +
+        '<span>Cotización relacionada</span>' +
+        (cotNom && cotId
+          ? '<button onclick="document.getElementById(\'traz-modal-overlay\').remove();cotVerDetalle(\''+cotId+'\');" style="font-size:.68rem;padding:3px 10px;border:1px solid rgba(74,158,255,.4);border-radius:4px;background:rgba(74,158,255,.08);color:var(--info);cursor:pointer;font-weight:600;">'+cotNom+' →</button>'
+          : '<span style="color:var(--danger);">✗ No registrada</span>'
+        ) +
+      '</div>' +
+    '</div>';
+
+  // TAB 3: Destinos
+  let tabDests =
+    '<div style="background:var(--s1);border:1.5px solid var(--br);border-radius:8px;padding:16px;">' +
+      '<div style="font-size:.62rem;font-weight:700;color:var(--green-deep);letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px;">📤 Destinos de Venta</div>';
+
+  if (destinos.length) {
+    tabDests +=
+      '<table style="width:100%;border-collapse:collapse;font-size:.72rem;">' +
+      '<thead><tr style="border-bottom:1.5px solid var(--br);">' +
+        '<th style="padding:5px 8px;text-align:left;color:var(--muted2);font-weight:600;">Fecha</th>' +
+        '<th style="padding:5px 8px;text-align:left;color:var(--muted2);font-weight:600;">Canal</th>' +
+        '<th style="padding:5px 8px;text-align:left;color:var(--muted2);font-weight:600;">Cliente</th>' +
+        '<th style="padding:5px 8px;text-align:right;color:var(--muted2);font-weight:600;">LBS</th>' +
+        '<th style="padding:5px 8px;text-align:left;color:var(--muted2);font-weight:600;">Ref.</th>' +
+      '</tr></thead><tbody>' +
+      destinos.map(d => {
+        const chipColor = d.canal.includes('Walmart') ? 'rgba(0,122,82,.1);color:var(--green-deep)'
+                        : d.canal.includes('Local')   ? 'rgba(74,158,255,.1);color:var(--info)'
+                        :                               'rgba(245,166,35,.1);color:var(--warn)';
+        return '<tr style="border-bottom:1px solid var(--br);">' +
+          '<td style="padding:6px 8px;white-space:nowrap;">' + d.fecha.split('-').reverse().join('/') + '</td>' +
+          '<td style="padding:6px 8px;"><span style="font-size:.62rem;padding:2px 8px;border-radius:20px;font-weight:700;white-space:nowrap;background:' + chipColor + ';">' + d.canal + '</span></td>' +
+          '<td style="padding:6px 8px;font-weight:600;">' + d.cliente + '</td>' +
+          '<td style="padding:6px 8px;text-align:right;color:var(--danger);font-weight:700;">−' + d.lbs.toFixed(1) + ' lbs</td>' +
+          '<td style="padding:6px 8px;font-size:.65rem;color:var(--info);">' + d.ref + '</td>' +
+        '</tr>';
+      }).join('') +
+      '</tbody></table>';
+  } else {
+    tabDests += '<div style="text-align:center;padding:16px;font-size:.74rem;color:var(--muted2);font-style:italic;">Sin ventas registradas para este lote aún</div>';
+  }
+  tabDests += '</div>';
+
+  // ── Build full modal ──────────────────────────────────────────
+  const tabStyle   = 'flex:1;padding:8px;border:none;border-radius:6px;font-size:.74rem;font-weight:600;cursor:pointer;transition:.15s;';
+  const tabActive  = tabStyle + 'background:white;color:var(--green-deep);box-shadow:0 1px 4px rgba(0,0,0,.12);';
+  const tabInactive= tabStyle + 'background:transparent;color:var(--muted2);';
+
+  const html =
     '<div id="traz-modal-overlay" onclick="if(event.target===this)this.remove()" ' +
     'style="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9998;display:flex;align-items:center;justify-content:center;padding:16px;">' +
-    '<div style="background:var(--cream);border-radius:14px;padding:24px;max-width:480px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.4);">' +
+    '<div style="background:var(--cream);border-radius:14px;padding:24px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.4);">' +
 
     // Header
     '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;">' +
       '<div>' +
-        '<div style="font-family:var(--fh);font-size:1.05rem;font-weight:800;color:var(--green-deep);">🔗 Origen del Lote</div>' +
-        '<div style="font-size:.72rem;color:var(--muted2);margin-top:3px;">' +
-          safe(prodName) + ' · ' + fechaIngreso + ' · ' + lbsLote.toFixed(0) + ' lbs (' + kgLote.toFixed(1) + ' kg)' +
-        '</div>' +
+        '<div style="font-family:var(--fh);font-size:1.1rem;font-weight:800;color:var(--green-deep);">🔗 Trazabilidad del Lote</div>' +
+        '<div style="font-size:.72rem;color:var(--muted2);margin-top:3px;">' + safe(prodName) + ' · ' + fechaFmt + ' · ' + lbsLote.toFixed(0) + ' lbs (' + kgLote.toFixed(1) + ' kg)</div>' +
       '</div>' +
-      '<button onclick="document.getElementById(\'traz-modal-overlay\').remove()" ' +
-      'style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--muted2);padding:4px;line-height:1;">✕</button>' +
+      '<button onclick="document.getElementById(\'traz-modal-overlay\').remove()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--muted2);">✕</button>' +
     '</div>' +
 
-    // Cadena de origen
-    '<div style="background:var(--s1);border:1.5px solid var(--br);border-radius:8px;padding:16px;margin-bottom:12px;">' +
-      '<div style="font-size:.64rem;font-weight:700;color:var(--green-deep);letter-spacing:.07em;text-transform:uppercase;margin-bottom:14px;">🌱 Cadena de Origen</div>' +
-
-      chainNode('🌾', 'rgba(0,122,82,.1)', 'Productor', productor === '—' ? '<span style="color:var(--muted2);font-weight:400;font-style:italic;">No registrado</span>' : productor, 'Origen del campo', 'var(--acc)') +
-      arrow +
-      chainNode('🤝', 'rgba(44,111,173,.1)', 'Intermediario / Vendedor', intermediario === '—' ? '<span style="color:var(--muted2);font-weight:400;font-style:italic;">No registrado</span>' : intermediario, 'DUCA: ' + duca, 'var(--info)') +
-      arrow +
-      chainNode('🏭', 'rgba(0,122,82,.1)', 'Recibido en bodega', 'AJÚA · Guatemala', fechaIngreso + ' · ' + bultos + ' bultos · ' + lbsLote.toFixed(0) + ' lbs', 'var(--green-deep)') +
-
+    // Summary bar
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">' +
+      '<div style="background:var(--s1);border:1.5px solid var(--br);border-radius:6px;padding:10px;text-align:center;">' +
+        '<div style="font-size:1.2rem;font-weight:800;color:var(--acc);font-family:var(--fh);">' + lbsLote.toFixed(0) + '</div>' +
+        '<div style="font-size:.6rem;color:var(--muted2);margin-top:2px;text-transform:uppercase;letter-spacing:.05em;">lbs entrada</div>' +
+      '</div>' +
+      '<div style="background:var(--s1);border:1.5px solid var(--br);border-radius:6px;padding:10px;text-align:center;">' +
+        '<div style="font-size:1.2rem;font-weight:800;color:var(--danger);font-family:var(--fh);">' + lbsVendidas.toFixed(0) + '</div>' +
+        '<div style="font-size:.6rem;color:var(--muted2);margin-top:2px;text-transform:uppercase;letter-spacing:.05em;">lbs vendidas</div>' +
+      '</div>' +
+      '<div style="background:var(--s1);border:1.5px solid var(--br);border-radius:6px;padding:10px;text-align:center;">' +
+        '<div style="font-size:1.2rem;font-weight:800;color:var(--warn);font-family:var(--fh);">' + lbsBodega.toFixed(0) + '</div>' +
+        '<div style="font-size:.6rem;color:var(--muted2);margin-top:2px;text-transform:uppercase;letter-spacing:.05em;">lbs en bodega</div>' +
+      '</div>' +
     '</div>' +
 
-    // Destinos
-    '<div style="background:var(--s1);border:1.5px solid var(--br);border-radius:8px;padding:16px;">' +
-      '<div style="font-size:.64rem;font-weight:700;color:var(--green-deep);letter-spacing:.07em;text-transform:uppercase;margin-bottom:12px;">📤 Destinos de Venta</div>';
+    // Tabs
+    '<div style="display:flex;gap:4px;margin-bottom:14px;background:var(--s2);border-radius:8px;padding:4px;" id="traz-tabs">' +
+      '<button id="traz-tab-origen"     style="' + tabActive   + '" onclick="trazShowTab(\'origen\')">🌱 Origen</button>' +
+      '<button id="traz-tab-documentos" style="' + tabInactive + '" onclick="trazShowTab(\'documentos\')">📄 Documentos</button>' +
+      '<button id="traz-tab-destinos"   style="' + tabInactive + '" onclick="trazShowTab(\'destinos\')">📤 Destinos</button>' +
+    '</div>' +
 
-  if (destinos.length) {
-    html += '<table style="width:100%;border-collapse:collapse;font-size:.72rem;">' +
-      '<thead><tr style="border-bottom:1.5px solid var(--br);">' +
-        '<th style="padding:4px 6px;text-align:left;color:var(--muted2);font-weight:600;">Fecha</th>' +
-        '<th style="padding:4px 6px;text-align:left;color:var(--muted2);font-weight:600;">Canal</th>' +
-        '<th style="padding:4px 6px;text-align:left;color:var(--muted2);font-weight:600;">Cliente</th>' +
-        '<th style="padding:4px 6px;text-align:right;color:var(--muted2);font-weight:600;">LBS</th>' +
-        '<th style="padding:4px 6px;text-align:left;color:var(--muted2);font-weight:600;">Ref.</th>' +
-      '</tr></thead><tbody>' +
-      destinos.map(d =>
-        '<tr style="border-bottom:1px solid var(--br);">' +
-          '<td style="padding:5px 6px;white-space:nowrap;">' + d.fecha + '</td>' +
-          '<td style="padding:5px 6px;font-size:.64rem;">' + d.canal + '</td>' +
-          '<td style="padding:5px 6px;font-weight:600;">' + d.cliente + '</td>' +
-          '<td style="padding:5px 6px;text-align:right;color:var(--danger);font-weight:700;">−' + d.lbs.toFixed(1) + ' lbs</td>' +
-          '<td style="padding:5px 6px;font-size:.63rem;color:var(--info);">' + d.ref + '</td>' +
-        '</tr>'
-      ).join('') +
-      '</tbody></table>';
-  } else {
-    html += '<div style="text-align:center;padding:12px;font-size:.72rem;color:var(--muted2);font-style:italic;">Sin ventas registradas para este lote aún</div>';
-  }
+    '<div id="traz-panel-origen">'     + tabOrigen + '</div>' +
+    '<div id="traz-panel-documentos" style="display:none;">' + tabDocs   + '</div>' +
+    '<div id="traz-panel-destinos"   style="display:none;">' + tabDests  + '</div>' +
 
-  html += '</div></div></div>';
+    '</div></div>';
 
   const ex = document.getElementById('traz-modal-overlay');
   if (ex) ex.remove();
   document.body.insertAdjacentHTML('beforeend', html);
 }
 
+// Tab switcher for trazabilidad modal
+function trazShowTab(name) {
+  ['origen','documentos','destinos'].forEach(t => {
+    const panel = document.getElementById('traz-panel-' + t);
+    const btn   = document.getElementById('traz-tab-' + t);
+    if (!panel || !btn) return;
+    const active = t === name;
+    panel.style.display = active ? '' : 'none';
+    btn.style.cssText = 'flex:1;padding:8px;border:none;border-radius:6px;font-size:.74rem;font-weight:600;cursor:pointer;transition:.15s;' +
+      (active ? 'background:white;color:var(--green-deep);box-shadow:0 1px 4px rgba(0,0,0,.12);'
+              : 'background:transparent;color:var(--muted2);');
+  });
+}
 
 
 function renderInvStock() {
