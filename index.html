@@ -821,7 +821,7 @@ tr:hover td{background:var(--green-pale);}
 <div style="font-size:2rem;margin-bottom:6px;">🌿</div>
 <div style="font-family:var(--fh);font-size:1.3rem;font-weight:700;color:var(--acc);">AJÚA</div>
 <div style="font-size:.72rem;color:var(--muted2);margin-top:3px;">Sistema de Control Interno</div>
-<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 02/03/2026 — build 22 · fix productoId cotizador→inventario</div>
+<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 02/03/2026 — build 23 · lavado auto-check + semana fija lunes-sábado</div>
 </div>
 <div style="margin-bottom:14px;">
 <label style="font-size:.68rem;color:var(--muted2);display:block;margin-bottom:5px;">Usuario</label>
@@ -1861,16 +1861,16 @@ tr:hover td{background:var(--green-pale);}
 <!-- Week selector -->
 <div class="card" style="margin-bottom:14px;">
   <div class="ct">📅 Semana de Gastos</div>
-  <div class="fgrid g3" style="margin-bottom:12px;">
-    <div class="fg">
-      <label>Semana del</label>
-      <input type="date" id="maq-semana-inicio" onchange="maqOnWeekChange()">
+  <!-- Hidden inputs used by JS — week is always Mon-Sat, never editable -->
+  <input type="hidden" id="maq-semana-inicio">
+  <input type="hidden" id="maq-semana-fin">
+  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:12px;">
+    <div style="background:var(--s2);border:1.5px solid var(--acc);border-radius:6px;padding:10px 16px;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:.6rem;color:var(--muted2);text-transform:uppercase;letter-spacing:.06em;">Semana actual</span>
+      <span id="maq-semana-label" style="font-family:var(--fh);font-size:.9rem;font-weight:800;color:var(--green-deep);">—</span>
+      <span style="font-size:.62rem;color:var(--muted2);">Lunes → Sábado</span>
     </div>
-    <div class="fg">
-      <label>Al (sábado) <span style="font-size:.6rem;color:var(--muted2);">— editable</span></label>
-      <input type="date" id="maq-semana-fin">
-    </div>
-    <div class="fg">
+    <div class="fg" style="margin:0;min-width:160px;">
       <label>Lbs procesadas semana</label>
       <input type="number" id="maq-lbs-proc" placeholder="0" oninput="maqCalc()">
     </div>
@@ -8326,7 +8326,18 @@ function alBuildEmpTable() {
 
 function alToggleEmp(id) {
   const chk = document.getElementById(`al-chk-${id}`);
-  if (chk) { chk.checked = !chk.checked; alUpdateCount(); }
+  if (!chk) return;
+  chk.checked = !chk.checked;
+  // Auto-check lavado horarios when employee is selected
+  if (chk.checked) {
+    AL_LAVADOS.forEach((_, i) => {
+      const lavChk = document.getElementById(`al-lav-${id}-${i}`);
+      const fixChk = document.getElementById(`al-fix-${i+1}`);
+      // Only auto-check if that horario is active (checkbox marked in header)
+      if (lavChk && fixChk?.checked) lavChk.checked = true;
+    });
+  }
+  alUpdateCount();
 }
 
 function alUpdateCount() {
@@ -13621,17 +13632,15 @@ function maqOnWeekChange() {
   const val = document.getElementById('maq-semana-inicio')?.value;
   if (!val) return;
   const { lunes, sabado } = maqGetWeekDates(val);
-  // Snap inicio to Monday of that week
+  // Always snap to Monday, fin always Saturday — not user-editable
   document.getElementById('maq-semana-inicio').value = lunes;
-  // Only auto-fill fin if it's empty or was auto-set (not manually changed)
-  const finEl = document.getElementById('maq-semana-fin');
-  if (!finEl.value || finEl._autoSet) {
-    finEl.value = sabado;
-    finEl._autoSet = true;
+  document.getElementById('maq-semana-fin').value = sabado;
+  // Update display label
+  const lbl = document.getElementById('maq-semana-label');
+  if (lbl) {
+    const fmt = d => { const [y,m,da] = d.split('-'); return `${da}/${m}/${y}`; };
+    lbl.textContent = fmt(lunes) + ' al ' + fmt(sabado);
   }
-  // Allow user to manually change fin without it being overridden
-  finEl.addEventListener('change', () => { finEl._autoSet = false; }, { once: false });
-  // Load personal from access control for this week
   maqRefreshPersonal();
   maqRenderCuentas();
   maqUpdateStatus();
@@ -13658,8 +13667,7 @@ function maqNuevaSemana() {
   today.setDate(today.getDate() + diff);
   const lunes = today.toISOString().split('T')[0];
   document.getElementById('maq-semana-inicio').value = lunes;
-  const _finEl = document.getElementById('maq-semana-fin'); if (_finEl) { _finEl._autoSet = true; _finEl.value = ''; }
-  maqOnWeekChange();
+  maqOnWeekChange(); // will set fin=sabado and update label
   // Reset cuentas
   maqCuentas = {};
   maqRenderCuentas();
@@ -14079,6 +14087,12 @@ function maqCargarSemana(inicio) {
   if (!saved) return;
   document.getElementById('maq-semana-inicio').value = saved.semanaInicio;
   document.getElementById('maq-semana-fin').value    = saved.semanaFin || '';
+  // Update display label
+  const _lbl = document.getElementById('maq-semana-label');
+  if (_lbl) {
+    const fmt = d => { const [y,m,da] = d.split('-'); return `${da}/${m}/${y}`; };
+    _lbl.textContent = fmt(saved.semanaInicio) + ' al ' + fmt(saved.semanaFin || saved.semanaInicio);
+  }
   if (document.getElementById('maq-lbs-proc'))
     document.getElementById('maq-lbs-proc').value = saved.lbsProc || 0;
   maqCuentas = JSON.parse(JSON.stringify(saved.cuentas || {}));
@@ -14106,11 +14120,9 @@ function maqInit() {
   const lunes = today.toISOString().split('T')[0];
 
   const inEl = document.getElementById('maq-semana-inicio');
-  if (inEl && !inEl.value) {
-    inEl.value = lunes;
-    const { sabado } = maqGetWeekDates(lunes);
-    document.getElementById('maq-semana-fin').value = sabado;
-  }
+  // Always set to current week on first load
+  inEl.value = lunes;
+  maqOnWeekChange(); // sets fin=sabado and updates label
 
   maqRefreshPersonal();
   maqRenderCuentas();
