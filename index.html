@@ -821,7 +821,7 @@ tr:hover td{background:var(--green-pale);}
 <div style="font-size:2rem;margin-bottom:6px;">🌿</div>
 <div style="font-family:var(--fh);font-size:1.3rem;font-weight:700;color:var(--acc);">AJÚA</div>
 <div style="font-size:.72rem;color:var(--muted2);margin-top:3px;">Sistema de Control Interno</div>
-<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 02/03/2026 — build 23 · lavado auto-check + semana fija lunes-sábado</div>
+<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 02/03/2026 — build 25 · traz fallback cotizacion + guard umbral fix· lavado: sin checkboxes por persona, presencia = cumplimiento</div>
 </div>
 <div style="margin-bottom:14px;">
 <label style="font-size:.68rem;color:var(--muted2);display:block;margin-bottom:5px;">Usuario</label>
@@ -1515,10 +1515,6 @@ tr:hover td{background:var(--green-pale);}
 <th style="width:36px;padding:7px 10px;"><input type="checkbox" id="al-chk-all" onchange="alSelAll(this.checked)" style="accent-color:var(--acc);"></th>
 <th style="text-align:left;padding:7px 10px;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);">Empleado</th>
 <th style="text-align:left;padding:7px 10px;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);">Área</th>
-<th style="text-align:center;padding:7px 10px;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--acc);">10:00</th>
-<th style="text-align:center;padding:7px 10px;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--acc);">12:00</th>
-<th style="text-align:center;padding:7px 10px;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--acc);">14:00</th>
-<th style="text-align:center;padding:7px 10px;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--acc);">16:00</th>
 </tr>
 </thead>
 <tbody id="al-emp-tbody"></tbody>
@@ -6847,7 +6843,9 @@ function save() {
     const snaps = snapList();
     if (snaps.length > 0) {
       const lastGoodTotal = _dbTotalRecords(snaps[0].data);
-      if (lastGoodTotal > 10 && currentTotal < lastGoodTotal * 0.3) {
+      // Only block if DB was large (>50 records) AND current is < 30% of that.
+      // For small databases, never block — a single "gasto de agua" record is valid.
+      if (lastGoodTotal > 50 && currentTotal < lastGoodTotal * 0.3) {
         console.error(`🚨 FIREBASE BLOQUEADO: actual(${currentTotal}) < 30% de snapshot(${lastGoodTotal})`);
         blockedByGuard = true;
       }
@@ -8299,25 +8297,14 @@ function alBuildEmpTable() {
   if (noEmp) noEmp.style.display = 'none';
   // Render as cards for mobile-friendly tap targets
   tbody.innerHTML = activos.map((e) => {
-    const lavChecks = AL_LAVADOS.map((h, i) => `
-      <label style="display:flex;align-items:center;gap:6px;background:var(--s2);border:1px solid var(--br);
-             border-radius:6px;padding:6px 10px;cursor:pointer;flex:1;min-width:80px;justify-content:center;">
-        <input type="checkbox" id="al-lav-${e.id}-${i}" style="accent-color:var(--acc);width:16px;height:16px;" onclick="event.stopPropagation()">
-        <span style="font-size:.7rem;font-weight:600;">${h}</span>
-      </label>`).join('');
     return `<tr id="al-emp-row-${e.id}" style="cursor:pointer;" onclick="alToggleEmp('${e.id}')">
-      <td colspan="10" style="padding:6px 4px;border-bottom:1px solid var(--br);">
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          <label style="display:flex;align-items:center;gap:8px;min-width:200px;cursor:pointer;" onclick="event.stopPropagation();alToggleEmp('${e.id}')">
-            <input type="checkbox" id="al-chk-${e.id}" style="accent-color:var(--acc);width:18px;height:18px;" onchange="alUpdateCount()" onclick="event.stopPropagation()">
-            <span style="font-size:.82rem;font-weight:600;">${e.nombre}</span>
-            <span class="chip cb" style="font-size:.58rem;">${e.area||'—'}</span>
-          </label>
-          <div style="display:flex;gap:5px;flex-wrap:wrap;font-size:.68rem;">
-            <span style="font-size:.65rem;color:var(--muted2);align-self:center;">Lavados:</span>
-            ${lavChecks}
-          </div>
-        </div>
+      <td style="padding:8px 10px;width:36px;">
+        <input type="checkbox" id="al-chk-${e.id}" style="accent-color:var(--acc);width:18px;height:18px;"
+          onchange="alUpdateCount()" onclick="event.stopPropagation()">
+      </td>
+      <td style="padding:8px 10px;font-size:.82rem;font-weight:600;">${e.nombre}</td>
+      <td style="padding:8px 10px;">
+        <span class="chip cb" style="font-size:.6rem;">${e.area||'—'}</span>
       </td>
     </tr>`;
   }).join('');
@@ -8328,15 +8315,6 @@ function alToggleEmp(id) {
   const chk = document.getElementById(`al-chk-${id}`);
   if (!chk) return;
   chk.checked = !chk.checked;
-  // Auto-check lavado horarios when employee is selected
-  if (chk.checked) {
-    AL_LAVADOS.forEach((_, i) => {
-      const lavChk = document.getElementById(`al-lav-${id}-${i}`);
-      const fixChk = document.getElementById(`al-fix-${i+1}`);
-      // Only auto-check if that horario is active (checkbox marked in header)
-      if (lavChk && fixChk?.checked) lavChk.checked = true;
-    });
-  }
   alUpdateCount();
 }
 
@@ -8358,7 +8336,6 @@ function alUpdateCount() {
 
 function alSelAll(val) {
   document.querySelectorAll('#al-emp-tbody input[id^=al-chk-]').forEach(c => { c.checked = val; });
-  document.querySelectorAll('#al-emp-tbody input[id^=al-lav-]').forEach(c => { c.checked = val; });
   const allChk = document.getElementById('al-chk-all');
   if (allChk) allChk.checked = val;
   alUpdateCount();
@@ -8383,10 +8360,11 @@ function saveAL() {
   activos.forEach(e => {
     const sel = document.getElementById(`al-chk-${e.id}`)?.checked;
     if (!sel) return;
+    // Presencia en turno = cumplimiento de todos los lavados activos
     const lavados = AL_LAVADOS.map((h, i) => ({
       hora: h,
       activo: lavActivos[i].activo,
-      cumplido: document.getElementById(`al-lav-${e.id}-${i}`)?.checked || false,
+      cumplido: lavActivos[i].activo, // presente = cumplió todos los horarios activos
     }));
     empleados.push({
       empleadoId: e.id,
@@ -8398,9 +8376,8 @@ function saveAL() {
 
   if (!empleados.length) { toast('⚠ Seleccione al menos un empleado', true); return; }
 
-  const totalCompletos = empleados.filter(e =>
-    e.lavados.every(l => !l.activo || l.cumplido)
-  ).length;
+  // Todos los seleccionados completaron los lavados (presencia = cumplimiento)
+  const totalCompletos = empleados.length;
 
   DB.al.unshift({
     id: uid(), ts: now(), fecha, turno, hi, hs,
@@ -12828,10 +12805,11 @@ function invVerTrazaLote(loteId) {
   const kgLote   = lbsLote / 2.20462;
   const safe     = s => String(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-  // Chain data
-  const productor    = safe(lote.productorNombre || '—');
-  const intermediario = safe(lote.proveedorNombre || lote.origen || '—');
-  const duca         = safe(lote.duca || '—');
+  // Chain data — con fallback a cotización para datos históricos sin productorNombre
+  const cot = (DB.cotizaciones||[]).find(c => c.id === lote.cotizacionId);
+  const productor    = safe(lote.productorNombre || (cot?.bodegaInfo?.productorNombre) || (cot?.productorNombre) || '—');
+  const intermediario = safe(lote.proveedorNombre || lote.origen || (cot?.bodegaInfo?.proveedorNombre) || (cot?.proveedorNombre) || '—');
+  const duca         = safe(lote.duca || cot?.ducaInfo?.numero || cot?.duca || '—');
   const fechaIngreso = safe(lote.fecha);
   const bultos       = lote.bultos || '—';
 
