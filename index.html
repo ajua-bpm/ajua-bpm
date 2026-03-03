@@ -812,7 +812,7 @@ tr:hover td{background:var(--green-pale);}
 <div style="font-size:2rem;margin-bottom:6px;">🌿</div>
 <div style="font-family:var(--fh);font-size:1.3rem;font-weight:700;color:var(--acc);">AJÚA</div>
 <div style="font-size:.72rem;color:var(--muted2);margin-top:3px;">Sistema de Control Interno</div>
-<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 02/03/2026 — build 14 · Todas las funciones faltantes + XML FEL completo + pipeline cotizador</div>
+<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 02/03/2026 — build 15 · XML FEL SAT Guatemala real (dte: namespace) + menú reorganizado</div>
 </div>
 <div style="margin-bottom:14px;">
 <label style="font-size:.68rem;color:var(--muted2);display:block;margin-bottom:5px;">Usuario</label>
@@ -904,19 +904,23 @@ tr:hover td{background:var(--green-pale);}
 <div class="ns">📦 Inventario</div>
 <div class="ni" onclick="show('inv-stock',this)"><span class="ico">📊</span>Stock en Tiempo Real</div>
 <div class="ni" onclick="show('inv-entrada',this)"><span class="ico">📥</span>Ingresos a Bodega</div>
+<div class="ns">💰 Ventas</div>
+<div class="ni" onclick="show('pedidos-walmart',this)"><span class="ico">🛒</span>Pedidos Walmart</div>
+<div class="ni" onclick="show('inv-salida',this)"><span class="ico">🏪</span>Ventas Walmart</div>
+<div class="ni" onclick="show('ventas-gt',this)"><span class="ico">📤</span>Despachos — Locales GT</div>
+<div class="ni" onclick="show('ventas-int',this)"><span class="ico">✈️</span>Despachos — Exportación</div>
+<div class="ns">⚙ Operaciones</div>
 <div class="ni" onclick="show('maquila',this)"><span class="ico">⚙️</span>Gastos Generales</div>
 <div class="ni" onclick="show('gastos-diarios',this)"><span class="ico">💸</span>Gastos Diarios</div>
 <div class="ni" onclick="show('cotizador-rapido',this)"><span class="ico">💼</span>Cotizador Rápido</div>
-<div class="ni" onclick="show('pedidos-walmart',this)"><span class="ico">📋</span>Pedidos Walmart</div>
-<div class="ni" onclick="show('inv-salida',this)"><span class="ico">📦</span>Ventas Walmart</div>
-<div class="ni" onclick="show('ventas-gt',this)"><span class="ico">📤</span>Despachos — Locales GT</div>
-<div class="ni" onclick="show('ventas-int',this)"><span class="ico">📤</span>Despachos — Exportación</div>
-<div class="ni" onclick="show('inv-trazabilidad',this)"><span class="ico">🔗</span>Trazabilidad</div>
-<div class="ni" onclick="show('inv-config',this)"><span class="ico">⚙</span>Productos y Presentaciones</div>
+<div class="ns">🏭 Cotizador</div>
 <div class="ni" onclick="show('inv-cotizador',this);cotMainTab('interno',null)"><span class="ico">🏭</span>Cotizador Interno</div>
 <div class="ni" onclick="show('inv-cotizador',this);cotMainTab('terceros',null)"><span class="ico">🤝</span>Cotizador Terceros</div>
 <div class="ni" onclick="show('inv-cotizador',this);cotMainTab('lista',null)"><span class="ico">📋</span>Lista Cotizaciones</div>
+<div class="ns">📈 Análisis</div>
+<div class="ni" onclick="show('inv-trazabilidad',this)"><span class="ico">🔗</span>Trazabilidad</div>
 <div class="ni" onclick="show('reporte',this)"><span class="ico">📊</span>Reporte General</div>
+<div class="ni" onclick="show('inv-config',this)"><span class="ico">⚙</span>Productos y Presentaciones</div>
 <div class="ni" onclick="show('proveedores',this)"><span class="ico">🏭</span>Proveedores y Productores</div>
 <div class="ns">⚙ Configuración</div>
 <div class="ni" onclick="show('empleados-db',this)"><span class="ico">👥</span>Base de Empleados</div>
@@ -12058,7 +12062,218 @@ function salReadXML(input) {
   const reader = new FileReader();
   reader.onload = e => {
     try {
-      const xml  = e.target.result;
+      const xmlStr = e.target.result;
+      const badge  = document.getElementById('sal-xml-badge');
+      if (badge) badge.style.display = 'inline-flex';
+
+      // ── Parse con DOMParser (maneja namespaces correctamente) ────
+      const parser = new DOMParser();
+      const doc    = parser.parseFromString(xmlStr, 'application/xml');
+
+      // Helper: busca un elemento por localName ignorando namespace prefix
+      const qn = (parent, localName) => {
+        // Intentar directamente
+        let els = parent.getElementsByTagNameNS('*', localName);
+        if (els.length) return els;
+        // Fallback: búsqueda por tagName con prefijos comunes
+        for (const prefix of ['dte:', '']) {
+          els = parent.getElementsByTagName(prefix + localName);
+          if (els.length) return els;
+        }
+        return [];
+      };
+      const txt = (parent, localName) => {
+        const els = qn(parent, localName);
+        return els[0]?.textContent?.trim() || '';
+      };
+      const attr = (el, attrName) => {
+        if (!el) return '';
+        // buscar con y sin namespace
+        return el.getAttribute(attrName) || el.getAttribute('dte:'+attrName) || '';
+      };
+
+      // ── Datos Generales ──────────────────────────────────────────
+      const datosGen  = qn(doc, 'DatosGenerales')[0];
+      const fechaHora = attr(datosGen, 'FechaHoraEmision') || '';
+      const fecha     = fechaHora.substring(0, 10);
+      const tipo      = attr(datosGen, 'Tipo') || 'FACT';
+      const moneda    = attr(datosGen, 'CodigoMoneda') || 'GTQ';
+
+      // ── Emisor ───────────────────────────────────────────────────
+      const emisorEl  = qn(doc, 'Emisor')[0];
+      const nitEmisor = attr(emisorEl, 'NITEmisor')     || '';
+      const nomEmisor = attr(emisorEl, 'NombreEmisor')  || '';
+      const nomCom    = attr(emisorEl, 'NombreComercial') || '';
+
+      // ── Receptor ─────────────────────────────────────────────────
+      const recEl     = qn(doc, 'Receptor')[0];
+      const nitRec    = attr(recEl, 'IDReceptor')       || '';
+      const nomRec    = attr(recEl, 'NombreReceptor')   || '';
+
+      // ── Certificación ────────────────────────────────────────────
+      const certEl    = qn(doc, 'Certificacion')[0];
+      const numAutEl  = qn(certEl || doc, 'NumeroAutorizacion')[0];
+      const numAut    = numAutEl?.textContent?.trim() || '';
+      const serie     = numAutEl ? attr(numAutEl, 'Serie') : '';
+      const numeroDTE = numAutEl ? attr(numAutEl, 'Numero') : '';
+
+      // ── Totales ──────────────────────────────────────────────────
+      const granTotalTxt = txt(doc, 'GranTotal');
+      const granTotal    = parseFloat(granTotalTxt) || 0;
+      const totalIVATxt  = qn(doc, 'TotalImpuesto')[0];
+      const totalIVA     = parseFloat(attr(totalIVATxt, 'TotalMontoImpuesto')) || 0;
+
+      // ── Aplicar datos fiscales al formulario ─────────────────────
+      if (numAut)    set('sal-factura', numAut);
+      if (serie)     set('sal-serie',   serie);
+      if (numeroDTE) set('sal-dte',     numeroDTE);
+      if (fecha)     set('sal-fecha',   fecha);
+      // Si el receptor tiene NIT Walmart (~1926272) setearlo
+      if (nitRec)    set('sal-nit', nitRec);
+
+      // ── Items / Líneas ───────────────────────────────────────────
+      const itemEls = [...qn(doc, 'Item')];
+
+      // Limpiar líneas actuales y reiniciar
+      document.getElementById('sal-lineas').innerHTML = '';
+      salLineaCount = 0;
+
+      const lineasCargadas = [];
+
+      itemEls.forEach((item, idx) => {
+        const desc       = txt(item, 'Descripcion');
+        const cantStr    = txt(item, 'Cantidad');
+        const precioStr  = txt(item, 'PrecioUnitario');
+        const totalStr   = txt(item, 'Total');
+        const nroLinea   = attr(item, 'NumeroLinea') || (idx+1);
+
+        const cant    = parseFloat(cantStr)   || 1;
+        // PrecioUnitario en FEL SAT = precio SIN IVA por unidad
+        // Total en FEL SAT = cant × precioUnitario (sin IVA)
+        // Para el form de salidas necesitamos precio CON IVA
+        const precioSinIVA  = parseFloat(precioStr) || (parseFloat(totalStr) / cant) || 0;
+        const precioConIVA  = precioSinIVA * 1.12;
+
+        // MontoGravable e impuesto por línea
+        const montoGravable = parseFloat(txt(item, 'MontoGravable'))  || 0;
+        const montoImpuesto = parseFloat(txt(item, 'MontoImpuesto'))  || 0;
+        const totalLinea    = parseFloat(totalStr) || 0;
+
+        if (!desc && cant === 0) return; // saltar líneas vacías
+
+        // Agregar línea al formulario
+        salAddLinea();
+        const n = salLineaCount;
+
+        // Match producto por nombre (primero exacto, luego parcial)
+        const descUp = desc.toUpperCase();
+        let prodMatch = (DB.iproductos||[]).find(p => p.nombre.toUpperCase() === descUp);
+        if (!prodMatch) {
+          // Buscar por primera palabra significativa (>=4 chars)
+          const palabra = descUp.split(' ').find(w => w.length >= 4) || '';
+          if (palabra) prodMatch = (DB.iproductos||[]).find(p =>
+            p.nombre.toUpperCase().includes(palabra) ||
+            descUp.includes(p.nombre.toUpperCase())
+          );
+        }
+
+        // Buscar presentación que coincida
+        let presMatch = null;
+        if (prodMatch) {
+          presMatch = (DB.ipresentaciones||[]).find(pr =>
+            pr.productoId === prodMatch.id &&
+            (desc.toUpperCase().includes(pr.nombre.toUpperCase()) ||
+             pr.nombre.toUpperCase().includes(descUp.split(' ')[0]))
+          );
+        }
+
+        lineasCargadas.push({ n, desc, cant, precioConIVA, precioSinIVA, totalLinea, prodMatch, presMatch });
+      });
+
+      // Aplicar valores con pequeño delay para que el DOM esté listo
+      setTimeout(() => {
+        lineasCargadas.forEach(({ n, desc, cant, precioConIVA, prodMatch, presMatch }) => {
+          // Set producto
+          if (prodMatch) {
+            const prodSel = document.getElementById('sal-lin-prod-' + n);
+            if (prodSel) {
+              prodSel.value = prodMatch.id;
+              if (typeof salLineaProdChange === 'function') salLineaProdChange(n);
+            }
+          }
+          // Set presentación si hay match
+          if (presMatch) {
+            setTimeout(() => {
+              const presSel = document.getElementById('sal-lin-pres-' + n);
+              if (presSel) presSel.value = presMatch.id;
+            }, 80);
+          }
+          // Set cantidad y precio
+          setTimeout(() => {
+            const bultosEl = document.getElementById('sal-lin-bultos-' + n);
+            const precioEl = document.getElementById('sal-lin-precio-' + n);
+            // Si no hay campo de producto, poner descripción en un campo de obs o nombre
+            const nomEl    = document.getElementById('sal-lin-nom-'    + n);
+            if (nomEl && !prodMatch) nomEl.value = desc;
+            if (bultosEl) bultosEl.value = cant;
+            if (precioEl) precioEl.value = precioConIVA.toFixed(2);
+            if (typeof salLineaCalc === 'function') salLineaCalc(n);
+          }, 160);
+        });
+        // Recalcular totales finales
+        setTimeout(() => {
+          if (typeof salRecalcTotales === 'function') salRecalcTotales();
+        }, 400);
+      }, 100);
+
+      // ── Vista previa ─────────────────────────────────────────────
+      const previewEl = document.getElementById('sal-xml-preview');
+      if (previewEl) {
+        previewEl.style.display = 'block';
+        const iconTipo = tipo === 'FACT' ? '🧾 Factura' : tipo === 'NCRE' ? '📝 Nota Crédito' : tipo;
+        const detLines = itemEls.map((item, i) => {
+          const d = txt(item, 'Descripcion');
+          const c = txt(item, 'Cantidad');
+          const t = txt(item, 'Total');
+          const matched = lineasCargadas[i]?.prodMatch;
+          const matchTag = matched
+            ? `<span style="color:var(--acc);font-weight:700;">✓ ${matched.nombre}</span>`
+            : `<span style="color:var(--warn);">⚠ sin match — asignar manualmente</span>`;
+          return `<div style="padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+            <strong>${c}×</strong> ${d} — Q ${parseFloat(t).toFixed(2)} ${matchTag}</div>`;
+        }).join('');
+
+        previewEl.innerHTML = `
+          <div style="font-weight:700;color:var(--acc);margin-bottom:6px;">✅ XML FEL del SAT Guatemala leído correctamente</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:.68rem;margin-bottom:8px;">
+            <div>📄 ${iconTipo} · ${moneda}</div>
+            <div>📅 ${fecha}</div>
+            <div>🏭 ${nomCom || nomEmisor}</div>
+            <div>👤 ${nomRec} (NIT: ${nitRec})</div>
+            ${numAut ? `<div colspan="2">🔑 Auth: <strong style="color:var(--info);">${numAut.substring(0,36)}</strong></div>` : ''}
+            ${serie  ? `<div>Serie: <strong>${serie}</strong>  No. ${numeroDTE}</div>` : ''}
+            <div>💰 Gran Total: <strong style="color:var(--acc);">Q ${granTotal.toFixed(2)}</strong></div>
+            <div>IVA: Q ${totalIVA.toFixed(2)}</div>
+          </div>
+          <div style="font-size:.68rem;font-weight:700;color:var(--warn);margin-bottom:4px;">📦 ${itemEls.length} línea(s) de producto:</div>
+          <div style="font-size:.68rem;line-height:1.8;">${detLines}</div>`;
+      }
+
+      const matchCount = lineasCargadas.filter(l => l.prodMatch).length;
+      toast(`✅ FEL cargado — ${itemEls.length} líneas · ${matchCount} productos reconocidos`);
+
+    } catch(err) {
+      console.error('salReadXML error:', err);
+      const previewEl = document.getElementById('sal-xml-preview');
+      if (previewEl) {
+        previewEl.style.display = 'block';
+        previewEl.innerHTML = `<span style="color:var(--danger);">⚠ Error leyendo XML: ${err.message}</span>`;
+      }
+      toast('⚠ Error al leer XML FEL: ' + err.message, true);
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+}
       const badge = document.getElementById('sal-xml-badge');
       if (badge) badge.style.display = 'inline-flex';
 
