@@ -766,47 +766,16 @@ tr:hover td{background:var(--green-pale);}
   <link rel="apple-touch-icon" href="icon-192.png">
 <!-- ══ CACHE BUSTER — corre primero, mata SW viejo ══ -->
 <script>
-(function() {
-  // BUILD 27 — Cache nuclear reset
-  // Eliminar TODOS los SW registrados y TODOS los caches
-  // Esto garantiza que el navegador descargue siempre el index más reciente
-  const BUILD_TOKEN = 'ajua-build-27';
-  const alreadyCleared = sessionStorage.getItem(BUILD_TOKEN);
-
-  if ('serviceWorker' in navigator) {
-    // Dar de baja TODOS los service workers sin excepción
-    navigator.serviceWorker.getRegistrations().then(regs => {
-      regs.forEach(reg => {
-        console.log('[BUILD27] Unregistering SW:', reg.scope);
-        reg.unregister();
-      });
-    });
-  }
-
-  if ('caches' in window) {
-    // Borrar TODOS los caches sin excepción
-    caches.keys().then(keys => {
-      keys.forEach(k => {
-        console.log('[BUILD27] Deleting cache:', k);
-        caches.delete(k);
-      });
-    });
-  }
-
-  // Marcar que ya se limpió en esta sesión para no hacer reload infinito
-  if (!alreadyCleared) {
-    sessionStorage.setItem(BUILD_TOKEN, '1');
-    // Solo recargar si había SW activo (para que tome efecto el unregister)
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(regs => {
-        if (regs.length > 0) {
-          console.log('[BUILD27] SW encontrado — recargando para aplicar cambios');
-          setTimeout(() => window.location.reload(), 500);
-        }
-      });
-    }
-  }
-})();
+// Desregistrar SW silenciosamente — sin reload, sin tocar sessionStorage
+// El SW ya está desactivado permanentemente en el bloque de abajo
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(reg => reg.unregister());
+  });
+}
+if ('caches' in window) {
+  caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
+}
 </script>
 <!-- Firebase ESM — v10.12 con persistencia moderna -->
 <script type="module">
@@ -842,7 +811,7 @@ tr:hover td{background:var(--green-pale);}
 <div style="font-size:2rem;margin-bottom:6px;">🌿</div>
 <div style="font-family:var(--fh);font-size:1.3rem;font-weight:700;color:var(--acc);">AJÚA</div>
 <div style="font-size:.72rem;color:var(--muted2);margin-top:3px;">Sistema de Control Interno</div>
-<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 03/03/2026 — build 28 · SW desactivado + botón reiniciar para personal</div>
+<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 03/03/2026 — build 29 · sin SW, sin reload forzado, recuperacion auto</div>
 </div>
 <div style="margin-bottom:14px;">
 <label style="font-size:.68rem;color:var(--muted2);display:block;margin-bottom:5px;">Usuario</label>
@@ -15177,29 +15146,11 @@ window.addEventListener('DOMContentLoaded', () => {
   const _gtNow = new Date(Date.now() - 6*60*60*1000);
   const td = _gtNow.toISOString().split('T')[0]; // Guatemala UTC-6
   document.querySelectorAll('input[type=date]').forEach(i => { if(!i.value) i.value = td; });
-  try { renderAll(); } catch(e) { console.error('renderAll error:', e); }
-  try { fbCheckConfig(); } catch(e) { console.error('fbCheckConfig error:', e); }
-  try { provTab('producto', document.getElementById('prov-tab-producto')); } catch(e) { console.error('provTab error:', e); }
-  try { populateProvSelects(); } catch(e) { console.error('populateProvSelects error:', e); }
-  try { populateCotSelects(); } catch(e) { console.error('populateCotSelects error:', e); }
-  // ✅ FIX: Do NOT call authEnsureDB() here — it runs too early before Firebase loads.
-  // authEnsureDB() is called inside initFirebase() after cloud data is loaded.
-  // We only call it now as fallback if Firebase never initializes (offline / no config).
-  setTimeout(() => {
-    if (!_fbReady) {
-      console.warn('⚠️ Firebase no listo en 5s — ejecutando authEnsureDB en modo local');
-      try { authEnsureDB(); } catch(e) {}
-      // Actualizar status en pantalla de login
-      const statusEl = document.getElementById('login-fb-status');
-      if (statusEl && !AUTH_SESSION) {
-        statusEl.style.background = 'rgba(214,48,48,.08)';
-        statusEl.style.borderColor = 'rgba(214,48,48,.3)';
-        statusEl.style.color = '#d63030';
-        statusEl.textContent = '⚠ Sin conexión — puedes ingresar en modo local';
-      }
-    }
-  }, 5000);
-  if (!authResumeSession()) {
+
+  // 1. Verificar sesión PRIMERO — antes de renderizar nada
+  const hasSession = authResumeSession();
+  if (!hasSession) {
+    // Mostrar login, ocultar todo lo demás
     const ls = document.getElementById('login-screen');
     if (ls) ls.style.display = 'flex';
     const hint = document.getElementById('login-err');
@@ -15211,6 +15162,32 @@ window.addEventListener('DOMContentLoaded', () => {
       hint.textContent = 'Contacta al administrador si no puedes ingresar';
     }
   }
+
+  // 2. Inicializar Firebase (carga datos de la nube)
+  try { fbCheckConfig(); } catch(e) { console.error('fbCheckConfig error:', e); }
+
+  // 3. Renderizar solo si hay sesión activa
+  if (hasSession) {
+    try { renderAll(); } catch(e) { console.error('renderAll error:', e); }
+    try { provTab('producto', document.getElementById('prov-tab-producto')); } catch(e) {}
+    try { populateProvSelects(); } catch(e) {}
+    try { populateCotSelects(); } catch(e) {}
+  }
+
+  // 4. Fallback si Firebase no responde en 5s
+  setTimeout(() => {
+    if (!_fbReady) {
+      console.warn('⚠️ Firebase no listo en 5s — ejecutando authEnsureDB en modo local');
+      try { authEnsureDB(); } catch(e) {}
+      const statusEl = document.getElementById('login-fb-status');
+      if (statusEl && !AUTH_SESSION) {
+        statusEl.style.background = 'rgba(214,48,48,.08)';
+        statusEl.style.borderColor = 'rgba(214,48,48,.3)';
+        statusEl.style.color = '#d63030';
+        statusEl.textContent = '⚠ Sin conexión — puedes ingresar en modo local';
+      }
+    }
+  }, 5000);
 });
 
 </script>
