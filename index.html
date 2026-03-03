@@ -842,7 +842,7 @@ tr:hover td{background:var(--green-pale);}
 <div style="font-size:2rem;margin-bottom:6px;">🌿</div>
 <div style="font-family:var(--fh);font-size:1.3rem;font-weight:700;color:var(--acc);">AJÚA</div>
 <div style="font-size:.72rem;color:var(--muted2);margin-top:3px;">Sistema de Control Interno</div>
-<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 03/03/2026 — build 27 · auto-recovery backup + onSnapshot guard + restore fix· SW cache v3 + personal live desde DB.al</div>
+<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 03/03/2026 — build 28 · SW desactivado + botón reiniciar para personal</div>
 </div>
 <div style="margin-bottom:14px;">
 <label style="font-size:.68rem;color:var(--muted2);display:block;margin-bottom:5px;">Usuario</label>
@@ -875,6 +875,16 @@ tr:hover td{background:var(--green-pale);}
       background:rgba(255,56,88,.12);border:1px solid rgba(255,56,88,.3);
       border-radius:4px;font-size:.72rem;color:var(--danger);text-align:center;
     "></div>
+
+<!-- Botón de ayuda para personal no técnico -->
+<div style="margin-top:16px;border-top:1px solid var(--br);padding-top:14px;text-align:center;">
+  <div style="font-size:.62rem;color:var(--muted2);margin-bottom:8px;">¿No conecta o muestra error?</div>
+  <button onclick="ajuaReset()" style="
+      width:100%;padding:11px;background:transparent;
+      border:1.5px solid var(--br);border-radius:8px;
+      font-size:.78rem;color:var(--muted2);cursor:pointer;
+      font-family:var(--fm);
+    ">🔄 Reiniciar aplicación</button>
 </div>
 </div>
 <div id="user-topbar" style="
@@ -4316,6 +4326,41 @@ function authCanAccess(moduleId) {
 }
 
 // ── Login / Logout ────────────────────────────────────────────────
+function ajuaReset() {
+  // Un toque — limpia caché, SW, y recarga. Para personal no técnico.
+  const btn = document.querySelector('button[onclick="ajuaReset()"]');
+  if (btn) { btn.textContent = '⏳ Limpiando...'; btn.disabled = true; }
+
+  const steps = [];
+
+  // 1. Desregistrar todos los Service Workers
+  if ('serviceWorker' in navigator) {
+    steps.push(
+      navigator.serviceWorker.getRegistrations().then(regs => {
+        return Promise.all(regs.map(r => r.unregister()));
+      })
+    );
+  }
+
+  // 2. Borrar todos los caches del navegador
+  if ('caches' in window) {
+    steps.push(
+      caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
+    );
+  }
+
+  // 3. Limpiar sessionStorage (NO localStorage — ahí están los datos)
+  try { sessionStorage.clear(); } catch(e) {}
+
+  Promise.all(steps).then(() => {
+    // Recargar desde el servidor (no desde caché)
+    window.location.reload(true);
+  }).catch(() => {
+    window.location.reload(true);
+  });
+}
+
+
 function authLogin() {
   const nombre = (document.getElementById('login-user')?.value || '').trim();
   const clave  = (document.getElementById('login-pass')?.value || '').trim();
@@ -15170,16 +15215,14 @@ window.addEventListener('DOMContentLoaded', () => {
 
 </script>
 <script>
+  // SERVICE WORKER DESACTIVADO — index siempre fresco del servidor
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js')
-        .then(reg => {
-          console.log('SW registered, scope:', reg.scope);
-          // Check for updates every 60 min
-          setInterval(() => reg.update(), 60 * 60 * 1000);
-        })
-        .catch(e => console.warn('SW error:', e));
+    navigator.serviceWorker.getRegistrations().then(regs => {
+      regs.forEach(reg => { reg.unregister(); });
     });
+  }
+  if ('caches' in window) {
+    caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
   }
 
   // Show install prompt on Android
