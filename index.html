@@ -821,7 +821,7 @@ tr:hover td{background:var(--green-pale);}
 <div style="font-size:2rem;margin-bottom:6px;">🌿</div>
 <div style="font-family:var(--fh);font-size:1.3rem;font-weight:700;color:var(--acc);">AJÚA</div>
 <div style="font-size:.72rem;color:var(--muted2);margin-top:3px;">Sistema de Control Interno</div>
-<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 02/03/2026 — build 16 · nav active fix + layout tablet + cotizador nav + resume sesión</div>
+<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 02/03/2026 — build 17 · fix login timeout + fallback local</div>
 </div>
 <div style="margin-bottom:14px;">
 <label style="font-size:.68rem;color:var(--muted2);display:block;margin-bottom:5px;">Usuario</label>
@@ -4310,23 +4310,41 @@ function authLogin() {
     return;
   }
 
-  // If Firebase hasn't loaded users yet, wait up to 3 seconds
-  if ((DB.usuarios||[]).length === 0) {
-    const btn = document.querySelector('#login-screen button');
-    if (btn) { btn.textContent = '⏳ Cargando...'; btn.disabled = true; }
-    let attempts = 0;
-    const wait = setInterval(() => {
-      attempts++;
-      if ((DB.usuarios||[]).length > 0 || attempts > 15) {
-        clearInterval(wait);
-        if (btn) { btn.textContent = 'Ingresar →'; btn.disabled = false; }
-        authDoLogin(nombre, clave);
-      }
-    }, 200);
+  // Si ya hay usuarios cargados, ingresar directo
+  if ((DB.usuarios||[]).length > 0) {
+    authDoLogin(nombre, clave);
     return;
   }
 
-  authDoLogin(nombre, clave);
+  // Firebase aún no ha cargado — esperar hasta 8 segundos
+  const btn = document.querySelector('#login-screen button');
+  const statusEl = document.getElementById('login-fb-status');
+  if (btn) { btn.textContent = '⏳ Verificando...'; btn.disabled = true; }
+
+  let attempts = 0;
+  const maxAttempts = 40; // 40 × 200ms = 8 segundos
+  const wait = setInterval(() => {
+    attempts++;
+    if ((DB.usuarios||[]).length > 0) {
+      // Firebase cargó con usuarios
+      clearInterval(wait);
+      if (btn) { btn.textContent = 'Ingresar →'; btn.disabled = false; }
+      authDoLogin(nombre, clave);
+    } else if (attempts >= maxAttempts || _fbReady) {
+      // Tiempo agotado o Firebase listo pero sin usuarios — usar fallback local
+      clearInterval(wait);
+      if (btn) { btn.textContent = 'Ingresar →'; btn.disabled = false; }
+      // Forzar creación de usuario admin por defecto y reintentar
+      try { authEnsureDB(); } catch(e) {}
+      if (statusEl) {
+        statusEl.style.background = 'rgba(242,104,34,.08)';
+        statusEl.style.borderColor = 'rgba(242,104,34,.3)';
+        statusEl.style.color = '#f26822';
+        statusEl.textContent = '⚠ Modo local — sin conexión a la nube';
+      }
+      authDoLogin(nombre, clave);
+    }
+  }, 200);
 }
 
 function authDoLogin(nombre, clave) {
@@ -14873,10 +14891,18 @@ window.addEventListener('DOMContentLoaded', () => {
   // We only call it now as fallback if Firebase never initializes (offline / no config).
   setTimeout(() => {
     if (!_fbReady) {
-      console.warn('⚠️ Firebase no listo en 10s — ejecutando authEnsureDB en modo local');
+      console.warn('⚠️ Firebase no listo en 5s — ejecutando authEnsureDB en modo local');
       try { authEnsureDB(); } catch(e) {}
+      // Actualizar status en pantalla de login
+      const statusEl = document.getElementById('login-fb-status');
+      if (statusEl && !AUTH_SESSION) {
+        statusEl.style.background = 'rgba(214,48,48,.08)';
+        statusEl.style.borderColor = 'rgba(214,48,48,.3)';
+        statusEl.style.color = '#d63030';
+        statusEl.textContent = '⚠ Sin conexión — puedes ingresar en modo local';
+      }
     }
-  }, 10000);
+  }, 5000);
   if (!authResumeSession()) {
     const ls = document.getElementById('login-screen');
     if (ls) ls.style.display = 'flex';
