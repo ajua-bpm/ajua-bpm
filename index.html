@@ -821,7 +821,7 @@ tr:hover td{background:var(--green-pale);}
 <div style="font-size:2rem;margin-bottom:6px;">🌿</div>
 <div style="font-family:var(--fh);font-size:1.3rem;font-weight:700;color:var(--acc);">AJÚA</div>
 <div style="font-size:.72rem;color:var(--muted2);margin-top:3px;">Sistema de Control Interno</div>
-<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 02/03/2026 — build 19 · stock math fix + trazabilidad por lote integrada</div>
+<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 02/03/2026 — build 21 · modal trazabilidad lote — cadena origen simple</div>
 </div>
 <div style="margin-bottom:14px;">
 <label style="font-size:.68rem;color:var(--muted2);display:block;margin-bottom:5px;">Usuario</label>
@@ -1759,10 +1759,10 @@ tr:hover td{background:var(--green-pale);}
 </div>
 </div>
 <div class="sec" id="sec-inv-stock">
-<div class="ph"><h1>Stock en Tiempo Real</h1><p>Inventario disponible · haz clic en 🔗 Trazabilidad o en un botón de lote para ver origen, productor, vendedor y destinos</p></div>
+<div class="ph"><h1>Stock en Tiempo Real</h1><p>Existencias por producto en bodega · Historial de movimientos: entradas, Walmart, Local GT, Exportación</p></div>
 <div class="card">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-<div class="ct" style="margin:0;">Inventario Disponible</div>
+<div class="ct" style="margin:0;">Existencias en Bodega por Producto</div>
 <div style="display:flex;gap:6px;flex-wrap:wrap;">
 <button class="btn bo bsm" onclick="invExportStock()">↓ Excel</button>
 <button class="btn bo bsm" onclick="printSec('sec-inv-stock')">🖨</button>
@@ -1782,8 +1782,9 @@ tr:hover td{background:var(--green-pale);}
 <div style="overflow-x:auto;">
 <table style="font-size:.72rem;width:100%;">
 <thead><tr>
-<th>Fecha</th><th>Tipo</th><th>Canal</th><th>Producto</th><th>Entidad</th>
-<th>Bultos</th><th>LBS</th><th>Documento</th>
+<th>Fecha</th><th>Canal</th><th>Producto</th><th>Entidad / Cliente</th>
+<th style="text-align:right;">Bultos / Cajas</th><th style="text-align:right;">Total LBS</th>
+<th style="text-align:right;">Stock Bodega</th><th>Documento</th>
 </tr></thead>
 <tbody id="inv-mov-tbody"></tbody>
 </table>
@@ -2840,9 +2841,9 @@ tr:hover td{background:var(--green-pale);}
 </div>
 </div>
 <div class="sec" id="sec-inv-trazabilidad">
-<div class="ph"><h1>Trazabilidad Completa</h1><p>Rastreo de cada lote desde el productor hasta el cliente final — incluyendo mermas y pérdidas</p></div>
+<div class="ph"><h1>Trazabilidad</h1><p>Informativa y de rastreo · origen de compra (campo → cotizador → bodega) y destinos de venta (bodega → cliente)</p></div>
 <div class="card">
-<div class="ct">Buscar Trazabilidad</div>
+<div class="ct">Buscar por producto y rango de fechas</div>
 <div class="fgrid g3">
 <div class="fg"><label>Producto</label>
 <select id="traz-producto"><option value="">— Todos los productos —</option></select>
@@ -12800,124 +12801,114 @@ function invVerTrazaLote(loteId) {
   const lote = (DB.ientradas||[]).find(r => r.id === loteId);
   if (!lote) { toast('⚠ Lote no encontrado', true); return; }
 
-  // Build traceability data for this specific lot
   const prodId   = lote.productoId;
   const prodName = lote.productoNombre || prodId;
-  const lbsLote  = (lote.lbsNeto||lote.lbsBruto||lote.lbsTotal||(lote.kgTotal?lote.kgTotal*2.20462:0)||0);
+  const lbsLote  = lote.lbsNeto||lote.lbsBruto||lote.lbsTotal||(lote.kgTotal?lote.kgTotal*2.20462:0)||0;
   const kgLote   = lbsLote / 2.20462;
+  const safe     = s => String(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-  // Find all sales that include this product (we link by productoId and date range)
-  // Lot arrived on lote.fecha; sales after that date are potential consumers
-  const salesRows = [];
-  const addSales = (arr, canal, getLineas, getRef, getCliente) => {
+  // Chain data
+  const productor    = safe(lote.productorNombre || '—');
+  const intermediario = safe(lote.proveedorNombre || lote.origen || '—');
+  const duca         = safe(lote.duca || '—');
+  const fechaIngreso = safe(lote.fecha);
+  const bultos       = lote.bultos || '—';
+
+  // Destination sales after lot arrival date
+  const destinos = [];
+  const addDest = (arr, canal, getLineas, getCliente, getRef) => {
     (arr||[]).forEach(r => {
       if (r.fecha < lote.fecha) return;
-      const lineas = getLineas(r).filter(l => {
-        const lid = l.productoId;
-        return lid === prodId ||
-               (l.productoNombre && l.productoNombre.toUpperCase() === prodName.toUpperCase());
-      });
+      const lineas = (getLineas(r)||[]).filter(l =>
+        l.productoId === prodId ||
+        (l.productoNombre||'').toUpperCase() === prodName.toUpperCase()
+      );
       if (!lineas.length) return;
-      const lbs = lineas.reduce((s,l)=>s+(l.totalLbs||l.lbs||0), 0);
-      salesRows.push({ fecha:r.fecha, canal, cliente:getCliente(r), lbs, ref:getRef(r) });
+      const lbs = lineas.reduce((s,l)=>s+(l.totalLbs||l.lbs||0),0);
+      destinos.push({ fecha:r.fecha, canal, cliente:safe(getCliente(r)), lbs, ref:safe(getRef(r)) });
     });
   };
-  addSales(DB.isalidas,   '🏪 Walmart',     r=>r.lineas||[],     r=>r.factura||r.oc||'—',         r=>r.clienteNombre||'Walmart GT');
-  addSales(DB.vgtVentas,  '🛒 Local GT',    r=>r.lineas||[],     r=>r.numFactura||'—',             r=>r.comprador||'—');
-  addSales(DB.vintVentas, '✈️ Exportación', r=>r.lineas||[],     r=>r.porte||r.contenedorRef||'—', r=>r.comprador||r.pais||'—');
+  addDest(DB.isalidas,   '🏪 Walmart',     r=>r.lineas, r=>r.clienteNombre||'Walmart GT', r=>r.factura||r.oc||'—');
+  addDest(DB.vgtVentas,  '🛒 Local GT',    r=>r.lineas, r=>r.comprador||'—',              r=>r.numFactura||'—');
+  addDest(DB.vintVentas, '✈️ Exportación', r=>r.lineas, r=>r.comprador||r.pais||'—',      r=>r.porte||r.contenedorRef||'—');
 
-  const totalVendido = salesRows.reduce((s,r)=>s+r.lbs, 0);
-  const saldo = lbsLote - totalVendido;
-
-  // Build modal HTML
-  const safeStr = s => String(s||'—').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const row = (label, val, color) =>
-    '<tr><td style="color:var(--muted2);font-size:.7rem;padding:5px 8px;white-space:nowrap;">' + label + '</td>' +
-    '<td style="padding:5px 8px;font-weight:600;' + (color?'color:'+color+';':'') + '">' + safeStr(val) + '</td></tr>';
-
-  let html = '<div id="traz-modal-overlay" onclick="if(event.target===this)this.remove()" style="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9998;display:flex;align-items:center;justify-content:center;padding:16px;">' +
-    '<div style="background:var(--cream);border-radius:14px;padding:24px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.4);">' +
-    // Header
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">' +
-      '<div>' +
-        '<div style="font-family:var(--fh);font-size:1.1rem;font-weight:800;color:var(--green-deep);">🔗 Trazabilidad de Lote</div>' +
-        '<div style="font-size:.74rem;color:var(--muted2);margin-top:2px;">' + safeStr(prodName) + '</div>' +
+  // ── Build modal ───────────────────────────────────────────────
+  const chainNode = (icon, bg, role, name, detail, nameColor) =>
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">' +
+      '<div style="width:34px;height:34px;border-radius:50%;background:'+bg+';display:flex;align-items:center;justify-content:justify-content:center;font-size:.9rem;flex-shrink:0;text-align:center;line-height:34px;">'+icon+'</div>' +
+      '<div style="flex:1;">' +
+        '<div style="font-size:.57rem;color:var(--muted2);text-transform:uppercase;letter-spacing:.06em;">'+role+'</div>' +
+        '<div style="font-size:.8rem;font-weight:700;color:'+(nameColor||'var(--txt)')+';">'+name+'</div>' +
+        '<div style="font-size:.62rem;color:var(--muted2);">'+detail+'</div>' +
       '</div>' +
-      '<button onclick="document.getElementById(\'traz-modal-overlay\').remove()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--muted2);padding:4px;">✕</button>' +
-    '</div>' +
-    // Stats row
-    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px;">' +
-      invTrazStatCard('Entrada Lote', lbsLote.toFixed(0)+' lbs<br><small style="font-size:.65rem;color:var(--muted2);">'+ kgLote.toFixed(1)+' kg</small>', 'var(--acc)', 'rgba(0,122,82,.08)','rgba(0,122,82,.25)') +
-      invTrazStatCard('Total Vendido', totalVendido.toFixed(0)+' lbs', 'var(--danger)', 'rgba(214,48,48,.07)','rgba(214,48,48,.2)') +
-      invTrazStatCard('Saldo Bodega',  saldo.toFixed(0)+' lbs', saldo>0?'var(--info)':'var(--danger)', 'rgba(74,158,255,.07)','rgba(74,158,255,.2)') +
-    '</div>' +
-    // Lot identification
-    '<div style="background:var(--s1);border:1.5px solid var(--br);border-radius:8px;padding:14px;margin-bottom:14px;">' +
-      '<div style="font-size:.7rem;font-weight:700;color:var(--green-deep);margin-bottom:10px;letter-spacing:.05em;">📋 IDENTIFICACIÓN DEL LOTE</div>' +
-      '<table style="width:100%;border-collapse:collapse;">' +
-        row('Fecha de ingreso', lote.fecha) +
-        row('Producto', prodName) +
-        row('Bultos', lote.bultos || '—') +
-        row('LBS brutas', (lote.lbsBruto||0).toFixed(1)+' lbs') +
-        row('LBS netas', lbsLote.toFixed(1)+' lbs  (' + kgLote.toFixed(1) + ' kg)') +
-        (lote.mermaLbs>0 ? row('Merma', lote.mermaLbs.toFixed(1)+' lbs ('+((lote.pctMerma||0).toFixed(1))+'%)', 'var(--warn)') : '') +
-        row('Nº DUCA / Aduana', lote.duca||'—') +
-        row('Ref. Cotización', lote.cotRef||lote.cotizacionNom||'—') +
-        row('Nº Interno', lote.id.substring(0,8).toUpperCase()) +
-      '</table>' +
-    '</div>' +
-    // Chain of custody
-    '<div style="background:var(--s1);border:1.5px solid var(--br);border-radius:8px;padding:14px;margin-bottom:14px;">' +
-      '<div style="font-size:.7rem;font-weight:700;color:var(--green-deep);margin-bottom:10px;letter-spacing:.05em;">🌱 CADENA DE CUSTODIA</div>' +
-      '<table style="width:100%;border-collapse:collapse;">' +
-        row('Productor', lote.productorNombre||lote.productorId||'—', lote.productorNombre?'var(--acc)':'') +
-        row('Vendedor / Proveedor', lote.proveedorNombre||lote.proveedorId||lote.origen||'—', lote.proveedorNombre?'var(--acc)':'') +
-        row('Fact. Productor', lote.factProductor||lote.factProd||'—') +
-        row('Fact. Proveedor MX', lote.factProveedor||lote.factMx||'—') +
-        row('Observaciones', lote.obs||'—') +
-      '</table>' +
     '</div>';
 
-  // Sales table
-  if (salesRows.length) {
-    html += '<div style="background:var(--s1);border:1.5px solid var(--br);border-radius:8px;padding:14px;">' +
-      '<div style="font-size:.7rem;font-weight:700;color:var(--green-deep);margin-bottom:10px;letter-spacing:.05em;">📤 DESTINOS DE VENTA (' + salesRows.length + ' registros)</div>' +
-      '<table style="width:100%;border-collapse:collapse;font-size:.72rem;">' +
+  const arrow = '<div style="padding-left:17px;color:var(--muted2);font-size:.78rem;line-height:1;margin-bottom:10px;">↓</div>';
+
+  let html =
+    '<div id="traz-modal-overlay" onclick="if(event.target===this)this.remove()" ' +
+    'style="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9998;display:flex;align-items:center;justify-content:center;padding:16px;">' +
+    '<div style="background:var(--cream);border-radius:14px;padding:24px;max-width:480px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.4);">' +
+
+    // Header
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;">' +
+      '<div>' +
+        '<div style="font-family:var(--fh);font-size:1.05rem;font-weight:800;color:var(--green-deep);">🔗 Origen del Lote</div>' +
+        '<div style="font-size:.72rem;color:var(--muted2);margin-top:3px;">' +
+          safe(prodName) + ' · ' + fechaIngreso + ' · ' + lbsLote.toFixed(0) + ' lbs (' + kgLote.toFixed(1) + ' kg)' +
+        '</div>' +
+      '</div>' +
+      '<button onclick="document.getElementById('traz-modal-overlay').remove()" ' +
+      'style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--muted2);padding:4px;line-height:1;">✕</button>' +
+    '</div>' +
+
+    // Cadena de origen
+    '<div style="background:var(--s1);border:1.5px solid var(--br);border-radius:8px;padding:16px;margin-bottom:12px;">' +
+      '<div style="font-size:.64rem;font-weight:700;color:var(--green-deep);letter-spacing:.07em;text-transform:uppercase;margin-bottom:14px;">🌱 Cadena de Origen</div>' +
+
+      chainNode('🌾', 'rgba(0,122,82,.1)', 'Productor', productor === '—' ? '<span style="color:var(--muted2);font-weight:400;font-style:italic;">No registrado</span>' : productor, 'Origen del campo', 'var(--acc)') +
+      arrow +
+      chainNode('🤝', 'rgba(44,111,173,.1)', 'Intermediario / Vendedor', intermediario === '—' ? '<span style="color:var(--muted2);font-weight:400;font-style:italic;">No registrado</span>' : intermediario, 'DUCA: ' + duca, 'var(--info)') +
+      arrow +
+      chainNode('🏭', 'rgba(0,122,82,.1)', 'Recibido en bodega', 'AJÚA · Guatemala', fechaIngreso + ' · ' + bultos + ' bultos · ' + lbsLote.toFixed(0) + ' lbs', 'var(--green-deep)') +
+
+    '</div>' +
+
+    // Destinos
+    '<div style="background:var(--s1);border:1.5px solid var(--br);border-radius:8px;padding:16px;">' +
+      '<div style="font-size:.64rem;font-weight:700;color:var(--green-deep);letter-spacing:.07em;text-transform:uppercase;margin-bottom:12px;">📤 Destinos de Venta</div>';
+
+  if (destinos.length) {
+    html += '<table style="width:100%;border-collapse:collapse;font-size:.72rem;">' +
       '<thead><tr style="border-bottom:1.5px solid var(--br);">' +
-        '<th style="padding:5px 8px;text-align:left;color:var(--muted2);font-weight:600;">Fecha</th>' +
-        '<th style="padding:5px 8px;text-align:left;color:var(--muted2);font-weight:600;">Canal</th>' +
-        '<th style="padding:5px 8px;text-align:left;color:var(--muted2);font-weight:600;">Cliente</th>' +
-        '<th style="padding:5px 8px;text-align:right;color:var(--muted2);font-weight:600;">LBS</th>' +
-        '<th style="padding:5px 8px;text-align:left;color:var(--muted2);font-weight:600;">Referencia</th>' +
+        '<th style="padding:4px 6px;text-align:left;color:var(--muted2);font-weight:600;">Fecha</th>' +
+        '<th style="padding:4px 6px;text-align:left;color:var(--muted2);font-weight:600;">Canal</th>' +
+        '<th style="padding:4px 6px;text-align:left;color:var(--muted2);font-weight:600;">Cliente</th>' +
+        '<th style="padding:4px 6px;text-align:right;color:var(--muted2);font-weight:600;">LBS</th>' +
+        '<th style="padding:4px 6px;text-align:left;color:var(--muted2);font-weight:600;">Ref.</th>' +
       '</tr></thead><tbody>' +
-      salesRows.map(s =>
+      destinos.map(d =>
         '<tr style="border-bottom:1px solid var(--br);">' +
-          '<td style="padding:5px 8px;">' + safeStr(s.fecha) + '</td>' +
-          '<td style="padding:5px 8px;font-size:.68rem;">' + s.canal + '</td>' +
-          '<td style="padding:5px 8px;font-size:.7rem;">' + safeStr(s.cliente) + '</td>' +
-          '<td style="padding:5px 8px;text-align:right;color:var(--danger);font-weight:700;">−' + s.lbs.toFixed(1) + ' lbs</td>' +
-          '<td style="padding:5px 8px;font-size:.65rem;color:var(--info);">' + safeStr(s.ref) + '</td>' +
+          '<td style="padding:5px 6px;white-space:nowrap;">' + d.fecha + '</td>' +
+          '<td style="padding:5px 6px;font-size:.64rem;">' + d.canal + '</td>' +
+          '<td style="padding:5px 6px;font-weight:600;">' + d.cliente + '</td>' +
+          '<td style="padding:5px 6px;text-align:right;color:var(--danger);font-weight:700;">−' + d.lbs.toFixed(1) + ' lbs</td>' +
+          '<td style="padding:5px 6px;font-size:.63rem;color:var(--info);">' + d.ref + '</td>' +
         '</tr>'
       ).join('') +
-      '</tbody></table></div>';
+      '</tbody></table>';
   } else {
-    html += '<div style="background:rgba(0,122,82,.05);border:1px solid rgba(0,122,82,.2);border-radius:6px;padding:12px;text-align:center;font-size:.74rem;color:var(--muted2);">Sin ventas registradas para este lote aún</div>';
+    html += '<div style="text-align:center;padding:12px;font-size:.72rem;color:var(--muted2);font-style:italic;">Sin ventas registradas para este lote aún</div>';
   }
 
-  html += '</div></div>';
+  html += '</div></div></div>';
 
-  // Remove existing modal if any, then inject
   const ex = document.getElementById('traz-modal-overlay');
   if (ex) ex.remove();
   document.body.insertAdjacentHTML('beforeend', html);
 }
 
-function invTrazStatCard(titulo, valor, colorVal, bg, border) {
-  return '<div style="background:' + bg + ';border:1.5px solid ' + border + ';border-radius:8px;padding:12px;text-align:center;">' +
-    '<div style="font-size:.58rem;color:var(--muted2);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;">' + titulo + '</div>' +
-    '<div style="font-size:1.2rem;font-weight:800;color:' + colorVal + ';font-family:var(--fh);line-height:1.2;">' + valor + '</div>' +
-  '</div>';
-}
+
 
 function renderInvStock() {
   invEnsureDB();
@@ -12953,25 +12944,36 @@ function renderInvStock() {
             return '<button onclick="invVerTrazaLote(\''+l.id+'\')" style="font-size:.6rem;padding:3px 7px;border:1px solid rgba(0,122,82,.4);border-radius:20px;background:rgba(0,122,82,.06);color:var(--acc);cursor:pointer;white-space:nowrap;">🔗 '+tag+' · '+lbsL+' lbs</button>';
           }).join('')
         : '';
-      return '<div style="background:var(--s1);border:1.5px solid ' + color + '44;border-radius:8px;padding:16px;">' +
-        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">' +
-          '<div style="font-family:var(--fh);font-size:.82rem;font-weight:700;line-height:1.3;color:var(--green-deep);">' + s.prod.nombre + '</div>' +
-          '<button onclick="invAbrirTraz(\''+s.prod.id+'\')" style="font-size:.58rem;padding:3px 8px;border:1px solid rgba(0,122,82,.3);border-radius:4px;background:rgba(0,122,82,.06);color:var(--acc);cursor:pointer;flex-shrink:0;margin-left:6px;">🔗 Trazabilidad</button>' +
+      return '<div style="background:var(--s1);border:1.5px solid ' + color + '55;border-radius:8px;padding:16px;">' +
+        // Header row: product name + traza button
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">' +
+          '<div style="font-family:var(--fh);font-size:.84rem;font-weight:800;line-height:1.3;color:var(--green-deep);">' + s.prod.nombre + '</div>' +
+          '<button onclick="invAbrirTraz(\''+s.prod.id+'\')" style="font-size:.58rem;padding:3px 8px;border:1px solid rgba(0,122,82,.3);border-radius:4px;background:rgba(0,122,82,.06);color:var(--acc);cursor:pointer;flex-shrink:0;margin-left:8px;white-space:nowrap;">🔗 Trazabilidad</button>' +
         '</div>' +
-        '<div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:6px;">' +
-          '<div><div style="font-size:1.8rem;font-weight:800;color:' + color + ';font-family:var(--fh);line-height:1;">' + saldoVal.toFixed(0) + '</div><div style="font-size:.6rem;color:var(--muted2);">' + unidadLabel + ' en stock</div></div>' +
-          '<div style="font-size:.75rem;color:var(--muted2);">' + (!esPorUnidad ? saldoKg.toFixed(1)+' kg' : '') + '</div>' +
+        // Big stock number
+        '<div style="margin-bottom:8px;">' +
+          '<div style="font-size:2rem;font-weight:900;color:' + color + ';font-family:var(--fh);line-height:1;">' + saldoVal.toFixed(0) + '</div>' +
+          '<div style="font-size:.64rem;color:var(--muted2);margin-top:1px;">lbs en bodega' + (!esPorUnidad ? ' · ' + saldoKg.toFixed(1) + ' kg' : '') + '</div>' +
         '</div>' +
-        '<div style="display:flex;gap:8px;margin-bottom:6px;font-size:.68rem;flex-wrap:wrap;">' +
-          '<span style="color:var(--acc);">↑ ' + entradaVal.toFixed(0) + ' ' + unidadLabel + ' entrada</span>' +
-          '<span style="color:var(--danger);">↓ ' + salidaVal.toFixed(0) + ' ' + unidadLabel + ' salida</span>' +
-          (s.mermaEntrada > 0 ? '<span style="color:var(--warn);">⚠ ' + s.mermaEntrada.toFixed(0) + ' lbs merma (' + pctMerma + '%)</span>' : '') +
+        // Mini stats grid
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:8px;font-size:.68rem;">' +
+          '<div style="background:rgba(0,217,139,.07);border-radius:4px;padding:5px 7px;">' +
+            '<div style="color:var(--muted2);font-size:.58rem;text-transform:uppercase;letter-spacing:.05em;">Entrada</div>' +
+            '<div style="color:var(--acc);font-weight:700;">' + entradaVal.toFixed(0) + ' ' + unidadLabel + '</div>' +
+          '</div>' +
+          '<div style="background:rgba(255,56,88,.07);border-radius:4px;padding:5px 7px;">' +
+            '<div style="color:var(--muted2);font-size:.58rem;text-transform:uppercase;letter-spacing:.05em;">Salida</div>' +
+            '<div style="color:var(--danger);font-weight:700;">' + salidaVal.toFixed(0) + ' ' + unidadLabel + '</div>' +
+          '</div>' +
         '</div>' +
-        (alerta ? '<div style="font-size:.62rem;color:var(--warn);font-weight:600;margin-bottom:6px;">⚠ Bajo stock mínimo (' + minStock + ' ' + unidadLabel + ')</div>' : '') +
-        '<div style="height:4px;background:var(--br);border-radius:2px;overflow:hidden;margin-bottom:' + (loteBtns?'8px':'0') + ';">' +
-          '<div style="width:' + pctStock + '%;height:100%;background:' + color + ';border-radius:2px;transition:.3s;"></div>' +
+        (s.mermaEntrada > 0 ? '<div style="font-size:.62rem;color:var(--warn);margin-bottom:6px;">⚠ Merma: ' + s.mermaEntrada.toFixed(0) + ' lbs (' + pctMerma + '%)</div>' : '') +
+        (alerta ? '<div style="font-size:.62rem;color:var(--warn);font-weight:700;margin-bottom:6px;">⚠ Bajo stock mínimo (' + minStock + ' ' + unidadLabel + ')</div>' : '') +
+        // Progress bar
+        '<div style="height:5px;background:var(--br);border-radius:3px;overflow:hidden;margin-bottom:' + (loteBtns?'10px':'0') + ';">' +
+          '<div style="width:' + pctStock + '%;height:100%;background:' + color + ';border-radius:3px;transition:.4s;"></div>' +
         '</div>' +
-        (loteBtns ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">' + loteBtns + '</div>' : '') +
+        // Lot trace buttons
+        (loteBtns ? '<div style="display:flex;flex-wrap:wrap;gap:4px;">' + loteBtns + '</div>' : '') +
       '</div>';
     }).join('');
   }
@@ -13064,19 +13066,23 @@ function renderInvStock() {
     return;
   }
 
-  tb.innerHTML = allMovs.slice(0, 80).map(m => {
-    const isEnt = m.tipo === 'entrada';
+  tb.innerHTML = allMovs.slice(0, 120).map(m => {
+    const isEnt  = m.tipo === 'entrada';
+    const lbsClr = isEnt ? 'var(--acc)' : 'var(--danger)';
     const saldoColor = m._saldo > 500 ? 'var(--acc)' : m._saldo > 100 ? 'var(--warn)' : 'var(--danger)';
+    const canalBg    = isEnt
+      ? 'background:rgba(0,217,139,.1);color:var(--acc);'
+      : 'background:rgba(255,56,88,.1);color:var(--danger);';
     return '<tr>' +
-      '<td>' + m.fecha + '</td>' +
-      '<td style="font-size:.68rem;">' + m.canal + '</td>' +
-      '<td style="font-size:.72rem;font-weight:600;">' + (m.productoNombre || '—') + '</td>' +
+      '<td style="white-space:nowrap;">' + m.fecha + '</td>' +
+      '<td><span style="font-size:.62rem;padding:2px 7px;border-radius:20px;font-weight:700;white-space:nowrap;' + canalBg + '">' + m.canal + '</span></td>' +
+      '<td style="font-size:.74rem;font-weight:700;color:var(--green-deep);">' + (m.productoNombre || '—') + '</td>' +
       '<td style="font-size:.7rem;color:var(--muted2);">' + (m.entidad || '—') + '</td>' +
-      '<td style="text-align:right;">' + (m.bultos || '—') + '</td>' +
-      '<td style="text-align:right;color:' + (isEnt?'var(--acc)':'var(--danger)') + ';font-weight:700;">' +
+      '<td style="text-align:right;font-weight:600;">' + (m.bultos > 0 ? m.bultos : '—') + '</td>' +
+      '<td style="text-align:right;color:' + lbsClr + ';font-weight:700;">' +
         (isEnt ? '+' : '−') + m.lbs.toFixed(1) + ' lbs' +
       '</td>' +
-      '<td style="text-align:right;font-weight:700;color:' + saldoColor + ';">' + m._saldo.toFixed(0) + ' lbs</td>' +
+      '<td style="text-align:right;font-weight:800;color:' + saldoColor + ';font-family:var(--fh);">' + m._saldo.toFixed(0) + ' lbs</td>' +
       '<td style="font-size:.65rem;color:var(--info);">' + m.doc + '</td>' +
     '</tr>';
   }).join('');
@@ -13150,115 +13156,133 @@ function buscarTraz() {
   const hasta  = v('traz-hasta');
   const cont   = document.getElementById('traz-result');
 
-  // Local resolve helper (was missing — caused silent JS error)
   const resolveIdTraz = (id, nombre) => {
     if (!id && !nombre) return '';
-    if (id) {
-      const p = DB.iproductos?.find(p => p.id === id);
-      if (p) return p.id;
-    }
+    const p = id ? DB.iproductos?.find(p => p.id === id) : null;
+    if (p) return p.id;
     if (nombre) {
-      const p = DB.iproductos?.find(p => p.nombre?.toUpperCase() === nombre?.toUpperCase());
-      if (p) return p.id;
+      const p2 = DB.iproductos?.find(p => p.nombre?.toUpperCase() === nombre?.toUpperCase());
+      if (p2) return p2.id;
     }
     return id || nombre || '';
   };
 
-  // Gather entradas
-  let entradas = (DB.ientradas||[]).filter(r =>
+  // ── Entradas (origen de compra) ────────────────────────────────
+  const entradas = (DB.ientradas||[]).filter(r =>
     (!prodId || r.productoId === prodId) &&
-    (!desde || r.fecha >= desde) &&
-    (!hasta || r.fecha <= hasta));
+    (!desde  || r.fecha >= desde) &&
+    (!hasta  || r.fecha <= hasta)
+  );
 
-  // Gather ALL sales: Walmart, Local GT, Exportación
-  let salidas = [];
-
-  // Ventas Walmart
+  // ── Salidas (destinos de venta) ────────────────────────────────
+  const salidas = [];
   (DB.isalidas||[]).forEach(r => {
     if ((!desde||r.fecha>=desde) && (!hasta||r.fecha<=hasta)) {
-      const lineas = r.lineas||[];
-      if (!prodId || lineas.some(l=>resolveIdTraz(l.productoId,l.productoNombre)===prodId)) {
-        salidas.push({...r, canal:'Walmart', clienteNombre: r.clienteNombre||r.cliente||'Walmart Guatemala'});
-      }
+      if (!prodId || (r.lineas||[]).some(l=>resolveIdTraz(l.productoId,l.productoNombre)===prodId))
+        salidas.push({...r, canal:'\u{1F3EA} Walmart', clienteNombre: r.clienteNombre||'Walmart Guatemala'});
     }
   });
-
-  // Despachos locales GT
   (DB.vgtVentas||[]).forEach(r => {
     if ((!desde||r.fecha>=desde) && (!hasta||r.fecha<=hasta)) {
-      const lineas = r.lineas||[];
-      if (!prodId || lineas.some(l=>l.productoId===prodId)) {
-        salidas.push({...r, canal:'Local GT', clienteNombre: r.comprador||r.clienteNombre||'—', factura: r.numFactura||''});
-      }
+      if (!prodId || (r.lineas||[]).some(l=>l.productoId===prodId))
+        salidas.push({...r, canal:'\u{1F6D2} Local GT', clienteNombre: r.comprador||r.clienteNombre||'—', factura: r.numFactura||''});
     }
   });
-
-  // Exportaciones
   (DB.vintVentas||[]).forEach(r => {
     if ((!desde||r.fecha>=desde) && (!hasta||r.fecha<=hasta)) {
-      const lineas = r.lineas||[];
-      if (!prodId || lineas.some(l=>l.productoId===prodId)) {
-        salidas.push({...r, canal:'Exportación', clienteNombre: r.comprador||r.clienteNombre||'—'});
-      }
+      if (!prodId || (r.lineas||[]).some(l=>l.productoId===prodId))
+        salidas.push({...r, canal:'\u2708\uFE0F Export', clienteNombre: r.comprador||r.pais||'—'});
     }
   });
 
   if (!entradas.length && !salidas.length) {
-    cont.innerHTML = '<div class="card"><div class="empty">Sin movimientos para los criterios seleccionados</div></div>';
+    cont.innerHTML = '<div class="card"><div class="empty">Sin registros para los criterios seleccionados</div></div>';
     return;
   }
 
-  const totalEntradaLbs = entradas.reduce((s,r)=>s+(r.lbsNeto||r.lbsBruto||0),0);
-  const totalMermaLbs   = entradas.reduce((s,r)=>s+(r.mermaLbs||0),0);
-  const totalSalidaLbs  = salidas.reduce((s,r)=>{
-    const fl = prodId ? (r.lineas||[]).filter(l=>resolveIdTraz(l.productoId,l.productoNombre)===prodId) : (r.lineas||[]);
-    return s + fl.reduce((a,l)=>a+(l.totalLbs||l.lbs||0),0);
-  },0);
-  const saldo = totalEntradaLbs - totalSalidaLbs;
+  let html = '';
 
-  let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:16px;">' +
-    mkStatCard('TOTAL ENTRADA', totalEntradaLbs.toFixed(0)+' lbs', 'var(--acc)', 'rgba(0,217,139,.08)', 'rgba(0,217,139,.3)') +
-    mkStatCard('TOTAL MERMA',   totalMermaLbs.toFixed(0)+' lbs',   'var(--warn)','rgba(245,197,24,.08)','rgba(245,197,24,.3)') +
-    mkStatCard('TOTAL SALIDA',  totalSalidaLbs.toFixed(0)+' lbs',  'var(--danger)','rgba(255,56,88,.08)','rgba(255,56,88,.3)') +
-    mkStatCard('SALDO BODEGA',  saldo.toFixed(0)+' lbs',           'var(--info)', 'rgba(74,158,255,.08)','rgba(74,158,255,.3)') +
-  '</div>';
-
+  // ── SECCIÓN 1: ORIGEN DE COMPRA ────────────────────────────────
   if (entradas.length) {
-    html += '<div class="tw"><div class="twh"><span class="twt">📥 Entradas ('+entradas.length+')</span></div>' +
-      '<div style="overflow-x:auto;"><table><thead><tr><th>Fecha</th><th>Producto</th><th>Bultos</th><th>LBS neto</th><th>Merma</th><th>① Fact.Prod.</th><th>② Fact.MX</th><th>③ DUCA</th></tr></thead><tbody>' +
-      entradas.map(r=>'<tr>'+
-        '<td>'+r.fecha+'</td><td style="font-size:.72rem;">'+r.productoNombre+'</td>'+
-        '<td>'+(r.bultos||'—')+'</td>'+
-        '<td style="color:var(--acc);font-weight:700;">'+(r.lbsNeto||r.lbsBruto||r.lbsTotal||(r.kgTotal?r.kgTotal*2.20462:0)||0).toFixed(1)+' lbs</td>'+
-        '<td style="color:var(--warn);">'+(r.mermaLbs>0?r.mermaLbs.toFixed(1)+' ('+r.pctMerma?.toFixed(1)+'%)':'—')+'</td>'+
-        '<td style="font-size:.68rem;">'+(
-          (r.factProd||r.factProductor)?'<span style="color:var(--acc);">✓ '+(r.factProd||r.factProductor)+'</span>':'<span style="color:var(--danger);">✗</span>'
-        )+'</td>'+
-        '<td style="font-size:.68rem;">'+(
-          (r.factMx||r.factProveedor)?'<span style="color:var(--acc);">✓ '+(r.factMx||r.factProveedor)+'</span>':'<span style="color:var(--danger);">✗</span>'
-        )+'</td>'+
-        '<td style="font-size:.68rem;">'+(r.duca?'<span style="color:var(--acc);">✓ '+r.duca+'</span>':'<span style="color:var(--danger);">✗</span>')+'</td>'+
-      '</tr>').join('')+
+    html += '<div class="card" style="margin-bottom:14px;">' +
+      '<div class="ct" style="margin-bottom:12px;">📥 Origen de Compra — del campo al inventario (' + entradas.length + ' lote' + (entradas.length>1?'s':'') + ')</div>' +
+      '<div style="overflow-x:auto;"><table style="font-size:.72rem;width:100%;">' +
+      '<thead><tr>' +
+        '<th>Fecha ingreso</th>' +
+        '<th>Producto</th>' +
+        '<th style="text-align:right;">Bultos</th>' +
+        '<th style="text-align:right;">LBS</th>' +
+        '<th>Productor</th>' +
+        '<th>Vendedor / Proveedor MX</th>' +
+        '<th>Precio compra</th>' +
+        '<th>DUCA</th>' +
+        '<th>Fact. Prod.</th>' +
+        '<th>Fact. Prov.</th>' +
+        '<th>Cotización</th>' +
+      '</tr></thead><tbody>' +
+      entradas.map(r => {
+        const lbs     = r.lbsNeto||r.lbsBruto||r.lbsTotal||(r.kgTotal?r.kgTotal*2.20462:0)||0;
+        const cot     = (DB.cotizaciones||[]).find(c => c.id === r.cotizacionId);
+        const costoLb = r.costoLb || (cot && cot.totalCosto && cot.totalLbs ? cot.totalCosto/cot.totalLbs : 0);
+        const costoTxt = costoLb > 0 ? 'Q ' + costoLb.toFixed(4) + '/lb' : (cot && cot.totalCosto ? 'Q ' + cot.totalCosto.toFixed(2) + ' total' : '—');
+        const prodNom  = r.productorNombre || (cot&&cot.bodegaInfo ? cot.bodegaInfo.productorNombre : '') || '—';
+        const provNom  = r.proveedorNombre || (cot&&cot.bodegaInfo ? cot.bodegaInfo.proveedorNombre : '') || '—';
+        const ducaOK   = r.duca || (cot&&cot.ducaInfo ? cot.ducaInfo.numero : '') || cot?.duca || '';
+        const fProd    = r.factProductor||r.factProd||(cot&&cot.bodegaInfo?cot.bodegaInfo.factProductor:'')||'';
+        const fProv    = r.factProveedor||r.factMx||(cot&&cot.bodegaInfo?cot.bodegaInfo.factProveedor:'')||'';
+        const cotNom   = r.cotizacionNom || cot?.nombre || '';
+        const cotId    = r.cotizacionId  || '';
+        const mermaStr = r.mermaLbs > 0 ? '<br><span style="color:var(--warn);font-size:.62rem;">⚠ '+r.mermaLbs.toFixed(0)+' lbs merma</span>' : '';
+        const pclr = v => v && v!=='—' ? 'color:var(--acc);' : 'color:var(--muted2);';
+        return '<tr>' +
+          '<td style="white-space:nowrap;">' + r.fecha + '</td>' +
+          '<td style="font-weight:700;color:var(--green-deep);">' + (r.productoNombre||'—') + '</td>' +
+          '<td style="text-align:right;">' + (r.bultos||'—') + '</td>' +
+          '<td style="text-align:right;color:var(--acc);font-weight:700;">' + lbs.toFixed(1) + ' lbs' + mermaStr + '</td>' +
+          '<td style="font-size:.7rem;'+pclr(prodNom)+'">' + prodNom + '</td>' +
+          '<td style="font-size:.7rem;'+pclr(provNom)+'">' + provNom + '</td>' +
+          '<td style="font-size:.7rem;color:var(--warn);font-weight:600;">' + costoTxt + '</td>' +
+          '<td style="font-size:.68rem;">' + (ducaOK ? '<span style="color:var(--acc);">✓ ' + ducaOK + '</span>' : '<span style="color:var(--muted2);">—</span>') + '</td>' +
+          '<td style="font-size:.68rem;">' + (fProd  ? '<span style="color:var(--acc);">✓ ' + fProd  + '</span>' : '<span style="color:var(--muted2);">—</span>') + '</td>' +
+          '<td style="font-size:.68rem;">' + (fProv  ? '<span style="color:var(--acc);">✓ ' + fProv  + '</span>' : '<span style="color:var(--muted2);">—</span>') + '</td>' +
+          '<td style="font-size:.65rem;">' + (cotNom&&cotId ? '<button onclick="cotVerDetalle(\''+cotId+'\');" style="font-size:.62rem;padding:2px 6px;border:1px solid rgba(74,158,255,.4);border-radius:3px;background:rgba(74,158,255,.08);color:var(--info);cursor:pointer;">'+cotNom+'</button>' : '<span style="color:var(--muted2);">—</span>') + '</td>' +
+        '</tr>';
+      }).join('') +
       '</tbody></table></div></div>';
   }
 
+  // ── SECCIÓN 2: DESTINOS DE VENTA ──────────────────────────────
   if (salidas.length) {
-    html += '<div class="tw" style="margin-top:16px;"><div class="twh"><span class="twt">📤 Salidas / Ventas ('+salidas.length+')</span></div>' +
-      '<div style="overflow-x:auto;"><table><thead><tr><th>Fecha</th><th>Canal</th><th>Cliente</th><th>Productos</th><th>LBS</th><th>Total Q</th><th>Referencia</th></tr></thead><tbody>' +
-      salidas.map(r=>{
-        const fl = prodId?(r.lineas||[]).filter(l=>l.productoId===prodId):(r.lineas||[]);
+    html += '<div class="card">' +
+      '<div class="ct" style="margin-bottom:12px;">📤 Destinos de Venta — del inventario al cliente (' + salidas.length + ' despacho' + (salidas.length>1?'s':'') + ')</div>' +
+      '<div style="overflow-x:auto;"><table style="font-size:.72rem;width:100%;">' +
+      '<thead><tr>' +
+        '<th>Fecha</th>' +
+        '<th>Canal</th>' +
+        '<th>Cliente</th>' +
+        '<th>Productos despachados</th>' +
+        '<th style="text-align:right;">Bultos / Cajas</th>' +
+        '<th style="text-align:right;">LBS</th>' +
+        '<th>Referencia / FEL</th>' +
+      '</tr></thead><tbody>' +
+      salidas.map(r => {
+        const fl   = prodId ? (r.lineas||[]).filter(l=>resolveIdTraz(l.productoId,l.productoNombre)===prodId) : (r.lineas||[]);
         const fLbs = fl.reduce((s,l)=>s+(l.totalLbs||l.lbs||0),0);
-        const fQ   = fl.reduce((s,l)=>s+(l.totalQ||l.precioTotal||0),0);
-        return '<tr>'+
-          '<td>'+r.fecha+'</td>'+
-          '<td><span class="chip cr" style="font-size:.62rem;">'+r.canal+'</span></td>'+
-          '<td style="font-size:.72rem;">'+r.clienteNombre+'</td>'+
-          '<td style="font-size:.68rem;">'+fl.map(l=>l.productoNombre||l.nombre||'—').join(', ')+'</td>'+
-          '<td style="color:var(--acc);">'+fLbs.toFixed(1)+'</td>'+
-          '<td style="color:var(--acc);">Q'+fQ.toFixed(2)+'</td>'+
-          '<td style="font-size:.65rem;color:var(--info);">'+(r.factura||r.oc||r.numFactura||'—')+'</td>'+
+        const fBul = fl.reduce((s,l)=>s+(l.bultos||l.cant||0),0);
+        const prods = fl.length
+          ? fl.map(l=>(l.productoNombre||'—')+' ×'+(l.bultos||l.cant||0)).join(' · ')
+          : (r.lineas||[]).map(l=>l.productoNombre||'—').join(', ');
+        const ref = r.factura||r.oc||r.numFactura||r.porte||'—';
+        return '<tr>' +
+          '<td style="white-space:nowrap;">' + r.fecha + '</td>' +
+          '<td><span style="font-size:.62rem;padding:2px 7px;border-radius:20px;background:rgba(255,56,88,.1);color:var(--danger);font-weight:700;">' + r.canal + '</span></td>' +
+          '<td style="font-size:.72rem;font-weight:700;">' + r.clienteNombre + '</td>' +
+          '<td style="font-size:.68rem;color:var(--muted2);">' + prods + '</td>' +
+          '<td style="text-align:right;font-weight:600;">' + (fBul>0?fBul:'—') + '</td>' +
+          '<td style="text-align:right;color:var(--danger);font-weight:700;">' + fLbs.toFixed(1) + ' lbs</td>' +
+          '<td style="font-size:.65rem;color:var(--info);">' + ref + '</td>' +
         '</tr>';
-      }).join('')+
+      }).join('') +
       '</tbody></table></div></div>';
   }
 
