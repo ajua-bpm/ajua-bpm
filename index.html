@@ -821,7 +821,7 @@ tr:hover td{background:var(--green-pale);}
 <div style="font-size:2rem;margin-bottom:6px;">🌿</div>
 <div style="font-family:var(--fh);font-size:1.3rem;font-weight:700;color:var(--acc);">AJÚA</div>
 <div style="font-size:.72rem;color:var(--muted2);margin-top:3px;">Sistema de Control Interno</div>
-<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 02/03/2026 — build 21 · modal trazabilidad lote — cadena origen simple</div>
+<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 02/03/2026 — build 22 · fix productoId cotizador→inventario</div>
 </div>
 <div style="margin-bottom:14px;">
 <label style="font-size:.68rem;color:var(--muted2);display:block;margin-bottom:5px;">Usuario</label>
@@ -10023,6 +10023,7 @@ function cotCalc() {
   for (let i=1; i<=cotProdCount; i++) {
     if (!document.getElementById('cot-prod-row-' + i)) continue;
     const nom  = v('cot-p-nom-' + i) || ('Producto ' + i);
+    const prodId = v('cot-p-id-' + i) || '';
     const qty  = parseFloat(v('cot-p-qty-' + i))  || 0;
     const kgu  = parseFloat(v('cot-p-kgu-' + i))  || 0;
     const pMXN = parseFloat(v('cot-p-pxn-' + i))  || 0;
@@ -10050,7 +10051,7 @@ function cotCalc() {
     totalLbs    += lbsT;
     totalBultos += qty;
     totalCompraGTQ += sGTQ;
-    prods.push({ i, nom, qty, unit, kgu, kgT, lbsT, pMXN, pGTQ, sMXN, sGTQ, esPorUnidad });
+    prods.push({ i, nom, qty, unit, kgu, kgT, lbsT, pMXN, pGTQ, sMXN, sGTQ, esPorUnidad, productoId: prodId });
   }
 
   // ── BUG 1 FIX: porcentajes ─────────────────────────────────────
@@ -10281,6 +10282,7 @@ function saveCot() {
       i:r.i, nom:r.nom, qty:r.qty, unit:r.unit, kgu:r.kgu, kgT:r.kgT, lbsT:r.lbsT,
       pMXN:r.pMXN, pGTQ:r.pGTQ, sMXN:r.sMXN, sGTQ:r.sGTQ, pctGas:r.pctGas,
       gastosP:r.gastosP, costoTot:r.costoTot, costoUd:r.costoUd, costoKg:r.costoKg, costoLb:r.costoLb,
+      productoId: r.productoId || '',
     })),
     ventaLineas: ventaData,
     totalKg:computed.totalKg, totalLbs:computed.totalLbs, totalBultos:computed.totalBultos,
@@ -10520,6 +10522,7 @@ function cotEditarDesde() {
       cotAddProducto();
       const n = cotProdCount;
       set('cot-p-nom-'+n, p.nom||''); set('cot-p-qty-'+n, p.qty||''); set('cot-p-kgu-'+n, p.kgu||''); set('cot-p-pxn-'+n, p.pMXN||'');
+      if (p.productoId) { const sel=document.getElementById('cot-p-id-'+n); if(sel) sel.value=p.productoId; }
       const us=document.getElementById('cot-p-unit-'+n); if(us) us.value=p.unit||'bolsa';
       const ge=document.getElementById('cot-p-pct-gas-'+n); if(ge){ge.value=p.pctGas?.toFixed(1)||'';ge._userSet=true;}
       const vl=rec.ventaLineas?.find(vl=>vl.i===p.i);
@@ -12621,6 +12624,13 @@ function invGetStock() {
     return id;
   };
 
+  // Resolve productoId with name fallback for entries saved before fix
+  const resolveEntradaId = (r) => {
+    if (r.productoId) { const f=DB.iproductos.find(p=>p.id===r.productoId); if(f) return r.productoId; }
+    if (r.productoNombre) { const f=DB.iproductos.find(p=>p.nombre.toUpperCase()===r.productoNombre.toUpperCase()); if(f) return f.id; }
+    return r.productoId || r.productoNombre || 'desconocido';
+  };
+
   // FIX: Read all possible lbs field names from ientradas
   const getLbsEntrada = (r) =>
     r.lbsNeto || r.lbsBruto || r.lbsTotal ||
@@ -12634,7 +12644,7 @@ function invGetStock() {
       if (seenCot.has(dedupeKey)) return;
       seenCot.add(dedupeKey);
     }
-    const id = ensureEntry(r.productoId, r.productoNombre);
+    const id = ensureEntry(resolveEntradaId(r), r.productoNombre);
     const prod = DB.iproductos.find(p => p.id === id);
     const esPorUnidad = prod?.unidadCompra === 'unidad' || prod?.unidadCompra === 'pza';
     if (esPorUnidad) {
