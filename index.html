@@ -6664,8 +6664,7 @@ async function restoreFromFirebaseBackup() {
     const counts = Object.entries(data)
       .filter(([k,v]) => Array.isArray(v) && v.length > 0 && k !== '_backupMeta')
       .map(([k,v]) => `${k}: ${v.length}`)
-      .join('
-');
+      .join('\n');
     if (!confirm(`¿Restaurar backup de Firebase?
 
 Fecha: ${fecha}
