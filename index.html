@@ -12924,9 +12924,13 @@ function renderInvMovs() {
 }
 function invAbrirTrazModal(prodId) {
   invEnsureDB();
-  const lotes = (DB.ientradas||[]).filter(r => r.productoId === prodId);
+  const prod = (DB.iproductos||[]).find(p => p.id === prodId);
+  const prodNombre = (prod?.nombre || '').toUpperCase();
+  const lotes = (DB.ientradas||[]).filter(r =>
+    r.productoId === prodId ||
+    (!r.productoId && prodNombre && (r.productoNombre||'').toUpperCase() === prodNombre)
+  );
   if (lotes.length === 0) {
-    // No lots registered — go to general trazabilidad
     invAbrirTraz(prodId);
     return;
   }
@@ -12978,8 +12982,13 @@ function invVerTrazaLote(loteId) {
   const lote = (DB.ientradas||[]).find(r => r.id === loteId);
   if (!lote) { toast('⚠ Lote no encontrado', true); return; }
 
-  const prodId   = lote.productoId;
-  const prodName = lote.productoNombre || prodId;
+  // Resolver productoId aunque esté vacío (lotes históricos del cotizador)
+  let prodId   = lote.productoId;
+  let prodName = lote.productoNombre || prodId;
+  if (!prodId && prodName) {
+    const match = (DB.iproductos||[]).find(p => p.nombre.toUpperCase() === prodName.toUpperCase());
+    if (match) prodId = match.id;
+  }
   const lbsLote  = lote.lbsNeto||lote.lbsBruto||lote.lbsTotal||(lote.kgTotal?lote.kgTotal*2.20462:0)||0;
   const kgLote   = lbsLote / 2.20462;
   const safe     = s => String(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
