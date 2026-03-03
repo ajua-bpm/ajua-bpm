@@ -821,7 +821,7 @@ tr:hover td{background:var(--green-pale);}
 <div style="font-size:2rem;margin-bottom:6px;">🌿</div>
 <div style="font-family:var(--fh);font-size:1.3rem;font-weight:700;color:var(--acc);">AJÚA</div>
 <div style="font-size:.72rem;color:var(--muted2);margin-top:3px;">Sistema de Control Interno</div>
-<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 03/03/2026 — build 26 · SW cache v3 + personal live desde DB.al</div>
+<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 03/03/2026 — build 27 · auto-recovery backup + onSnapshot guard + restore fix· SW cache v3 + personal live desde DB.al</div>
 </div>
 <div style="margin-bottom:14px;">
 <label style="font-size:.68rem;color:var(--muted2);display:block;margin-bottom:5px;">Usuario</label>
@@ -6595,30 +6595,71 @@ function showSnapshots() {
     </table>`;
 }
 async function restoreFromFirebaseBackup() {
-  if (!_fbReady || !_fbDb) {
-    toast('⚠ Firebase no conectado', true); return;
+  // Esperar Firebase si aún no está listo (máx 10s)
+  if (!_fbDb) {
+    toast('⚠ Firebase no inicializado aún — espera unos segundos', true); return;
+  }
+  if (!_fbReady) {
+    toast('⏳ Conectando con Firebase... intenta en 5 segundos', true);
+    // Esperar hasta 10s
+    for (let i = 0; i < 50; i++) {
+      await new Promise(r => setTimeout(r, 200));
+      if (_fbReady) break;
+    }
+    if (!_fbReady) { toast('⚠ Firebase no conectado — revisa internet', true); return; }
   }
   try {
     const { db, doc, getDoc } = _fbDb;
     const backupRef = doc(db, 'ajua_bpm', BACKUP_DOC);
-    const snap = await getDoc(backupRef);
+    let snap;
+    try { snap = await getDoc(backupRef); }
+    catch(fetchErr) { toast('⚠ Error leyendo backup: ' + fetchErr.message, true); return; }
+
     if (!snap.exists()) {
-      toast('⚠ No hay backup en Firebase aún', true); return;
+      // Intentar leer con getDoc directo usando los módulos globales
+      toast('⚠ No se encontró backup en Firebase. Si ves datos en Firebase Console en backup_auto, refresca la página e intenta de nuevo.', true);
+      return;
     }
     const data = snap.data();
     const meta = data._backupMeta || {};
     const total = meta.totalRecords || _dbTotalRecords(data);
     const fecha = meta.gtTime ? new Date(meta.gtTime).toLocaleString('es-GT') : 'fecha desconocida';
-    if (!confirm(`¿Restaurar backup de Firebase?\n\nFecha: ${fecha}\nRegistros: ${total}\n\nEsto reemplazará los datos actuales de 'main'.`)) return;
-    // Limpiar meta antes de restaurar
+    // Show detailed counts so user can verify it's the right data
+    const counts = Object.entries(data)
+      .filter(([k,v]) => Array.isArray(v) && v.length > 0 && k !== '_backupMeta')
+      .map(([k,v]) => `${k}: ${v.length}`)
+      .join('
+');
+    if (!confirm(`¿Restaurar backup de Firebase?
+
+Fecha: ${fecha}
+Total registros: ${total}
+
+Contenido:
+${counts}
+
+Esto reemplazará los datos actuales.`)) return;
     const clean = Object.assign({}, data);
     delete clean._backupMeta;
     DB = Object.assign({}, DB_DEFAULT, clean);
-    save();
-    renderAll();
+    // Save to main and localStorage
+    localStorage.setItem(DB_KEY, JSON.stringify(DB));
+    snapSave();
+    await (async () => {
+      try {
+        const { setDoc } = _fbDb;
+        const mainRef = doc(db, 'ajua_bpm', 'main');
+        await setDoc(mainRef, DB);
+        console.log('✅ main restaurado desde backup_auto');
+      } catch(e) { console.warn('Error escribiendo main:', e); }
+    })();
+    try { renderAll(); } catch(e) {}
+    try { populateAllRespSelects(); } catch(e) {}
+    try { updateDash(); } catch(e) {}
     toast(`✅ Backup restaurado — ${total} registros`);
   } catch(e) {
     toast('⚠ Error restaurando backup: ' + e.message, true);
+    console.error('restoreFromFirebaseBackup error:', e);
   }
 }
 // ── DB default structure ─────────────────────────────────────────
@@ -6731,12 +6772,62 @@ async function initFirebase(firebaseConfig) {
 
     if (snap.exists()) {
       const cloud = snap.data();
-      console.log('✅ Firebase: documento encontrado —', Object.keys(cloud).length, 'colecciones');
+      const cloudTotal = _dbTotalRecords(cloud);
+      console.log('✅ Firebase: documento encontrado —', Object.keys(cloud).length, 'colecciones —', cloudTotal, 'registros');
+
+      // 🛡️ AUTO-RECOVERY: Si main tiene muy pocos datos, verificar backup_auto
+      // Esto maneja el caso donde main fue sobreescrito accidentalmente con DB vacía
+      if (cloudTotal < 10) {
+        console.warn('⚠️ main tiene pocos datos (' + cloudTotal + ') — verificando backup_auto...');
+        try {
+          const backupRef = doc(db, 'ajua_bpm', BACKUP_DOC);
+          const backupSnap = await getDoc(backupRef);
+          if (backupSnap.exists()) {
+            const backupData = backupSnap.data();
+            const backupTotal = _dbTotalRecords(backupData);
+            console.log('📦 backup_auto tiene', backupTotal, 'registros');
+            if (backupTotal > cloudTotal * 3) {
+              // Backup tiene significativamente más datos — auto-restaurar
+              console.warn('🔄 AUTO-RESTORE: backup_auto(' + backupTotal + ') >> main(' + cloudTotal + ') — restaurando automáticamente...');
+              const clean = Object.assign({}, backupData);
+              delete clean._backupMeta;
+              DB = Object.assign({}, DB_DEFAULT, clean);
+              localStorage.setItem(DB_KEY, JSON.stringify(DB));
+              snapSave();
+              // Restaurar main desde backup
+              try { await setDoc(docRef, DB); console.log('✅ main restaurado desde backup_auto'); } catch(e) { console.warn('Error restaurando main:', e); }
+              fbShowStatus('online');
+              // Notificar al usuario
+              setTimeout(() => {
+                const restored = _dbTotalRecords(DB);
+                toast('🔄 Auto-restauración: ' + restored + ' registros recuperados desde backup', false);
+              }, 2000);
+              _fbReady = true;
+              startAutoBackup();
+              try { authEnsureDB(); } catch(e) {}
+              try { renderAll(); } catch(e) {}
+              setTimeout(() => { try { renderAll(); } catch(e) {} try { populateAllRespSelects(); } catch(e) {} try { updateDash(); } catch(e) {} }, 400);
+              // Setup listener and return early
+              onSnapshot(docRef, (snap) => {
+                if (!snap.exists() || _fbSaving) return;
+                const cloud = snap.data();
+                const cloudTotal2 = _dbTotalRecords(cloud);
+                const currentTotal2 = _dbTotalRecords(DB);
+                if (currentTotal2 > 20 && cloudTotal2 < currentTotal2 * 0.4) { console.warn('🚨 onSnapshot BLOQUEADO post-restore'); return; }
+                Object.keys(cloud).forEach(k => { DB[k] = cloud[k]; });
+                localStorage.setItem(DB_KEY, JSON.stringify(DB));
+                try { updateDash(); } catch(e) {}
+                fbShowStatus('online');
+              });
+              return;
+            }
+          }
+        } catch(backupErr) {
+          console.warn('Error verificando backup_auto:', backupErr);
+        }
+      }
 
       // ── Merge: cloud es la fuente de verdad COMPLETA ────────────
-      // CRÍTICO: usar Object.keys(cloud) NO Object.keys(DB_DEFAULT)
-      // El viejo código ignoraba silenciosamente cualquier campo de Firebase
-      // que no estuviera en DB_DEFAULT (calibraciones, gastoSemanales, etc.)
       DB = Object.assign({}, DB_DEFAULT, cloud);
       localStorage.setItem(DB_KEY, JSON.stringify(DB));
       // 🛡️ Snapshot inmediato al cargar datos reales de Firebase
@@ -6795,6 +6886,13 @@ async function initFirebase(firebaseConfig) {
     onSnapshot(docRef, (snap) => {
       if (!snap.exists() || _fbSaving) return;
       const cloud = snap.data();
+      // 🛡️ GUARD: nunca dejar que un snapshot con menos datos sobreescriba la DB actual
+      const cloudTotal = _dbTotalRecords(cloud);
+      const currentTotal = _dbTotalRecords(DB);
+      if (currentTotal > 20 && cloudTotal < currentTotal * 0.4) {
+        console.warn(`🚨 onSnapshot BLOQUEADO: cloud(${cloudTotal}) << DB actual(${currentTotal}) — posible borrado accidental`);
+        return;
+      }
       // Merge: cloud gana sobre DB actual
       Object.keys(cloud).forEach(k => { DB[k] = cloud[k]; });
       localStorage.setItem(DB_KEY, JSON.stringify(DB));
