@@ -821,7 +821,7 @@ tr:hover td{background:var(--green-pale);}
 <div style="font-size:2rem;margin-bottom:6px;">🌿</div>
 <div style="font-family:var(--fh);font-size:1.3rem;font-weight:700;color:var(--acc);">AJÚA</div>
 <div style="font-size:.72rem;color:var(--muted2);margin-top:3px;">Sistema de Control Interno</div>
-<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 02/03/2026 — build 17 · fix login timeout + fallback local</div>
+<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 02/03/2026 — build 19 · stock math fix + trazabilidad por lote integrada</div>
 </div>
 <div style="margin-bottom:14px;">
 <label style="font-size:.68rem;color:var(--muted2);display:block;margin-bottom:5px;">Usuario</label>
@@ -1759,7 +1759,7 @@ tr:hover td{background:var(--green-pale);}
 </div>
 </div>
 <div class="sec" id="sec-inv-stock">
-<div class="ph"><h1>Stock en Tiempo Real</h1><p>Inventario actual — lbs disponibles considerando entradas, Walmart, Local GT y exportación</p></div>
+<div class="ph"><h1>Stock en Tiempo Real</h1><p>Inventario disponible · haz clic en 🔗 Trazabilidad o en un botón de lote para ver origen, productor, vendedor y destinos</p></div>
 <div class="card">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
 <div class="ct" style="margin:0;">Inventario Disponible</div>
@@ -6960,7 +6960,15 @@ function show(id,el){closeNavOnMobile();
       case 'proveedores':
         provTab(provActivaTipo, document.querySelector('#sec-proveedores .tab.active')); break;
       case 'inv-stock':
-        invEnsureDB(); invPopulateSelects(); renderInvStock(); break;
+        invEnsureDB(); invPopulateSelects(); renderInvStock();
+        // Pre-populate traz-producto for when user clicks traza buttons
+        (function() {
+          const sel = document.getElementById('traz-producto');
+          if (sel && DB.iproductos?.length && sel.options.length <= 1) {
+            sel.innerHTML = '<option value="">— Todos los productos —</option>' +
+              DB.iproductos.map(p => '<option value="'+p.id+'">'+p.nombre+'</option>').join('');
+          }
+        })(); break;
       case 'inv-entrada':
         invEnsureDB(); invPopulateSelects(); renderIne(); break;
       case 'inv-salida':
@@ -6971,7 +6979,18 @@ function show(id,el){closeNavOnMobile();
       case 'inv-cotizador':
         invEnsureDB(); invPopulateSelects(); renderCotList(); break;
       case 'inv-trazabilidad':
-        invEnsureDB(); renderInvMovs(); break;
+        invEnsureDB();
+        // Populate product selector
+        (function() {
+          const sel = document.getElementById('traz-producto');
+          if (sel && DB.iproductos?.length) {
+            const cur = sel.value;
+            sel.innerHTML = '<option value="">— Todos los productos —</option>' +
+              DB.iproductos.map(p => '<option value="'+p.id+'">'+p.nombre+'</option>').join('');
+            sel.value = cur;
+          }
+        })();
+        renderInvMovs(); break;
       case 'inv-config':
         invEnsureDB(); renderIprod(); renderIpres(); renderIcli(); invConfigTab('productos', null); break;
       case 'maquila':
@@ -12660,7 +12679,17 @@ function invGetStock() {
     });
   });
 
-  return stock;
+  // Filter: only return products that exist in DB.iproductos
+  // Remove phantom entries (salida references to unregistered product IDs)
+  const cleanStock = {};
+  Object.entries(stock).forEach(([id, s]) => {
+    const inDB = DB.iproductos?.find(p => p.id === id);
+    if (inDB) {
+      cleanStock[id] = s;
+    }
+    // else: orphan/phantom entry — skip, don't show on dashboard
+  });
+  return cleanStock;
 }
 
 
@@ -12749,6 +12778,147 @@ function renderInvMovs() {
     '</tr>'
   ).join('');
 }
+function invAbrirTraz(prodId) {
+  // Pre-fill trazabilidad and navigate to it
+  show('inv-trazabilidad', document.querySelector('.ni[onclick*="inv-trazabilidad"]'));
+  setTimeout(() => {
+    const sel = document.getElementById('traz-producto');
+    if (sel && prodId) { sel.value = prodId; }
+    // Set date range: 1 year back
+    const hoy = new Date(); const hace1a = new Date(); hace1a.setFullYear(hoy.getFullYear()-1);
+    const fmt = d => d.toISOString().split('T')[0];
+    const desdeEl = document.getElementById('traz-desde');
+    const hastaEl = document.getElementById('traz-hasta');
+    if (desdeEl && !desdeEl.value) desdeEl.value = fmt(hace1a);
+    if (hastaEl && !hastaEl.value) hastaEl.value = fmt(hoy);
+    buscarTraz();
+  }, 120);
+}
+
+function invVerTrazaLote(loteId) {
+  invEnsureDB();
+  const lote = (DB.ientradas||[]).find(r => r.id === loteId);
+  if (!lote) { toast('⚠ Lote no encontrado', true); return; }
+
+  // Build traceability data for this specific lot
+  const prodId   = lote.productoId;
+  const prodName = lote.productoNombre || prodId;
+  const lbsLote  = (lote.lbsNeto||lote.lbsBruto||lote.lbsTotal||(lote.kgTotal?lote.kgTotal*2.20462:0)||0);
+  const kgLote   = lbsLote / 2.20462;
+
+  // Find all sales that include this product (we link by productoId and date range)
+  // Lot arrived on lote.fecha; sales after that date are potential consumers
+  const salesRows = [];
+  const addSales = (arr, canal, getLineas, getRef, getCliente) => {
+    (arr||[]).forEach(r => {
+      if (r.fecha < lote.fecha) return;
+      const lineas = getLineas(r).filter(l => {
+        const lid = l.productoId;
+        return lid === prodId ||
+               (l.productoNombre && l.productoNombre.toUpperCase() === prodName.toUpperCase());
+      });
+      if (!lineas.length) return;
+      const lbs = lineas.reduce((s,l)=>s+(l.totalLbs||l.lbs||0), 0);
+      salesRows.push({ fecha:r.fecha, canal, cliente:getCliente(r), lbs, ref:getRef(r) });
+    });
+  };
+  addSales(DB.isalidas,   '🏪 Walmart',     r=>r.lineas||[],     r=>r.factura||r.oc||'—',         r=>r.clienteNombre||'Walmart GT');
+  addSales(DB.vgtVentas,  '🛒 Local GT',    r=>r.lineas||[],     r=>r.numFactura||'—',             r=>r.comprador||'—');
+  addSales(DB.vintVentas, '✈️ Exportación', r=>r.lineas||[],     r=>r.porte||r.contenedorRef||'—', r=>r.comprador||r.pais||'—');
+
+  const totalVendido = salesRows.reduce((s,r)=>s+r.lbs, 0);
+  const saldo = lbsLote - totalVendido;
+
+  // Build modal HTML
+  const safeStr = s => String(s||'—').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const row = (label, val, color) =>
+    '<tr><td style="color:var(--muted2);font-size:.7rem;padding:5px 8px;white-space:nowrap;">' + label + '</td>' +
+    '<td style="padding:5px 8px;font-weight:600;' + (color?'color:'+color+';':'') + '">' + safeStr(val) + '</td></tr>';
+
+  let html = '<div id="traz-modal-overlay" onclick="if(event.target===this)this.remove()" style="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9998;display:flex;align-items:center;justify-content:center;padding:16px;">' +
+    '<div style="background:var(--cream);border-radius:14px;padding:24px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.4);">' +
+    // Header
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">' +
+      '<div>' +
+        '<div style="font-family:var(--fh);font-size:1.1rem;font-weight:800;color:var(--green-deep);">🔗 Trazabilidad de Lote</div>' +
+        '<div style="font-size:.74rem;color:var(--muted2);margin-top:2px;">' + safeStr(prodName) + '</div>' +
+      '</div>' +
+      '<button onclick="document.getElementById(\'traz-modal-overlay\').remove()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--muted2);padding:4px;">✕</button>' +
+    '</div>' +
+    // Stats row
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px;">' +
+      invTrazStatCard('Entrada Lote', lbsLote.toFixed(0)+' lbs<br><small style="font-size:.65rem;color:var(--muted2);">'+ kgLote.toFixed(1)+' kg</small>', 'var(--acc)', 'rgba(0,122,82,.08)','rgba(0,122,82,.25)') +
+      invTrazStatCard('Total Vendido', totalVendido.toFixed(0)+' lbs', 'var(--danger)', 'rgba(214,48,48,.07)','rgba(214,48,48,.2)') +
+      invTrazStatCard('Saldo Bodega',  saldo.toFixed(0)+' lbs', saldo>0?'var(--info)':'var(--danger)', 'rgba(74,158,255,.07)','rgba(74,158,255,.2)') +
+    '</div>' +
+    // Lot identification
+    '<div style="background:var(--s1);border:1.5px solid var(--br);border-radius:8px;padding:14px;margin-bottom:14px;">' +
+      '<div style="font-size:.7rem;font-weight:700;color:var(--green-deep);margin-bottom:10px;letter-spacing:.05em;">📋 IDENTIFICACIÓN DEL LOTE</div>' +
+      '<table style="width:100%;border-collapse:collapse;">' +
+        row('Fecha de ingreso', lote.fecha) +
+        row('Producto', prodName) +
+        row('Bultos', lote.bultos || '—') +
+        row('LBS brutas', (lote.lbsBruto||0).toFixed(1)+' lbs') +
+        row('LBS netas', lbsLote.toFixed(1)+' lbs  (' + kgLote.toFixed(1) + ' kg)') +
+        (lote.mermaLbs>0 ? row('Merma', lote.mermaLbs.toFixed(1)+' lbs ('+((lote.pctMerma||0).toFixed(1))+'%)', 'var(--warn)') : '') +
+        row('Nº DUCA / Aduana', lote.duca||'—') +
+        row('Ref. Cotización', lote.cotRef||lote.cotizacionNom||'—') +
+        row('Nº Interno', lote.id.substring(0,8).toUpperCase()) +
+      '</table>' +
+    '</div>' +
+    // Chain of custody
+    '<div style="background:var(--s1);border:1.5px solid var(--br);border-radius:8px;padding:14px;margin-bottom:14px;">' +
+      '<div style="font-size:.7rem;font-weight:700;color:var(--green-deep);margin-bottom:10px;letter-spacing:.05em;">🌱 CADENA DE CUSTODIA</div>' +
+      '<table style="width:100%;border-collapse:collapse;">' +
+        row('Productor', lote.productorNombre||lote.productorId||'—', lote.productorNombre?'var(--acc)':'') +
+        row('Vendedor / Proveedor', lote.proveedorNombre||lote.proveedorId||lote.origen||'—', lote.proveedorNombre?'var(--acc)':'') +
+        row('Fact. Productor', lote.factProductor||lote.factProd||'—') +
+        row('Fact. Proveedor MX', lote.factProveedor||lote.factMx||'—') +
+        row('Observaciones', lote.obs||'—') +
+      '</table>' +
+    '</div>';
+
+  // Sales table
+  if (salesRows.length) {
+    html += '<div style="background:var(--s1);border:1.5px solid var(--br);border-radius:8px;padding:14px;">' +
+      '<div style="font-size:.7rem;font-weight:700;color:var(--green-deep);margin-bottom:10px;letter-spacing:.05em;">📤 DESTINOS DE VENTA (' + salesRows.length + ' registros)</div>' +
+      '<table style="width:100%;border-collapse:collapse;font-size:.72rem;">' +
+      '<thead><tr style="border-bottom:1.5px solid var(--br);">' +
+        '<th style="padding:5px 8px;text-align:left;color:var(--muted2);font-weight:600;">Fecha</th>' +
+        '<th style="padding:5px 8px;text-align:left;color:var(--muted2);font-weight:600;">Canal</th>' +
+        '<th style="padding:5px 8px;text-align:left;color:var(--muted2);font-weight:600;">Cliente</th>' +
+        '<th style="padding:5px 8px;text-align:right;color:var(--muted2);font-weight:600;">LBS</th>' +
+        '<th style="padding:5px 8px;text-align:left;color:var(--muted2);font-weight:600;">Referencia</th>' +
+      '</tr></thead><tbody>' +
+      salesRows.map(s =>
+        '<tr style="border-bottom:1px solid var(--br);">' +
+          '<td style="padding:5px 8px;">' + safeStr(s.fecha) + '</td>' +
+          '<td style="padding:5px 8px;font-size:.68rem;">' + s.canal + '</td>' +
+          '<td style="padding:5px 8px;font-size:.7rem;">' + safeStr(s.cliente) + '</td>' +
+          '<td style="padding:5px 8px;text-align:right;color:var(--danger);font-weight:700;">−' + s.lbs.toFixed(1) + ' lbs</td>' +
+          '<td style="padding:5px 8px;font-size:.65rem;color:var(--info);">' + safeStr(s.ref) + '</td>' +
+        '</tr>'
+      ).join('') +
+      '</tbody></table></div>';
+  } else {
+    html += '<div style="background:rgba(0,122,82,.05);border:1px solid rgba(0,122,82,.2);border-radius:6px;padding:12px;text-align:center;font-size:.74rem;color:var(--muted2);">Sin ventas registradas para este lote aún</div>';
+  }
+
+  html += '</div></div>';
+
+  // Remove existing modal if any, then inject
+  const ex = document.getElementById('traz-modal-overlay');
+  if (ex) ex.remove();
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function invTrazStatCard(titulo, valor, colorVal, bg, border) {
+  return '<div style="background:' + bg + ';border:1.5px solid ' + border + ';border-radius:8px;padding:12px;text-align:center;">' +
+    '<div style="font-size:.58rem;color:var(--muted2);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;">' + titulo + '</div>' +
+    '<div style="font-size:1.2rem;font-weight:800;color:' + colorVal + ';font-family:var(--fh);line-height:1.2;">' + valor + '</div>' +
+  '</div>';
+}
+
 function renderInvStock() {
   invEnsureDB();
   const cards = document.getElementById('inv-stock-cards'); if (!cards) return;
@@ -12774,21 +12944,34 @@ function renderInvStock() {
       const minStock = s.prod.minStock || 0;
       const alerta   = minStock > 0 && saldoVal < minStock;
       const color    = saldoVal <= 0 ? 'var(--danger)' : alerta ? 'var(--warn)' : 'var(--acc)';
-      return '<div style="background:var(--s1);border:1.5px solid ' + color + '44;border-radius:4px;padding:16px;">' +
-        '<div style="font-family:var(--fh);font-size:.78rem;font-weight:700;margin-bottom:8px;line-height:1.3;">' + s.prod.nombre + '</div>' +
+      // Count lots (ientradas) for this product
+      const lotes = (DB.ientradas||[]).filter(r => r.productoId === s.prod.id);
+      const loteBtns = lotes.length > 0
+        ? lotes.map(l => {
+            const lbsL = (l.lbsNeto||l.lbsBruto||l.lbsTotal||(l.kgTotal?l.kgTotal*2.20462:0)||0).toFixed(0);
+            const tag = l.duca ? ('DUCA '+l.duca.substring(0,12)) : l.cotRef ? ('Ref: '+l.cotRef.substring(0,12)) : ('Lote '+l.fecha);
+            return '<button onclick="invVerTrazaLote(\''+l.id+'\')" style="font-size:.6rem;padding:3px 7px;border:1px solid rgba(0,122,82,.4);border-radius:20px;background:rgba(0,122,82,.06);color:var(--acc);cursor:pointer;white-space:nowrap;">🔗 '+tag+' · '+lbsL+' lbs</button>';
+          }).join('')
+        : '';
+      return '<div style="background:var(--s1);border:1.5px solid ' + color + '44;border-radius:8px;padding:16px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">' +
+          '<div style="font-family:var(--fh);font-size:.82rem;font-weight:700;line-height:1.3;color:var(--green-deep);">' + s.prod.nombre + '</div>' +
+          '<button onclick="invAbrirTraz(\''+s.prod.id+'\')" style="font-size:.58rem;padding:3px 8px;border:1px solid rgba(0,122,82,.3);border-radius:4px;background:rgba(0,122,82,.06);color:var(--acc);cursor:pointer;flex-shrink:0;margin-left:6px;">🔗 Trazabilidad</button>' +
+        '</div>' +
         '<div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:6px;">' +
           '<div><div style="font-size:1.8rem;font-weight:800;color:' + color + ';font-family:var(--fh);line-height:1;">' + saldoVal.toFixed(0) + '</div><div style="font-size:.6rem;color:var(--muted2);">' + unidadLabel + ' en stock</div></div>' +
           '<div style="font-size:.75rem;color:var(--muted2);">' + (!esPorUnidad ? saldoKg.toFixed(1)+' kg' : '') + '</div>' +
         '</div>' +
-        '<div style="display:flex;gap:10px;margin-bottom:8px;font-size:.68rem;flex-wrap:wrap;">' +
-          '<span style="color:var(--acc);">↑ ' + s.lbsEntrada.toFixed(0) + ' lbs entrada</span>' +
-          '<span style="color:var(--danger);">↓ ' + s.lbsSalida.toFixed(0) + ' lbs salida</span>' +
+        '<div style="display:flex;gap:8px;margin-bottom:6px;font-size:.68rem;flex-wrap:wrap;">' +
+          '<span style="color:var(--acc);">↑ ' + entradaVal.toFixed(0) + ' ' + unidadLabel + ' entrada</span>' +
+          '<span style="color:var(--danger);">↓ ' + salidaVal.toFixed(0) + ' ' + unidadLabel + ' salida</span>' +
           (s.mermaEntrada > 0 ? '<span style="color:var(--warn);">⚠ ' + s.mermaEntrada.toFixed(0) + ' lbs merma (' + pctMerma + '%)</span>' : '') +
         '</div>' +
-        (alerta ? '<div style="font-size:.62rem;color:var(--warn);font-weight:600;margin-bottom:6px;">⚠ Bajo stock mínimo (' + minStock + ' lbs)</div>' : '') +
-        '<div style="height:4px;background:var(--br);border-radius:2px;overflow:hidden;">' +
+        (alerta ? '<div style="font-size:.62rem;color:var(--warn);font-weight:600;margin-bottom:6px;">⚠ Bajo stock mínimo (' + minStock + ' ' + unidadLabel + ')</div>' : '') +
+        '<div style="height:4px;background:var(--br);border-radius:2px;overflow:hidden;margin-bottom:' + (loteBtns?'8px':'0') + ';">' +
           '<div style="width:' + pctStock + '%;height:100%;background:' + color + ';border-radius:2px;transition:.3s;"></div>' +
         '</div>' +
+        (loteBtns ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">' + loteBtns + '</div>' : '') +
       '</div>';
     }).join('');
   }
