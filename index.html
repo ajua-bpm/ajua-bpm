@@ -811,7 +811,7 @@ if ('caches' in window) {
 <div style="font-size:2rem;margin-bottom:6px;">🌿</div>
 <div style="font-family:var(--fh);font-size:1.3rem;font-weight:700;color:var(--acc);">AJÚA</div>
 <div style="font-size:.72rem;color:var(--muted2);margin-top:3px;">Sistema de Control Interno</div>
-<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 03/03/2026 — build 37 · costo vs pago separados</div>
+<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 04/03/2026 — build 39 · checklist guatecompras</div>
 </div>
 <div style="margin-bottom:14px;">
 <label style="font-size:.68rem;color:var(--muted2);display:block;margin-bottom:5px;">Usuario</label>
@@ -2165,7 +2165,7 @@ if ('caches' in window) {
   <div class="fgrid g3" style="margin-bottom:12px;">
     <div class="fg"><label>Fecha Posible de Entrega</label><input type="date" id="cr-fecha-entrega"></div>
     <div class="fg"><label>Tipo de Oferta</label>
-      <select id="cr-tipo">
+      <select id="cr-tipo" onchange="crTipoChange()">
         <option value="privada">🤝 Cliente Privado</option>
         <option value="guatecompras">🏛 Guatecompras</option>
         <option value="walmart">🛒 Walmart</option>
@@ -2188,6 +2188,19 @@ if ('caches' in window) {
   <div class="fgrid g2" style="margin-bottom:12px;">
     <div class="fg"><label>Requerimientos / Bases del Contrato</label>
       <textarea id="cr-requerimientos" rows="3" placeholder="Describe las bases técnicas, especificaciones, condiciones del contrato, requerimientos de calidad..."></textarea>
+    </div>
+    <!-- Checklist Guatecompras (visible solo para tipo guatecompras) -->
+    <div id="cr-checklist-section" style="display:none;margin-top:4px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <label style="margin-bottom:0;">📋 Checklist de Requisitos</label>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input id="cr-chk-nuevo" placeholder="Nuevo requisito..." style="font-size:.72rem;padding:4px 8px;border:1px solid var(--br);border-radius:4px;background:var(--s2);color:var(--txt);width:200px;"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();crAddChecklist();}">
+          <button class="btn bo bsm" onclick="crAddChecklist()" style="font-size:.68rem;padding:4px 10px;">+ Agregar</button>
+        </div>
+      </div>
+      <div id="cr-checklist-items" style="display:flex;flex-direction:column;gap:4px;"></div>
+      <div style="font-size:.63rem;color:var(--muted2);margin-top:6px;">💡 Enter o botón para agregar · Click en el estado para cambiar · ✕ para eliminar</div>
     </div>
     <div class="fg"><label>Observaciones</label>
       <textarea id="cr-obs" rows="3" placeholder="Notas adicionales, condiciones especiales, compromisos..."></textarea>
@@ -5504,62 +5517,91 @@ function pwGuardarCierre() {
 
 // ── Render lista ──────────────────────────────────────────────────
 function pwRenderLista() {
-  if (!DB.pedidosWalmart) DB.pedidosWalmart = [];
   const cont = document.getElementById('pw-lista-container');
   if (!cont) return;
 
   const filMes    = document.getElementById('pw-fil-fecha')?.value || '';
   const filEstado = document.getElementById('pw-fil-estado')?.value || '';
 
-  const pedidos = DB.pedidosWalmart.filter(p => {
+  // Separar pedidos base de agregados
+  const todos = (DB.pedidosWalmart || []).filter(p => {
     if (filMes    && !p.fechaEntrega?.startsWith(filMes)) return false;
     if (filEstado && p.estado !== filEstado) return false;
     return true;
-  }).sort((a,b) => b.fechaEntrega.localeCompare(a.fechaEntrega));
+  });
 
-  if (!pedidos.length) {
+  // Pedidos base (no son agregados, o su base no existe en la lista filtrada)
+  const bases     = todos.filter(p => !p.esAgregado || !todos.some(b => b.id === p.baseId));
+  const agregados = todos.filter(p => p.esAgregado  &&  todos.some(b => b.id === p.baseId));
+
+  bases.sort((a,b) => b.fechaEntrega.localeCompare(a.fechaEntrega));
+
+  if (!bases.length && !agregados.length) {
     cont.innerHTML = '<div class="empty">Sin pedidos en este período.</div>';
     return;
   }
 
   const hoy = new Date(Date.now()-6*60*60*1000).toISOString().split('T')[0];
 
-  cont.innerHTML = pedidos.map(p => {
+  const renderRubros = (p) => (p.rubros||[]).map((r,ri) => {
+    const eA = r.estado==='aceptado', eP=r.estado==='parcial', eR=r.estado==='rechazado';
+    const borde = eA?'var(--acc)':eP?'var(--orange)':eR?'var(--danger)':'var(--br)';
+    const stateLabel = !r.estado||r.estado==='pendiente' ? '—'
+      : eA ? '✅ Aceptado' : eP ? '⚠️ Parcial' : '❌ Rechazo';
+    return `<div style="border-left:3px solid ${borde};padding:6px 10px;margin-bottom:5px;background:${eA?'rgba(0,122,82,.04)':eR?'rgba(214,48,48,.04)':'var(--s2)'};border-radius:0 6px 6px 0;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">
+        <div>
+          ${r.item?`<span style="font-size:.62rem;color:var(--muted2);margin-right:4px;">${r.item}</span>`:''}
+          <span style="font-size:.78rem;font-weight:600;">${r.descripcion}</span>
+        </div>
+        <span style="font-size:.65rem;color:${eA?'var(--acc)':eR?'var(--danger)':'var(--muted2)'};">${stateLabel}</span>
+      </div>
+      <div style="display:flex;gap:14px;margin-top:4px;font-size:.72rem;">
+        <span style="color:var(--muted2);">Pedido: <strong style="color:var(--tx);">${r.cajasPedidas}</strong></span>
+        ${r.cajasAceptadas!=null?`<span style="color:var(--muted2);">Acept: <strong style="color:var(--acc);">${r.cajasAceptadas}</strong></span>`:''}
+        ${r.cajasRechazadas>0?`<span style="color:var(--muted2);">Rech: <strong style="color:var(--danger);">${r.cajasRechazadas}</strong></span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  const renderCard = (p, isAgregado) => {
     const est        = PW_ESTADOS[p.estado] || PW_ESTADOS.pendiente;
     const totalCajas = p.rubros?.reduce((s,r)=>s+r.cajasPedidas,0) || 0;
     const totAcep    = p.rubros?.reduce((s,r)=>s+(r.cajasAceptadas||0),0) || 0;
     const totRech    = p.rubros?.reduce((s,r)=>s+(r.cajasRechazadas||0),0) || 0;
     const esHoy      = p.fechaEntrega === hoy;
     const esPasado   = p.fechaEntrega < hoy;
-    const urgente    = (p.estado==='pendiente'||p.estado==='en_curso') && (esHoy||esPasado);
+    const urgente    = !isAgregado && (p.estado==='pendiente'||p.estado==='en_curso') && (esHoy||esPasado);
+    const rubrosHTML = renderRubros(p);
 
-    // Mobile-first rubros: use vertical cards instead of wide table
-    const rubrosHTML = (p.rubros||[]).map((r,ri) => {
-      const eA = r.estado==='aceptado', eP=r.estado==='parcial', eR=r.estado==='rechazado';
-      const borde = eA?'var(--acc)':eP?'var(--orange)':eR?'var(--danger)':'var(--br)';
-      const stateLabel = !r.estado||r.estado==='pendiente' ? '—'
-        : eA ? '✅ Aceptado' : eP ? '⚠️ Parcial' : '❌ Rechazo';
-      return `<div style="border-left:3px solid ${borde};padding:6px 10px;margin-bottom:5px;background:${eA?'rgba(0,122,82,.04)':eR?'rgba(214,48,48,.04)':'var(--s2)'};border-radius:0 6px 6px 0;">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">
-          <div>
-            ${r.item?`<span style="font-size:.62rem;color:var(--muted2);margin-right:4px;">${r.item}</span>`:''}
-            <span style="font-size:.78rem;font-weight:600;">${r.descripcion}</span>
-          </div>
-          <span style="font-size:.65rem;color:${eA?'var(--acc)':eR?'var(--danger)':'var(--muted2)'};">${stateLabel}</span>
+    if (isAgregado) {
+      // Agregado: bloque compacto dentro de la tarjeta base
+      return `<div style="border-top:1.5px dashed var(--br);margin-top:10px;padding-top:10px;">
+        <div style="font-size:.65rem;font-weight:700;color:var(--orange-deep);letter-spacing:.05em;margin-bottom:6px;">
+          📎 AGREGADO ${p.oc?'· OC: '+p.oc:''}
+          <span style="background:${est.color}22;color:${est.color};border:1px solid ${est.color}44;font-size:.6rem;padding:1px 7px;border-radius:10px;margin-left:6px;">${est.icon} ${est.label}</span>
         </div>
-        <div style="display:flex;gap:14px;margin-top:4px;font-size:.72rem;">
-          <span style="color:var(--muted2);">Pedido: <strong style="color:var(--tx);">${r.cajasPedidas}</strong></span>
-          ${r.cajasAceptadas!=null?`<span style="color:var(--muted2);">Acept: <strong style="color:var(--acc);">${r.cajasAceptadas}</strong></span>`:''}
-          ${r.cajasRechazadas>0?`<span style="color:var(--muted2);">Rech: <strong style="color:var(--danger);">${r.cajasRechazadas}</strong></span>`:''}
+        <div style="margin-bottom:8px;">${rubrosHTML}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <button class="btn bsm bo" style="flex:1;min-width:80px;" onclick="pwEditarPedido('${p.id}')">✏️ Ver / Editar</button>
+          ${(p.estado==='pendiente'||p.estado==='en_curso') ?
+            `<button class="btn bsm" style="flex:1;min-width:80px;background:var(--orange);color:#fff;font-weight:700;"
+              onclick="pwEditarPedido('${p.id}')">🔔 Cerrar día</button>` : ''}
         </div>
+        ${p.albaranDoc||p.rechazoDoc ? `<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
+          ${p.albaranDoc?'<span class="chip ck" style="font-size:.65rem;">📄 Albarán ✓</span>':''}
+          ${p.rechazoDoc?'<span class="chip cr" style="font-size:.65rem;">🚫 Rechazo ✓</span>':''}
+        </div>` : ''}
       </div>`;
-    }).join('');
+    }
 
+    // Pedido base completo
+    const hijos = agregados.filter(a => a.baseId === p.id);
     return `<div style="background:var(--s1);border:1.5px solid ${urgente?'var(--orange)':'var(--br)'};
       border-radius:10px;padding:14px;margin-bottom:12px;
       ${urgente?'box-shadow:0 0 0 3px rgba(242,104,34,.12);':''}">
 
-      <!-- Header row -->
+      <!-- Header -->
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px;">
         <div style="flex:1;min-width:0;">
           <div style="font-family:var(--fh);font-size:.95rem;font-weight:800;color:var(--green-deep);line-height:1.2;">
@@ -5580,17 +5622,19 @@ function pwRenderLista() {
         </span>
       </div>
 
-      <!-- Summary totals on mobile -->
       ${totAcep||totRech ? `<div style="display:flex;gap:10px;margin-bottom:8px;font-size:.72rem;font-family:var(--fn);">
         ${totAcep?`<span style="color:var(--acc);font-weight:700;">✅ ${totAcep} aceptadas</span>`:''}
         ${totRech?`<span style="color:var(--danger);font-weight:700;">❌ ${totRech} rechazadas</span>`:''}
       </div>` : ''}
 
-      <!-- Rubros -->
+      <!-- Rubros base -->
       <div style="margin-bottom:10px;">${rubrosHTML}</div>
 
-      <!-- Action buttons — full width stacking on mobile -->
-      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+      <!-- Agregados inline -->
+      ${hijos.map(h => renderCard(h, true)).join('')}
+
+      <!-- Botones -->
+      <div style="display:flex;flex-wrap:wrap;gap:6px;${hijos.length?'margin-top:12px;':''}">
         <button class="btn bsm bo" style="flex:1;min-width:100px;"
           onclick="pwEditarPedido('${p.id}')">✏️ Ver / Editar</button>
         ${(p.estado==='pendiente'||p.estado==='en_curso') ?
@@ -5600,16 +5644,17 @@ function pwRenderLista() {
           onclick="pwNuevoPedido('${p.id}')">+ Agregado</button>
       </div>
 
-      <!-- Docs badges -->
       ${p.albaranDoc||p.rechazoDoc ? `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
         ${p.albaranDoc?'<span class="chip ck" style="font-size:.65rem;">📄 Albarán ✓</span>':''}
         ${p.rechazoDoc?'<span class="chip cr" style="font-size:.65rem;">🚫 Rechazo ✓</span>':''}
       </div>` : ''}
     </div>`;
-  }).join('');
+  };
+
+  cont.innerHTML = bases.map(p => renderCard(p, false)).join('');
 }
 
-// ── Calendario ────────────────────────────────────────────────────
+
 function pwRenderCalendario() {
   const grid = document.getElementById('pw-cal-grid');
   const tit  = document.getElementById('pw-cal-titulo');
@@ -15133,12 +15178,68 @@ let _crGastos    = []; // gastos varios en edición
 
 function crInit() {
   if (!DB.cotizadorRapido) DB.cotizadorRapido = [];
-  // Set today's date if empty
   const fi = document.getElementById('cr-fecha-oferta');
   if (fi && !fi.value) {
     const gt = new Date(Date.now() - 6*3600000);
     fi.value = gt.toISOString().split('T')[0];
   }
+}
+
+// ── Checklist Guatecompras ────────────────────────────────────────
+let _crChecklist = []; // [{id, texto, estado}] estado: 'pendiente'|'listo'|'falta'
+
+function crTipoChange() {
+  const tipo = document.getElementById('cr-tipo')?.value;
+  const sec  = document.getElementById('cr-checklist-section');
+  if (sec) sec.style.display = tipo === 'guatecompras' ? '' : 'none';
+}
+
+function crAddChecklist() {
+  const inp = document.getElementById('cr-chk-nuevo');
+  const texto = inp?.value.trim();
+  if (!texto) return;
+  _crChecklist.push({ id: uid(), texto, estado: 'pendiente' });
+  inp.value = '';
+  crRenderChecklist();
+}
+
+function crChecklistEstado(id) {
+  const item = _crChecklist.find(c => c.id === id);
+  if (!item) return;
+  const ciclo = { pendiente: 'listo', listo: 'falta', falta: 'pendiente' };
+  item.estado = ciclo[item.estado] || 'pendiente';
+  crRenderChecklist();
+}
+
+function crChecklistDel(id) {
+  _crChecklist = _crChecklist.filter(c => c.id !== id);
+  crRenderChecklist();
+}
+
+function crRenderChecklist() {
+  const cont = document.getElementById('cr-checklist-items');
+  if (!cont) return;
+  const EST = {
+    pendiente: { ico: '⏳', color: 'var(--warn)',   bg: 'rgba(242,167,34,.1)',  label: 'Pendiente' },
+    listo:     { ico: '✅', color: 'var(--acc)',    bg: 'rgba(0,122,82,.08)',   label: 'Listo' },
+    falta:     { ico: '❌', color: 'var(--danger)', bg: 'rgba(214,48,48,.08)',  label: 'Falta' },
+  };
+  if (!_crChecklist.length) {
+    cont.innerHTML = '<div style="font-size:.72rem;color:var(--muted2);font-style:italic;padding:8px 0;">Sin requisitos agregados aún</div>';
+    return;
+  }
+  cont.innerHTML = _crChecklist.map(c => {
+    const e = EST[c.estado] || EST.pendiente;
+    return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:${e.bg};border-radius:6px;border:1px solid ${e.color}33;">
+      <button onclick="crChecklistEstado('${c.id}')" title="Click para cambiar estado"
+        style="background:${e.bg};border:1.5px solid ${e.color};border-radius:20px;padding:2px 10px;font-size:.65rem;font-weight:700;color:${e.color};cursor:pointer;white-space:nowrap;flex-shrink:0;">
+        ${e.ico} ${e.label}
+      </button>
+      <span style="flex:1;font-size:.75rem;">${escHtml(c.texto)}</span>
+      <button onclick="crChecklistDel('${c.id}')"
+        style="background:none;border:none;color:var(--muted2);cursor:pointer;font-size:.85rem;padding:0 4px;flex-shrink:0;">✕</button>
+    </div>`;
+  }).join('');
 }
 
 // ── Producto row ──────────────────────────────────────────────────
@@ -15222,7 +15323,7 @@ function crUpdateTotales() {
   const comVal = parseFloat(document.getElementById('cr-comision-val')?.value)||0;
   const comTipo = document.getElementById('cr-comision-tipo')?.value;
   if (comVal > 0) {
-    const comMonto = comTipo === '%' ? totalVenta * comVal / 100 : comVal;
+    const comisionMonto = comTipo === '%' ? totalVenta * comVal / 100 : comVal;
     const badge = document.getElementById('cr-resumen-comision');
     const cm = document.getElementById('cr-comision-monto');
     if (badge) badge.style.display = 'block';
@@ -15313,7 +15414,8 @@ function crSave() {
     gastosVarios:   JSON.parse(JSON.stringify(_crGastos)),
     totalCosto, totalVenta,
     margen: totalVenta > 0 ? ((totalVenta-totalCosto)/totalVenta*100) : 0,
-    estado: 'pendiente', // pendiente / aceptada / rechazada
+    estado: 'pendiente',
+    checklist: JSON.parse(JSON.stringify(_crChecklist)),
   };
 
   if (editId) {
@@ -15365,10 +15467,15 @@ function crEdit(id) {
   document.getElementById('cr-obs').value = r.obs||'';
   document.getElementById('cr-comision-val').value = r.comisionVal||'';
   document.getElementById('cr-comision-tipo').value = r.comisionTipo||'Q';
-  _crProductos = JSON.parse(JSON.stringify(r.productos||[]));
-  _crGastos    = JSON.parse(JSON.stringify(r.gastosVarios||[]));
+  _crProductos  = JSON.parse(JSON.stringify(r.productos||[]));
+  _crGastos     = JSON.parse(JSON.stringify(r.gastosVarios||[]));
+  _crChecklist  = JSON.parse(JSON.stringify(r.checklist||[]));
   crRenderProductos();
   crRenderGastos();
+  crRenderChecklist();
+  // Mostrar checklist section si es guatecompras
+  const chkSec = document.getElementById('cr-checklist-section');
+  if (chkSec) chkSec.style.display = r.tipo === 'guatecompras' ? '' : 'none';
   document.getElementById('cr-form-title').textContent = 'Editando oferta: ' + r.cliente;
   document.getElementById('cr-cancel-btn').style.display = '';
   document.getElementById('cr-form-card')?.scrollIntoView({behavior:'smooth'});
@@ -15391,8 +15498,12 @@ function crResetForm() {
   document.getElementById('cr-cancel-btn').style.display = 'none';
   _crProductos = [];
   _crGastos    = [];
+  _crChecklist = [];
   crRenderProductos();
   crRenderGastos();
+  crRenderChecklist();
+  const chkSec = document.getElementById('cr-checklist-section');
+  if (chkSec) chkSec.style.display = 'none';
   const fi = document.getElementById('cr-fecha-oferta');
   if (fi) { const gt = new Date(Date.now()-6*3600000); fi.value = gt.toISOString().split('T')[0]; }
 }
@@ -15403,7 +15514,7 @@ function crRender() {
   if (!tb) return;
   const list = (DB.cotizadorRapido||[]).slice().sort((a,b)=>(b.fechaOferta||b.ts||'').localeCompare(a.fechaOferta||a.ts||''));
   if (!list.length) {
-    tb.innerHTML = '<tr><td colspan="8"><div class="empty">Sin ofertas registradas</div></td></tr>';
+    tb.innerHTML = '<tr><td colspan="9"><div class="empty">Sin ofertas registradas</div></td></tr>';
     return;
   }
   const TIPO_LBL = { privada:'🤝 Privado', guatecompras:'🏛 Guatecompras', walmart:'🛒 Walmart', exportacion:'🌎 Exportación', otro:'📋 Otro' };
@@ -15417,6 +15528,16 @@ function crRender() {
     <td style="font-weight:600;">${escHtml(r.cliente||'—')}</td>
     <td><span class="chip cb" style="font-size:.6rem;">${TIPO_LBL[r.tipo]||r.tipo}</span></td>
     <td style="font-size:.72rem;color:var(--muted2);">${escHtml(r.ref||'—')}</td>
+    <td style="font-size:.68rem;">${r.tipo==='guatecompras'&&r.checklist?.length ? (() => {
+      const tot=r.checklist.length, listos=r.checklist.filter(c=>c.estado==='listo').length, faltan=r.checklist.filter(c=>c.estado==='falta').length;
+      const pct=Math.round(listos/tot*100);
+      return `<span title="${listos}/${tot} requisitos listos" style="display:inline-flex;align-items:center;gap:4px;">
+        <span style="width:40px;height:6px;background:var(--br);border-radius:3px;display:inline-block;overflow:hidden;">
+          <span style="width:${pct}%;height:100%;background:${pct===100?'var(--acc)':'var(--warn)'};display:block;"></span>
+        </span>
+        <span style="color:${faltan>0?'var(--danger)':pct===100?'var(--acc)':'var(--warn)'};">${listos}/${tot}</span>
+      </span>`;
+    })() : '—'}</td>
     <td>${r.fechaEntrega||'—'}</td>
     <td style="text-align:right;font-weight:700;color:var(--green-deep);">Q ${(r.totalVenta||0).toFixed(2)}</td>
     <td>${EST_CHIP[r.estado]||EST_CHIP.pendiente}</td>
