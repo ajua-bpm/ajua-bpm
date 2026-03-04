@@ -811,7 +811,7 @@ if ('caches' in window) {
 <div style="font-size:2rem;margin-bottom:6px;">🌿</div>
 <div style="font-family:var(--fh);font-size:1.3rem;font-weight:700;color:var(--acc);">AJÚA</div>
 <div style="font-size:.72rem;color:var(--muted2);margin-top:3px;">Sistema de Control Interno</div>
-<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 03/03/2026 — build 32 · proteccion datos Firebase</div>
+<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 03/03/2026 — build 37 · costo vs pago separados</div>
 </div>
 <div style="margin-bottom:14px;">
 <label style="font-size:.68rem;color:var(--muted2);display:block;margin-bottom:5px;">Usuario</label>
@@ -1993,6 +1993,23 @@ if ('caches' in window) {
           <option value="imp-ret">🧾 Retenciones</option>
           <option value="imp-otro">🧾 Otro Impuesto</option>
         </optgroup>
+        <optgroup label="🛃 Importación">
+          <option value="imp-agente">🛃 Agente Aduanal</option>
+          <option value="imp-descarga">🏋 Descargadores</option>
+          <option value="imp-ministe">🏛 Ministerio / Sanidad</option>
+          <option value="imp-aranceles">💲 Aranceles / DAI</option>
+          <option value="imp-flete-int">🚢 Flete Internacional</option>
+          <option value="imp-fumig-imp">🧪 Fumigación Importación</option>
+          <option value="imp-otros">📦 Otros Gastos Importación</option>
+          <option value="imp-anticipo">💸 Anticipo a Proveedor MX</option>
+        </optgroup>
+        <optgroup label="👷 Personal y Nómina">
+          <option value="per-salario">👷 Salario / Jornal</option>
+          <option value="per-anticipo">💵 Anticipo</option>
+          <option value="per-bonif">🎁 Bonificación</option>
+          <option value="per-prestamo">🤝 Préstamo a empleado</option>
+          <option value="per-otro">👤 Otro Personal</option>
+        </optgroup>
         <option value="gastos-varios">📋 Gastos Varios</option>
         <option value="otro">🔖 Otro (especificar)</option>
       </select>
@@ -2031,6 +2048,20 @@ if ('caches' in window) {
         <div style="font-size:.68rem;color:var(--muted2);margin-top:6px;">Toma foto de la boleta, recibo o comprobante bancario.<br>Se guarda junto al gasto para auditoría.</div>
         <button id="gd-foto-clear" class="btn bo bsm" style="display:none;margin-top:6px;border-color:var(--danger);color:var(--danger);font-size:.65rem;" onclick="gdClearFoto()">✕ Quitar foto</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Empleado (visible solo en categorías de Personal) -->
+  <div class="fgrid g2" style="margin-bottom:12px;" id="gd-empleado-row" style="display:none;">
+    <div class="fg" id="gd-empleado-wrap">
+      <label>Empleado</label>
+      <select id="gd-empleado">
+        <option value="">— Seleccionar empleado —</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label>Referencia (semana, quincena...)</label>
+      <input id="gd-emp-ref" placeholder="Ej: semana 03/03, quincena febrero...">
     </div>
   </div>
 
@@ -2270,6 +2301,7 @@ if ('caches' in window) {
         <option value="en_curso">🚛 En curso</option>
         <option value="cerrado">✅ Cerrado</option>
         <option value="con_rechazo">⚠️ Con rechazo</option>
+        <option value="sin_stock">📦 Sin stock</option>
       </select>
     </div>
     <div id="pw-lista-container"></div>
@@ -4757,6 +4789,7 @@ const PW_ESTADOS = {
   en_curso:     { label:'En curso',     color:'var(--info)',    icon:'🚛' },
   cerrado:      { label:'Aceptado ✓',   color:'var(--acc)',     icon:'✅' },
   con_rechazo:  { label:'Con rechazo',  color:'var(--danger)',  icon:'⚠️' },
+  sin_stock:    { label:'Sin stock',    color:'var(--muted2)',  icon:'📦' },
 };
 
 // ── Init ─────────────────────────────────────────────────────────
@@ -5339,8 +5372,10 @@ function pwGuardarCierre() {
   const rec = DB.pedidosWalmart.find(p=>p.id===pwActivoId);
   if (!rec) return;
 
-  let hayRechazo = false;
+  let hayRechazo   = false;
+  let haySinStock  = false;
   let todosResueltos = true;
+  let todosNoEntregados = true; // true si todos son no_llevado
 
   rec.rubros.forEach(r => {
     const est = document.getElementById('pw-cr-estado-'+r.n)?.value;
@@ -5349,21 +5384,30 @@ function pwGuardarCierre() {
     if (est === 'aceptado') {
       r.cajasAceptadas  = r.cajasPedidas;
       r.cajasRechazadas = 0;
+      todosNoEntregados = false;
     } else if (est === 'parcial') {
       r.cajasAceptadas  = parseFloat(document.getElementById('pw-cr-aceptadas-'+r.n)?.value)||0;
       r.cajasRechazadas = r.cajasPedidas - r.cajasAceptadas;
       hayRechazo = true;
+      todosNoEntregados = false;
     } else if (est === 'rechazado') {
       r.cajasAceptadas  = 0;
       r.cajasRechazadas = r.cajasPedidas;
       hayRechazo = true;
+      todosNoEntregados = false;
+    } else if (est === 'no_llevado') {
+      // Sin stock — no es rechazo, es falta de inventario
+      r.cajasAceptadas  = 0;
+      r.cajasRechazadas = 0;
+      r.cajasSinStock   = r.cajasPedidas;
+      haySinStock = true;
     }
   });
 
   if (!todosResueltos) { toast('⚠ Indica el resultado de cada rubro', true); return; }
 
-  // Validate documents
-  if (!rec.albaranDoc) {
+  // Albarán: no requerido si todo fue sin stock (no hubo entrega física)
+  if (!todosNoEntregados && !rec.albaranDoc) {
     toast('🚫 Debes cargar el albarán antes de cerrar el pedido', true);
     return;
   }
@@ -5372,14 +5416,19 @@ function pwGuardarCierre() {
     return;
   }
 
-  rec.estado   = hayRechazo ? 'con_rechazo' : 'cerrado';
+  // Estado del pedido — sin_stock es su propia categoría, no con_rechazo
+  rec.estado   = todosNoEntregados ? 'sin_stock'
+               : hayRechazo        ? 'con_rechazo'
+               : haySinStock       ? 'con_rechazo'  // parcialmente sin stock + algo entregado
+               : 'cerrado';
   rec.cierreTs = now();
 
   // Build summary
-  const totalCajas     = rec.rubros.reduce((s,r)=>s+r.cajasPedidas,0);
-  const totalAceptadas = rec.rubros.reduce((s,r)=>s+(r.cajasAceptadas||0),0);
-  const totalRechazadas= rec.rubros.reduce((s,r)=>s+(r.cajasRechazadas||0),0);
-  rec.resumen = { totalCajas, totalAceptadas, totalRechazadas };
+  const totalCajas      = rec.rubros.reduce((s,r)=>s+r.cajasPedidas,0);
+  const totalAceptadas  = rec.rubros.reduce((s,r)=>s+(r.cajasAceptadas||0),0);
+  const totalRechazadas = rec.rubros.reduce((s,r)=>s+(r.cajasRechazadas||0),0);
+  const totalSinStock   = rec.rubros.reduce((s,r)=>s+(r.cajasSinStock||0),0);
+  rec.resumen = { totalCajas, totalAceptadas, totalRechazadas, totalSinStock };
 
   // ── AUTO-CREATE isalida record so inventory is updated ────────────
   invEnsureDB();
@@ -5445,7 +5494,10 @@ function pwGuardarCierre() {
   save(); pwRenderLista(); pwRenderCalendario();
   try { renderInvStock(); } catch(e) {}
   try { renderSal(); } catch(e) {}
-  toast(hayRechazo ? '⚠️ Pedido cerrado con '+totalRechazadas+' cajas rechazadas — inventario actualizado' : '✅ Pedido cerrado — '+totalAceptadas+' cajas · inventario actualizado');
+  const _msg = todosNoEntregados ? '📦 Pedido cerrado — sin stock, no se generó albarán'
+              : hayRechazo ? '⚠️ Pedido cerrado con '+totalRechazadas+' cajas rechazadas'
+              : '✅ Pedido cerrado — '+totalAceptadas+' cajas aceptadas';
+  toast(_msg);
   pwTab('lista', document.getElementById('pw-tab-lista'));
   document.getElementById('pw-tab-form').style.display = 'none';
 }
@@ -5605,6 +5657,7 @@ function pwRenderCalendario() {
     const totalCajas = pedidos.reduce((s,p)=>s+(p.rubros?.reduce((x,r)=>x+r.cajasPedidas,0)||0),0);
     // Dominant status color
     const dominantEst = pedidos.find(p=>p.estado==='con_rechazo')
+      || pedidos.find(p=>p.estado==='sin_stock')
       || pedidos.find(p=>p.estado==='en_curso')
       || pedidos.find(p=>p.estado==='cerrado')
       || pedidos[0];
@@ -5672,7 +5725,7 @@ function pwCheckNotificaciones() {
 
   DB.pedidosWalmart.forEach(p => {
     if (p.fechaEntrega !== hoy) return;
-    if (p.estado === 'cerrado' || p.estado === 'con_rechazo') return;
+    if (p.estado === 'cerrado' || p.estado === 'con_rechazo' || p.estado === 'sin_stock') return;
 
     const [hh] = (p.horaEntrega||'16:00').split(':').map(Number);
 
@@ -5896,6 +5949,22 @@ const GD_CATS = {
   'imp-otro':       { label:'Otro Impuesto',          ico:'🧾', grupo:'Impuestos' },
   'gastos-varios':  { label:'Gastos Varios',          ico:'📋', grupo:'Varios' },
   otro:             { label:'Otro',                   ico:'🔖', grupo:'Varios' },
+  // Importación
+  'imp-agente':     { label:'Agente Aduanal',         ico:'🛃', grupo:'Importación' },
+  'imp-anticipo':   { label:'Anticipo a Proveedor MX', ico:'💸', grupo:'Costo Producto' },
+  'imp-descarga':   { label:'Descargadores',          ico:'🏋', grupo:'Importación' },
+  'imp-ministe':    { label:'Ministerio / Sanidad',   ico:'🏛', grupo:'Importación' },
+  'imp-aranceles':  { label:'Aranceles / DAI',        ico:'💲', grupo:'Importación' },
+  'imp-flete-int':  { label:'Flete Internacional',    ico:'🚢', grupo:'Importación' },
+  'imp-fumig-imp':  { label:'Fumigación Importación', ico:'🧪', grupo:'Importación' },
+  'imp-otros':      { label:'Otros Gastos Importación',ico:'📦',grupo:'Importación' },
+  'imp-anticipo':   { label:'Anticipo a Proveedor MX',  ico:'💸',grupo:'Importación' },
+  // Personal
+  'per-salario':    { label:'Salario / Jornal',       ico:'👷', grupo:'Personal' },
+  'per-anticipo':   { label:'Anticipo',               ico:'💵', grupo:'Personal' },
+  'per-bonif':      { label:'Bonificación',           ico:'🎁', grupo:'Personal' },
+  'per-prestamo':   { label:'Préstamo a empleado',    ico:'🤝', grupo:'Personal' },
+  'per-otro':       { label:'Otro Personal',          ico:'👤', grupo:'Personal' },
 };
 
 let _gdFotoData = null;
@@ -5966,9 +6035,17 @@ function gdSave() {
   const devolucionQuien = pagadoPor === 'empleado'
     ? (document.getElementById('gd-devolucion-quien')?.value || '')
     : null;
+  // Datos de empleado para categorías de Personal
+  const gdInfo = GD_CATS[cat] || {};
+  const empleadoId  = gdInfo.grupo === 'Personal' ? (document.getElementById('gd-empleado')?.value || '') : null;
+  const empRef      = gdInfo.grupo === 'Personal' ? (document.getElementById('gd-emp-ref')?.value.trim() || '') : null;
+  const empleadoNom = empleadoId
+    ? ((DB.empleados||[]).find(e=>(e.id||e.nombre)===empleadoId)?.nombre || empleadoId)
+    : null;
   const rec = { fecha, cat, monto, desc, metodo,
     pagadoPor, devolucionQuien,
     devolucionPendiente: pagadoPor === 'empleado',
+    empleadoId, empleadoNombre: empleadoNom, empRef,
     foto: _gdFotoData || null };
 
   if (editId) {
@@ -5989,6 +6066,9 @@ function gdSave() {
   document.getElementById('gd-desc').value  = '';
   const _ppEl = document.getElementById('gd-pagado-por');
   if (_ppEl) { _ppEl.value = 'empresa'; gdPagadoPorChange(); }
+  const _empEl = document.getElementById('gd-empleado'); if (_empEl) _empEl.value = '';
+  const _empRef = document.getElementById('gd-emp-ref'); if (_empRef) _empRef.value = '';
+  const _empRow = document.getElementById('gd-empleado-row'); if (_empRow) _empRow.style.display = 'none';
   gdClearFoto();
   save();
   gdRender();
@@ -6125,7 +6205,7 @@ function gdRender() {
     return `<tr>
       <td>${g.fecha}</td>
       <td><span class="chip cb">${info.ico} ${info.label}</span></td>
-      <td style="font-size:.78rem;">${g.desc || '—'}</td>
+      <td style="font-size:.78rem;">${g.empleadoNombre ? '<span style="font-weight:600;color:var(--info);">👤 '+g.empleadoNombre+'</span>' + (g.desc?' · '+g.desc:'') : (g.desc || '—')}</td>
       <td style="font-size:.72rem;">${metMap[g.metodo]||g.metodo||'—'}${pagadorChip}</td>
       <td style="text-align:right;font-weight:700;color:var(--green-deep);">Q ${(g.monto||0).toFixed(2)}</td>
       <td>${fotoBtn}</td>
@@ -6239,26 +6319,64 @@ function generarReporte() {
     });
   });
 
-  // ── 2. COSTOS IMPORTACIÓN ────────────────────────────────────────
-  let costoImportacion = 0;
-  (DB.ientradas || []).filter(e => e.fecha >= desde && e.fecha <= hasta).forEach(e => {
-    costoImportacion += e.costoTotal || e.totalQ || 0;
+  // ── 2. COSTO DE PRODUCTO (del cotizador — precio real negociado) ──
+  // El costo es lo que vale el producto según cotización, independiente de si se pagó.
+  // Para costo/kg y costo/lb se usa costoKg y costoLb del cotizador.
+  let costoProducto          = 0;  // costo total producto (cotizador)
+  let costoLotesManual       = 0;  // lotes manuales con cxlb ingresado
+  let totalLbsProducto       = 0;
+  let totalKgProducto        = 0;
+
+  // Fuente 1: ientradas desde cotizador (tienen costoTotal = costoUd * qty)
+  (DB.ientradas || []).filter(e => e.fecha >= desde && e.fecha <= hasta && e.source === 'cotizador').forEach(e => {
+    costoProducto    += e.costoTotal || 0;
+    totalLbsProducto += e.lbsTotal  || e.lbsBruto || 0;
+    totalKgProducto  += e.kgTotal   || e.kgBruto  || 0;
   });
+  // Fuente 2: lotes manuales (ingreso directo con cxlb)
+  (DB.ientradas || []).filter(e => e.fecha >= desde && e.fecha <= hasta && e.source !== 'cotizador').forEach(e => {
+    costoLotesManual += e.costoTotal || e.totalQ || 0;
+    totalLbsProducto += e.lbsBruto  || e.lbsTotal || 0;
+    totalKgProducto  += e.kgBruto   || e.kgTotal  || 0;
+  });
+  const costoImportacion = costoProducto + costoLotesManual;
+  const costoKgPromedio  = totalKgProducto  > 0 ? costoImportacion / totalKgProducto  : 0;
+  const costoLbPromedio  = totalLbsProducto > 0 ? costoImportacion / totalLbsProducto : 0;
+
+  // ── 2b. PAGOS REALES (flujo de caja — puede diferir del costo) ──
+  // Los anticipos son lo que salió de la cuenta. Puede haber crédito o pago posterior.
+  let pagadoTotal  = 0;
+  let anticiposTotal = 0;
+  const anticiposContados = new Set();
+  (DB.gastosDiarios || []).filter(g => g.fecha >= desde && g.fecha <= hasta && g.cat === 'imp-anticipo').forEach(g => {
+    pagadoTotal    += g.monto || 0;
+    anticiposTotal += g.monto || 0;
+    if (g.anticipo_ref) anticiposContados.add(g.anticipo_ref);
+  });
+  (DB.cotizaciones || []).forEach(cot => {
+    (cot.anticipos || []).forEach(a => {
+      if (!anticiposContados.has(a.id) && a.fecha >= desde && a.fecha <= hasta) {
+        pagadoTotal    += a.gtq || 0;
+        anticiposTotal += a.gtq || 0;
+      }
+    });
+  });
+  const porPagar = Math.max(0, costoImportacion - pagadoTotal);
 
   // ── 3. GASTOS GENERALES (maquila semanal) ───────────────────────
   let costoMaquila = 0;
   (DB.gastosSemanales || []).filter(s => s.semanaInicio >= desde && s.semanaInicio <= hasta).forEach(s => {
-    // grandTotal is saved in gastosSemanales
     costoMaquila += s.grandTotal || s.totalGral || 0;
   });
 
-  // ── 4. GASTOS DIARIOS ────────────────────────────────────────────
+  // ── 4. GASTOS DIARIOS (operativos — sin anticipos de producto) ──
   let gastosDiariosTotal = 0;
-  const gdPorCategoria  = {};
+  const gdPorCategoria   = {};
   (DB.gastosDiarios || []).filter(g => g.fecha >= desde && g.fecha <= hasta).forEach(g => {
-    gastosDiariosTotal += g.monto || 0;
-    const info = GD_CATS[g.cat] || { label: g.cat, grupo: 'Otros' };
+    if (g.cat === 'imp-anticipo') return; // ya contado en pagadoTotal, no en gastos operativos
+    const info  = GD_CATS[g.cat] || { label: g.cat, grupo: 'Otros' };
     const grupo = info.grupo || 'Otros';
+    gastosDiariosTotal += g.monto || 0;
     gdPorCategoria[grupo] = (gdPorCategoria[grupo] || 0) + (g.monto || 0);
   });
 
@@ -6270,15 +6388,24 @@ function generarReporte() {
 
   // ── 6. KPIs ───────────────────────────────────────────────────────
   const kpis = [
-    { l:'Ingresos brutos',        v:'Q '+totalIngresos.toFixed(2),     c:'var(--acc)',    big:true },
-    { l:'Costo total',            v:'Q '+costoTotal.toFixed(2),         c:'var(--warn)' },
-    { l:'Utilidad bruta',         v:'Q '+utilidad.toFixed(2),           c:utilidad>=0?'var(--acc)':'var(--danger)', big:true },
-    { l:'Margen bruto',           v:margen.toFixed(1)+'%',              c:margen>=20?'var(--acc)':margen>=10?'var(--warn)':'var(--danger)' },
-    { l:'Costo importación',      v:'Q '+costoImportacion.toFixed(2),   c:'var(--muted2)' },
-    { l:'Gastos Generales',       v:'Q '+costoMaquila.toFixed(2),       c:'var(--muted2)' },
-    { l:'Gastos Diarios',         v:'Q '+gastosDiariosTotal.toFixed(2), c:'var(--info)' },
-    { l:'LBS vendidas',           v:totalLbsVendidas.toFixed(0)+' lbs', c:'var(--txt)' },
-    { l:'Costo / lb',             v:'Q '+costoPorLb.toFixed(4),         c:'var(--muted2)' },
+    // ── Rentabilidad ──
+    { l:'Ingresos brutos',         v:'Q '+totalIngresos.toFixed(2),                    c:'var(--acc)',    big:true },
+    { l:'Costo total',             v:'Q '+costoTotal.toFixed(2),                       c:'var(--warn)',   big:true },
+    { l:'Utilidad bruta',          v:'Q '+utilidad.toFixed(2),                         c:utilidad>=0?'var(--acc)':'var(--danger)', big:true },
+    { l:'Margen bruto',            v:margen.toFixed(1)+'%',                            c:margen>=20?'var(--acc)':margen>=10?'var(--warn)':'var(--danger)' },
+    // ── Costo por unidad ──
+    { l:'📦 Costo producto',       v:'Q '+costoImportacion.toFixed(2),                 c:'var(--warn)' },
+    { l:'↳ Costo / kg',            v:'Q '+costoKgPromedio.toFixed(4),                  c:'var(--muted2)' },
+    { l:'↳ Costo / lb',            v:'Q '+costoLbPromedio.toFixed(4),                  c:'var(--muted2)' },
+    // ── Flujo de caja (pagos reales) ──
+    { l:'💸 Pagado a proveedor',   v:'Q '+pagadoTotal.toFixed(2),                      c:'var(--info)' },
+    ...(porPagar>0?[{ l:'⏳ Por pagar (crédito)', v:'Q '+porPagar.toFixed(2),          c:'var(--danger)' }]:[]),
+    // ── Gastos operativos ──
+    { l:'🔧 Gastos operativos',    v:'Q '+gastosDiariosTotal.toFixed(2),               c:'var(--muted2)' },
+    { l:'👷 Nómina / Maquila',     v:'Q '+costoMaquila.toFixed(2),                    c:'var(--muted2)' },
+    // ── Volumen ──
+    { l:'LBS vendidas',            v:totalLbsVendidas.toFixed(0)+' lbs',               c:'var(--txt)' },
+    { l:'Costo / lb vendida',      v:'Q '+(totalLbsVendidas>0?costoTotal/totalLbsVendidas:0).toFixed(4), c:'var(--muted2)' },
   ];
   const kpisEl = document.getElementById('rep-kpis');
   if (kpisEl) kpisEl.innerHTML = kpis.map(k =>
@@ -10685,24 +10812,53 @@ async function antFetchTC() {
 
 function saveAnticipo() {
   const rec = DB.cotizaciones.find(c=>c.id===cotActivaId); if(!rec) { toast('⚠ No hay cotización activa',true); return; }
-  const gtq = parseFloat(v('ant-gtq')) || 0;
-  const tc  = parseFloat(v('ant-tc'))  || 0;
+  const gtq   = parseFloat(v('ant-gtq')) || 0;
+  const tc    = parseFloat(v('ant-tc'))  || 0;
   if (!gtq) { toast('⚠ Ingresa el monto enviado',true); return; }
   if (!tc)  { toast('⚠ Ingresa el TC del día',true); return; }
-  const mxn = gtq * tc;
+  const mxn   = gtq * tc;
+  const fecha = v('ant-fecha') || today();
+  const ref   = v('ant-ref');
+  const obs   = v('ant-obs');
+  const metodo= v('ant-metodo') || 'banco';
+  const antId = uid();
+
   rec.anticipos = rec.anticipos || [];
-  rec.anticipos.push({ id:uid(), ts:now(), fecha:v('ant-fecha')||today(), metodo:v('ant-metodo'), gtq, tc, mxn, ref:v('ant-ref'), obs:v('ant-obs') });
+  rec.anticipos.push({ id:antId, ts:now(), fecha, metodo, gtq, tc, mxn, ref, obs });
   if (rec.estado==='borrador') rec.estado = 'anticipos';
+
+  // ── Registrar como gasto diario contable ─────────────────────
+  if (!DB.gastosDiarios) DB.gastosDiarios = [];
+  DB.gastosDiarios.unshift({
+    id: uid(), ts: now(),
+    fecha,
+    cat:    'imp-anticipo',
+    monto:  gtq,
+    desc:   'Anticipo MX — ' + (rec.nombre||rec.id) + (ref?' · '+ref:''),
+    metodo: metodo === 'banco' ? 'banco' : 'efectivo',
+    pagadoPor: 'empresa',
+    devolucionPendiente: false,
+    cotizacionId:  rec.id,
+    anticipo_mxn:  mxn,
+    anticipo_tc:   tc,
+    anticipo_ref:  antId,   // link back to anticipo for dedup
+    foto: null,
+  });
+
   ['ant-gtq','ant-tc','ant-ref','ant-obs'].forEach(id=>set(id,''));
   set('ant-mxn-result','');
   save(); renderAnticipos(rec); renderDetResumen(rec); renderCotList();
-  toast('✓ Anticipo registrado — Q'+gtq.toFixed(2)+' → $'+mxn.toFixed(2)+' MXN');
+  toast('✓ Anticipo registrado — Q'+gtq.toFixed(2)+' → $'+mxn.toFixed(2)+' MXN · contabilizado en gastos');
 }
 
 function delAnticipo(cotId, antId) {
   const rec = DB.cotizaciones.find(c=>c.id===cotId); if(!rec) return;
   rec.anticipos = (rec.anticipos||[]).filter(a=>a.id!==antId);
   if (!rec.anticipos.length && rec.estado==='anticipos') rec.estado='borrador';
+  // Eliminar también el gasto diario vinculado
+  if (DB.gastosDiarios) {
+    DB.gastosDiarios = DB.gastosDiarios.filter(g => g.anticipo_ref !== antId);
+  }
   save(); renderAnticipos(rec); renderDetResumen(rec); renderCotList();
   toast('Anticipo eliminado');
 }
@@ -13672,13 +13828,24 @@ function toggleLicFields(show) {
 
 // ── gdCatChange — filtra subcategoría según categoría gasto ──────
 function gdCatChange() {
-  // Las categorías ya se manejan con GD_CATS. Esta función puede
-  // refrescar la descripción del gasto al cambiar de categoría.
-  const cat = document.getElementById('gd-cat')?.value || '';
-  const info = (typeof GD_CATS !== 'undefined') ? (GD_CATS[cat] || null) : null;
+  const cat    = document.getElementById('gd-cat')?.value || '';
+  const info   = GD_CATS[cat] || null;
   const descEl = document.getElementById('gd-desc');
-  if (descEl && info) {
-    descEl.placeholder = 'Descripción — ' + (info.label || cat);
+  if (descEl && info) descEl.placeholder = 'Descripción — ' + (info.label || cat);
+
+  // Mostrar selector de empleado solo para categorías de Personal
+  const esPersonal = info?.grupo === 'Personal';
+  const empRow = document.getElementById('gd-empleado-row');
+  if (empRow) empRow.style.display = esPersonal ? '' : 'none';
+
+  // Poblar select de empleados activos
+  if (esPersonal) {
+    const sel = document.getElementById('gd-empleado');
+    if (sel) {
+      const activos = (DB.empleados||[]).filter(e => e.activo !== false && e.nombre);
+      sel.innerHTML = '<option value="">— Seleccionar empleado —</option>' +
+        activos.map(e => `<option value="${e.id||e.nombre}">${e.nombre}${e.cargo?' · '+e.cargo:''}</option>`).join('');
+    }
   }
 }
 
