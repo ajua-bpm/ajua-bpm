@@ -811,7 +811,7 @@ if ('caches' in window) {
 <div style="font-size:2rem;margin-bottom:6px;">🌿</div>
 <div style="font-family:var(--fh);font-size:1.3rem;font-weight:700;color:var(--acc);">AJÚA</div>
 <div style="font-size:.72rem;color:var(--muted2);margin-top:3px;">Sistema de Control Interno</div>
-<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 04/03/2026 — build 40 · crSave bug fix definitivo</div>
+<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 06/03/2026 — build 42 · 3 bugs críticos corregidos</div>
 </div>
 <div style="margin-bottom:14px;">
 <label style="font-size:.68rem;color:var(--muted2);display:block;margin-bottom:5px;">Usuario</label>
@@ -2920,7 +2920,8 @@ if ('caches' in window) {
     <div style="font-weight:700;font-size:.82rem;margin-bottom:8px;">📸 Nivel 1 — Snapshots Locales (cada hora, últimas 24h)</div>
     <div style="font-size:.75rem;color:var(--muted);margin-bottom:10px;">Guardados automáticamente en este dispositivo. Funcionan sin internet.</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-      <button class="btn bsm" style="background:var(--green-deep);color:var(--cream);" onclick="snapSave();toast('📸 Snapshot guardado ahora')">📸 Snapshot ahora</button>
+      <button class="btn bsm" style="background:var(--green-deep);color:var(--cream);" onclick="
+    toast('📸 Snapshot guardado ahora')">📸 Snapshot ahora</button>
       <button class="btn bo bsm" onclick="showSnapshots()">📋 Ver historial snapshots</button>
     </div>
     <div id="snapshots-panel" style="display:none;margin-top:8px;"></div>
@@ -5814,8 +5815,7 @@ function pwFechaAmigable(dateStr) {
 }
 
 const DB_KEY      = 'ajua_bpm_v2';
-const SNAP_KEY    = 'ajua_bpm_snapshots'; // Historial local de snapshots
-const SNAP_MAX    = 24;                   // Máximo 24 snapshots (24 horas)
+// Snapshots locales eliminados — Firebase es el único backup
 const BACKUP_DOC  = 'backup_auto';        // Documento separado en Firebase para backups
 
 // ══════════════════════════════════════════════════════════════════
@@ -5848,21 +5848,11 @@ function _dbTotalRecords(dbObj) {
 }
 
 function snapSave() {
-  // Nivel 1: guardar snapshot local con timestamp
-  try {
-    const snaps = JSON.parse(localStorage.getItem(SNAP_KEY) || '[]');
-    snaps.unshift({ ts: Date.now(), gtTime: new Date(Date.now()-6*3600000).toISOString(), data: DB });
-    if (snaps.length > SNAP_MAX) snaps.length = SNAP_MAX; // rotar
-    localStorage.setItem(SNAP_KEY, JSON.stringify(snaps));
-  } catch(e) { console.warn('snapSave error:', e); }
+  // Snapshots locales deshabilitados — Firebase es el backup real
+  // (los snapshots locales llenaban el localStorage con copias completas de la DB)
 }
 
-function snapList() {
-  // Retorna lista de snapshots disponibles para restaurar
-  try {
-    return JSON.parse(localStorage.getItem(SNAP_KEY) || '[]');
-  } catch(e) { return []; }
-}
+function snapList() { return []; } // Snapshots locales eliminados
 
 function snapRestore(index) {
   // Restaura un snapshot específico
@@ -5920,12 +5910,10 @@ async function backupToFirebase() {
 function startAutoBackup() {
   // Primer backup a los 2 minutos de cargar (dar tiempo a Firebase)
   setTimeout(() => {
-    snapSave();
     backupToFirebase();
   }, 2 * 60 * 1000);
   // Luego cada 5 minutos — protección real de datos
   setInterval(() => {
-    snapSave();
     backupToFirebase();
     console.log('⏰ Auto-backup ejecutado:', new Date().toLocaleString('es-GT'));
   }, 5 * 60 * 1000);
@@ -6782,127 +6770,10 @@ function nomAbrir() {
 }
 
 function showSnapshots() {
-  const panel = document.getElementById('snapshots-panel');
-  if (!panel) return;
-  const snaps = snapList();
-  panel.style.display = 'block';
-  if (!snaps.length) {
-    panel.innerHTML = '<div style="font-size:.75rem;color:var(--muted);">No hay snapshots aún — se crearán automáticamente cada hora.</div>';
-    return;
-  }
-  panel.innerHTML = `
-    <table style="width:100%;font-size:.75rem;border-collapse:collapse;">
-      <thead><tr style="background:var(--s1);">
-        <th style="padding:5px 8px;text-align:left;">Fecha (GT)</th>
-        <th style="padding:5px 8px;text-align:right;">Registros</th>
-        <th style="padding:5px 8px;text-align:center;">Acción</th>
-      </tr></thead>
-      <tbody>
-      ${snaps.map((s,i) => {
-        const total = _dbTotalRecords(s.data);
-        const fecha = s.gtTime ? new Date(s.gtTime).toLocaleString('es-GT') : new Date(s.ts).toLocaleString('es-GT');
-        return `<tr style="border-bottom:1px solid var(--br);">
-          <td style="padding:5px 8px;">${fecha}${i===0?' <span style="color:var(--acc);font-weight:700;">← más reciente</span>':''}</td>
-          <td style="padding:5px 8px;text-align:right;font-weight:700;">${total}</td>
-          <td style="padding:5px 8px;text-align:center;">
-            <button class="btn bo bsm" onclick="snapRestore(${i})" style="font-size:.68rem;padding:3px 8px;">↩ Restaurar</button>
-          </td>
-        </tr>`;
-      }).join('')}
-      </tbody>
-    </table>`;
+  toast('ℹ️ Snapshots locales deshabilitados — usa Restaurar desde Firebase', false);
 }
-async function restoreFromFirebaseBackup() {
-  // Esperar Firebase si aún no está listo (máx 10s)
-  if (!_fbDb) {
-    toast('⚠ Firebase no inicializado aún — espera unos segundos', true); return;
-  }
-  if (!_fbReady) {
-    toast('⏳ Conectando con Firebase... intenta en 5 segundos', true);
-    // Esperar hasta 10s
-    for (let i = 0; i < 50; i++) {
-      await new Promise(r => setTimeout(r, 200));
-      if (_fbReady) break;
-    }
-    if (!_fbReady) { toast('⚠ Firebase no conectado — revisa internet', true); return; }
-  }
-  try {
-    const { db, doc, getDoc } = _fbDb;
-    const backupRef = doc(db, 'ajua_bpm', BACKUP_DOC);
-    let snap;
-    try { snap = await getDoc(backupRef); }
-    catch(fetchErr) { toast('⚠ Error leyendo backup: ' + fetchErr.message, true); return; }
 
-    if (!snap.exists()) {
-      // Intentar leer con getDoc directo usando los módulos globales
-      toast('⚠ No se encontró backup en Firebase. Si ves datos en Firebase Console en backup_auto, refresca la página e intenta de nuevo.', true);
-      return;
-    }
-    const data = snap.data();
-    const meta = data._backupMeta || {};
-    const total = meta.totalRecords || _dbTotalRecords(data);
-    const fecha = meta.gtTime ? new Date(meta.gtTime).toLocaleString('es-GT') : 'fecha desconocida';
-    // Show detailed counts so user can verify it's the right data
-    const counts = Object.entries(data)
-      .filter(([k,v]) => Array.isArray(v) && v.length > 0 && k !== '_backupMeta')
-      .map(([k,v]) => `${k}: ${v.length}`)
-      .join('\n');
-    if (!confirm(`¿Restaurar backup de Firebase?
 
-Fecha: ${fecha}
-Total registros: ${total}
-
-Contenido:
-${counts}
-
-Esto reemplazará los datos actuales.`)) return;
-    const clean = Object.assign({}, data);
-    delete clean._backupMeta;
-    DB = Object.assign({}, DB_DEFAULT, clean);
-    // Save to main and localStorage
-    localStorage.setItem(DB_KEY, JSON.stringify(DB));
-    snapSave();
-    await (async () => {
-      try {
-        const { setDoc } = _fbDb;
-        const mainRef = doc(db, 'ajua_bpm', 'main');
-        await setDoc(mainRef, DB);
-        console.log('✅ main restaurado desde backup_auto');
-      } catch(e) { console.warn('Error escribiendo main:', e); }
-    })();
-    try { renderAll(); } catch(e) {}
-    try { populateAllRespSelects(); } catch(e) {}
-    try { updateDash(); } catch(e) {}
-    toast(`✅ Backup restaurado — ${total} registros`);
-  } catch(e) {
-    toast('⚠ Error restaurando backup: ' + e.message, true);
-    console.error('restoreFromFirebaseBackup error:', e);
-  }
-}
-// ── DB default structure ─────────────────────────────────────────
-const DB_DEFAULT = {tl:[],dt:[],bl:[],fum:[],rod:[],cap:[],ee:[],al:[],vis:[],vp:[],bas:[],lp:[],
-  iproductos:[],ipresentaciones:[],iclientes:[],ientradas:[],isalidas:[],cotizaciones:[],
-  proveedores:[],vgtVentas:[],vintVentas:[],maquila:[],usuarios:[],
-  pedidosWalmart:[],clientes:[],conductores:[],empleados:[],
-  gastosSemanales:[],
-  gastosDiarios:[],
-  cotizadorRapido:[] };  // gastos diarios con foto de boleta
-
-let DB = JSON.parse(JSON.stringify(DB_DEFAULT));
-
-// ── Firebase state ────────────────────────────────────────────────
-let _fbDb    = null;
-let _fbReady = false;
-let _fbSaving= false;
-let _fbSaveQ = null;
-
-// ── Load from localStorage first (instant, works offline) ─────────
-try {
-  const s = localStorage.getItem(DB_KEY);
-  if (s) { const p = JSON.parse(s); DB = Object.assign(DB, p); }
-} catch(e) {}
-
-// ── Firebase status indicator ─────────────────────────────────────
 function fbShowStatus(status) {
   const el = document.getElementById('fb-status');
   if (!el) return;
@@ -7009,9 +6880,8 @@ async function initFirebase(firebaseConfig) {
               const clean = Object.assign({}, backupData);
               delete clean._backupMeta;
               DB = Object.assign({}, DB_DEFAULT, clean);
-              localStorage.setItem(DB_KEY, JSON.stringify(DB));
-              snapSave();
-              // Restaurar main desde backup
+              try { localStorage.setItem(DB_KEY, JSON.stringify(DB)); } catch(e) { console.warn("localStorage full:", e); }
+    // Restaurar main desde backup
               try { await setDoc(docRef, DB); console.log('✅ main restaurado desde backup_auto'); } catch(e) { console.warn('Error restaurando main:', e); }
               fbShowStatus('online');
               // Notificar al usuario
@@ -7032,7 +6902,7 @@ async function initFirebase(firebaseConfig) {
                 const currentTotal2 = _dbTotalRecords(DB);
                 if (currentTotal2 > 20 && cloudTotal2 < currentTotal2 * 0.4) { console.warn('🚨 onSnapshot BLOQUEADO post-restore'); return; }
                 Object.keys(cloud).forEach(k => { DB[k] = cloud[k]; });
-                localStorage.setItem(DB_KEY, JSON.stringify(DB));
+                try { localStorage.setItem(DB_KEY, JSON.stringify(DB)); } catch(e) { console.warn("localStorage full:", e); }
                 try { updateDash(); } catch(e) {}
                 fbShowStatus('online');
               });
@@ -7046,9 +6916,10 @@ async function initFirebase(firebaseConfig) {
 
       // ── Merge: cloud es la fuente de verdad COMPLETA ────────────
       DB = Object.assign({}, DB_DEFAULT, cloud);
-      localStorage.setItem(DB_KEY, JSON.stringify(DB));
-      // 🛡️ Snapshot inmediato al cargar datos reales de Firebase
-      snapSave();
+      try { localStorage.setItem(DB_KEY, JSON.stringify(DB)); } catch(e) { console.warn("localStorage full:", e); }
+      _lastKnownTotal = _dbTotalRecords(DB); // fijar baseline sin snapshots
+      // Liberar espacio: eliminar snapshots locales de versiones anteriores
+      try { localStorage.removeItem('ajua_bpm_snapshots'); } catch(e) {}
       const counts = Object.entries(DB)
         .filter(([,v]) => Array.isArray(v))
         .map(([k,v]) => `${k}:${v.length}`)
@@ -7112,7 +6983,7 @@ async function initFirebase(firebaseConfig) {
       }
       // Merge: cloud gana sobre DB actual
       Object.keys(cloud).forEach(k => { DB[k] = cloud[k]; });
-      localStorage.setItem(DB_KEY, JSON.stringify(DB));
+      try { localStorage.setItem(DB_KEY, JSON.stringify(DB)); } catch(e) { console.warn("localStorage full:", e); }
       try { updateDash(); } catch(e) {}
       try {
         const active = document.querySelector('.sec.active');
@@ -7151,17 +7022,18 @@ function save() {
 
   // ══ GUARD 2: Nunca subir menos datos de los que había ════════════
   // Compara contra el snapshot local más reciente
+  // Guard: nunca subir a Firebase si los datos bajaron más del 40% sin explicación
+  // Usa _lastKnownTotal en memoria (no localStorage) para evitar falsos positivos
   let blockedByGuard = false;
   try {
-    const snaps = snapList();
-    if (snaps.length > 0) {
-      const lastGoodTotal = _dbTotalRecords(snaps[0].data);
-      // Bloquear si la DB actual tiene menos del 60% del último snapshot conocido
-      // (umbral más estricto — antes era 30% y solo con >50 registros)
-      if (lastGoodTotal > 10 && currentTotal < lastGoodTotal * 0.6) {
-        console.error(`🚨 FIREBASE BLOQUEADO: actual(${currentTotal}) < 60% de snapshot(${lastGoodTotal})`);
+    if (typeof _lastKnownTotal === 'number' && _lastKnownTotal > 10) {
+      if (currentTotal < _lastKnownTotal * 0.6) {
+        console.error(`🚨 FIREBASE BLOQUEADO: actual(${currentTotal}) < 60% de último conocido(${_lastKnownTotal})`);
         blockedByGuard = true;
       }
+    }
+    if (!blockedByGuard && currentTotal > (_lastKnownTotal||0)) {
+      _lastKnownTotal = currentTotal; // actualizar máximo conocido
     }
   } catch(e) {}
 
@@ -9336,7 +9208,7 @@ const BPM_MODULOS = [
   { id:'tl',  nombre:'Limpieza Transporte',        icono:'🚛',  tipo:'diario',   seccion:'transporte-limpieza',color:'#00a86b' },
   { id:'maq', nombre:'Gastos Generales (Maquila)', icono:'⚙️', tipo:'maestro',  seccion:'maquila',           color:'#4a9eff' },
   { id:'dt',  nombre:'Despacho Transporte',        icono:'📦',  tipo:'entrega',  seccion:'despacho',          color:'#f26822' },
-  { id:'vgt', nombre:'Ventas GT / Walmart',        icono:'🛒',  tipo:'entrega',  seccion:'ventas-gt',         color:'#f26822' },
+  { id:'vgt', nombre:'Ventas GT / Walmart',        icono:'🛒',  tipo:'entrega',  seccion:'pedidos-walmart',    color:'#f26822' },
   { id:'ee',  nombre:'Empleados Enfermos',         icono:'🏥',  tipo:'eventual', seccion:'empleados-enfermos',color:'#888' },
   { id:'cap', nombre:'Registro Capacitación',      icono:'📚',  tipo:'eventual', seccion:'capacitacion',      color:'#888' },
   { id:'vis', nombre:'Visitas',                    icono:'👤',  tipo:'eventual', seccion:'visitas',           color:'#888' },
@@ -14716,8 +14588,7 @@ function limpiarBaseOperativa() {
   )) return;
 
   // 🛡️ Backup automático ANTES de limpiar
-  snapSave();
-  backupToFirebase().catch(()=>{});
+    backupToFirebase().catch(()=>{});
 
   maqCuentas = {};
   DB.tl   = []; DB.dt  = []; DB.bl  = []; DB.fum = [];
@@ -14736,8 +14607,7 @@ function limpiarBaseOperativa() {
 
 function limpiarTodo() {
   // 🛡️ Backup automático ANTES de limpiar TODO
-  snapSave();
-  backupToFirebase().catch(()=>{});
+    backupToFirebase().catch(()=>{});
 
   if (!confirm(
     '💣 LIMPIAR TODO\n\n' +
@@ -14858,8 +14728,6 @@ async function bulkImportExcel(input) {
     const errors = [];
 
     // Guardar snapshot antes de modificar nada
-    snapSave();
-
     // ── HELPER: leer hoja como array de objetos ──────────────────
     function readSheet(sheetName) {
       // Buscar hoja por nombre parcial (sin emojis)
@@ -15146,7 +15014,7 @@ async function bulkImportExcel(input) {
     // ── Guardar todo ─────────────────────────────────────────────
     bulkShowProgress('💾 Guardando en Firebase...', 97);
     save();
-    snapSave(); // snapshot post-carga
+    // snapshot post-carga
     try { renderAll(); } catch(e) {}
     try { populateAllRespSelects(); } catch(e) {}
     try { renderEmpleados(); } catch(e) {}
@@ -15523,34 +15391,158 @@ function crRender() {
     aceptada:  '<span class="chip ck">✅ Aceptada</span>',
     rechazada: '<span class="chip cr">❌ Rechazada</span>',
   };
-  tb.innerHTML = list.map(r => `<tr>
-    <td>${r.fechaOferta||'—'}</td>
-    <td style="font-weight:600;">${escHtml(r.cliente||'—')}</td>
-    <td><span class="chip cb" style="font-size:.6rem;">${TIPO_LBL[r.tipo]||r.tipo}</span></td>
-    <td style="font-size:.72rem;color:var(--muted2);">${escHtml(r.ref||'—')}</td>
-    <td style="font-size:.68rem;">${r.tipo==='guatecompras'&&r.checklist?.length ? (() => {
-      const tot=r.checklist.length, listos=r.checklist.filter(c=>c.estado==='listo').length, faltan=r.checklist.filter(c=>c.estado==='falta').length;
-      const pct=Math.round(listos/tot*100);
-      return `<span title="${listos}/${tot} requisitos listos" style="display:inline-flex;align-items:center;gap:4px;">
-        <span style="width:40px;height:6px;background:var(--br);border-radius:3px;display:inline-block;overflow:hidden;">
-          <span style="width:${pct}%;height:100%;background:${pct===100?'var(--acc)':'var(--warn)'};display:block;"></span>
-        </span>
-        <span style="color:${faltan>0?'var(--danger)':pct===100?'var(--acc)':'var(--warn)'};">${listos}/${tot}</span>
-      </span>`;
-    })() : '—'}</td>
-    <td>${r.fechaEntrega||'—'}</td>
-    <td style="text-align:right;font-weight:700;color:var(--green-deep);">Q ${(r.totalVenta||0).toFixed(2)}</td>
-    <td>${EST_CHIP[r.estado]||EST_CHIP.pendiente}</td>
-    <td style="white-space:nowrap;">
-      ${r.estado==='pendiente'?`
-        <button class="btn bo bsm" onclick="crSetEstado('${r.id}','aceptada')" style="font-size:.62rem;color:var(--acc);border-color:var(--acc);">✅ Aceptar</button>
-        <button class="btn bo bsm" onclick="crSetEstado('${r.id}','rechazada')" style="font-size:.62rem;color:var(--danger);border-color:var(--danger);">❌ Rechazar</button>
-      `:''}
-      <button class="btn bo bsm" onclick="crEdit('${r.id}')" style="font-size:.62rem;">✏</button>
-      <button class="btn bo bsm" onclick="del('cotizadorRapido','${r.id}')" style="font-size:.62rem;border-color:var(--danger);color:var(--danger);">✕</button>
-    </td>
-  </tr>`).join('');
+  tb.innerHTML = list.map(r => {
+    // Checklist summary
+    const chk = r.checklist||[];
+    const chkHtml = r.tipo==='guatecompras' && chk.length
+      ? (() => {
+          const tot=chk.length, ok=chk.filter(c=>c.estado==='listo').length, mal=chk.filter(c=>c.estado==='falta').length;
+          const pct=Math.round(ok/tot*100);
+          const color = mal>0?'var(--danger)':pct===100?'var(--acc)':'var(--warn)';
+          return `<span style="display:inline-flex;align-items:center;gap:4px;font-size:.65rem;">
+            <span style="width:36px;height:5px;background:var(--br);border-radius:3px;display:inline-block;overflow:hidden;">
+              <span style="width:${pct}%;height:100%;background:${color};display:block;"></span>
+            </span>
+            <span style="color:${color};font-weight:700;">${ok}/${tot}</span>
+          </span>`;
+        })()
+      : '—';
+
+    return `<tr style="cursor:pointer;" onclick="crToggleDetalle('${r.id}')" title="Click para ver detalle">
+      <td>${r.fechaOferta||'—'}</td>
+      <td style="font-weight:600;">${escHtml(r.cliente||'—')}</td>
+      <td><span class="chip cb" style="font-size:.6rem;">${TIPO_LBL[r.tipo]||r.tipo}</span></td>
+      <td style="font-size:.72rem;color:var(--muted2);">${escHtml(r.ref||'—')}</td>
+      <td style="font-size:.68rem;">${chkHtml}</td>
+      <td>${r.fechaEntrega||'—'}</td>
+      <td style="text-align:right;font-weight:700;color:var(--green-deep);">Q ${(r.totalVenta||0).toFixed(2)}</td>
+      <td>${EST_CHIP[r.estado]||EST_CHIP.pendiente}</td>
+      <td style="white-space:nowrap;" onclick="event.stopPropagation()">
+        ${r.estado==='pendiente'?`
+          <button class="btn bo bsm" onclick="crSetEstado('${r.id}','aceptada')" style="font-size:.62rem;color:var(--acc);border-color:var(--acc);">✅</button>
+          <button class="btn bo bsm" onclick="crSetEstado('${r.id}','rechazada')" style="font-size:.62rem;color:var(--danger);border-color:var(--danger);">❌</button>
+        `:''}
+        <button class="btn bo bsm" onclick="crEdit('${r.id}')" style="font-size:.62rem;" title="Editar">✏</button>
+        <button class="btn bo bsm" onclick="del('cotizadorRapido','${r.id}')" style="font-size:.62rem;border-color:var(--danger);color:var(--danger);" title="Eliminar">✕</button>
+      </td>
+    </tr>
+    <tr id="cr-det-${r.id}" style="display:none;">
+      <td colspan="9" style="padding:0;background:var(--s2);border-bottom:2px solid var(--br);">
+        <div style="padding:14px 18px;">
+          ${crDetalleHTML(r)}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
 }
+
+function crToggleDetalle(id) {
+  const row = document.getElementById('cr-det-'+id);
+  if (!row) return;
+  const open = row.style.display !== 'none';
+  // Close all others
+  document.querySelectorAll('[id^="cr-det-"]').forEach(r => r.style.display = 'none');
+  if (!open) row.style.display = '';
+}
+
+function crDetalleHTML(r) {
+  const EST_CHK = {
+    pendiente: { ico:'⏳', color:'var(--warn)' },
+    listo:     { ico:'✅', color:'var(--acc)' },
+    falta:     { ico:'❌', color:'var(--danger)' },
+  };
+  let html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;flex-wrap:wrap;">';
+
+  // Left: productos + gastos
+  html += '<div>';
+  html += '<div style="font-size:.65rem;font-weight:700;color:var(--muted2);letter-spacing:.07em;text-transform:uppercase;margin-bottom:8px;">Productos</div>';
+  html += '<table style="width:100%;font-size:.72rem;border-collapse:collapse;">';
+  html += '<thead><tr style="color:var(--muted2);"><th style="text-align:left;padding:3px 6px;">Producto</th><th style="text-align:right;padding:3px 6px;">Cant</th><th style="text-align:right;padding:3px 6px;">Costo</th><th style="text-align:right;padding:3px 6px;">Precio</th><th style="text-align:right;padding:3px 6px;">Total</th></tr></thead>';
+  html += '<tbody>';
+  (r.productos||[]).forEach(p => {
+    html += `<tr style="border-top:1px solid var(--br);">
+      <td style="padding:4px 6px;">${escHtml(p.nombre||p.desc||'—')}</td>
+      <td style="text-align:right;padding:4px 6px;">${p.cant||0} ${p.unidad||''}</td>
+      <td style="text-align:right;padding:4px 6px;">Q ${(p.costo||0).toFixed(2)}</td>
+      <td style="text-align:right;padding:4px 6px;">Q ${(p.precio||0).toFixed(2)}</td>
+      <td style="text-align:right;padding:4px 6px;font-weight:700;">Q ${((p.precio||0)*(p.cant||0)).toFixed(2)}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  if ((r.gastosVarios||[]).length) {
+    html += '<div style="margin-top:10px;font-size:.65rem;font-weight:700;color:var(--muted2);letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px;">Gastos Varios</div>';
+    (r.gastosVarios||[]).forEach(g => {
+      html += `<div style="display:flex;justify-content:space-between;font-size:.72rem;padding:3px 0;border-bottom:1px solid var(--br);">
+        <span>${escHtml(g.desc||g.nombre||'—')}</span>
+        <span style="font-weight:700;">Q ${(g.monto||0).toFixed(2)}</span>
+      </div>`;
+    });
+  }
+  // Totals
+  html += `<div style="margin-top:10px;display:flex;gap:16px;font-size:.75rem;">
+    <span>Costo: <strong>Q ${(r.totalCosto||0).toFixed(2)}</strong></span>
+    <span>Venta: <strong style="color:var(--acc);">Q ${(r.totalVenta||0).toFixed(2)}</strong></span>
+    <span>Margen: <strong style="color:${(r.margen||0)>=15?'var(--acc)':'var(--warn)'};">${(r.margen||0).toFixed(1)}%</strong></span>
+    ${r.comisionMonto>0?`<span>Comisión: <strong>Q ${r.comisionMonto.toFixed(2)}</strong></span>`:''}
+  </div>`;
+  html += '</div>';
+
+  // Right: checklist + obs
+  html += '<div>';
+  if (r.requerimientos) {
+    html += `<div style="font-size:.65rem;font-weight:700;color:var(--muted2);letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px;">Requerimientos</div>`;
+    html += `<div style="font-size:.72rem;background:var(--s1);border:1px solid var(--br);border-radius:6px;padding:8px;margin-bottom:12px;white-space:pre-wrap;">${escHtml(r.requerimientos)}</div>`;
+  }
+  if (r.tipo==='guatecompras' && (r.checklist||[]).length) {
+    html += '<div style="font-size:.65rem;font-weight:700;color:var(--muted2);letter-spacing:.07em;text-transform:uppercase;margin-bottom:8px;">📋 Checklist Requisitos</div>';
+    const tot=r.checklist.length, ok=r.checklist.filter(c=>c.estado==='listo').length;
+    html += `<div style="margin-bottom:8px;font-size:.7rem;">
+      <div style="width:100%;height:7px;background:var(--br);border-radius:4px;overflow:hidden;margin-bottom:4px;">
+        <div style="width:${Math.round(ok/tot*100)}%;height:100%;background:${ok===tot?'var(--acc)':'var(--warn)'};transition:.3s;"></div>
+      </div>
+      <span style="color:var(--muted2);">${ok} de ${tot} requisitos listos</span>
+    </div>`;
+    r.checklist.forEach(c => {
+      const e = EST_CHK[c.estado]||EST_CHK.pendiente;
+      html += `<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;margin-bottom:4px;border-radius:5px;border:1px solid var(--br);font-size:.72rem;">
+        <button onclick="crChecklistToggleInline('${r.id}','${c.id}',event)"
+          style="background:none;border:none;cursor:pointer;font-size:.85rem;padding:0;flex-shrink:0;"
+          title="Click para cambiar estado">${e.ico}</button>
+        <span style="flex:1;color:${c.estado==='falta'?'var(--danger)':c.estado==='listo'?'var(--muted2)':'var(--txt)'};
+          ${c.estado==='listo'?'text-decoration:line-through;':''}">${escHtml(c.texto)}</span>
+        <span style="font-size:.6rem;color:${e.color};font-weight:700;">${c.estado.toUpperCase()}</span>
+      </div>`;
+    });
+  }
+  if (r.obs) {
+    html += `<div style="margin-top:10px;font-size:.65rem;font-weight:700;color:var(--muted2);letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px;">Observaciones</div>`;
+    html += `<div style="font-size:.72rem;color:var(--muted2);white-space:pre-wrap;">${escHtml(r.obs)}</div>`;
+  }
+  html += `<div style="margin-top:14px;display:flex;gap:8px;">
+    <button class="btn bo bsm" onclick="crEdit('${r.id}');crToggleDetalle('${r.id}')" style="font-size:.7rem;">✏️ Editar oferta completa</button>
+  </div>`;
+  html += '</div>';
+  html += '</div>';
+  return html;
+}
+
+function crChecklistToggleInline(offerId, itemId, event) {
+  event.stopPropagation();
+  const r = (DB.cotizadorRapido||[]).find(x => x.id === offerId);
+  if (!r) return;
+  const item = (r.checklist||[]).find(c => c.id === itemId);
+  if (!item) return;
+  const ciclo = { pendiente:'listo', listo:'falta', falta:'pendiente' };
+  item.estado = ciclo[item.estado]||'pendiente';
+  save();
+  crRender();
+  // Re-open the detail row
+  setTimeout(() => {
+    const row = document.getElementById('cr-det-'+offerId);
+    if (row) row.style.display = '';
+  }, 50);
+}
+
 
 function crExportCSV() {
   const list = (DB.cotizadorRapido||[]).slice().sort((a,b)=>(b.fechaOferta||'').localeCompare(a.fechaOferta||''));
