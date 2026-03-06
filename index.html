@@ -811,7 +811,7 @@ if ('caches' in window) {
 <div style="font-size:2rem;margin-bottom:6px;">🌿</div>
 <div style="font-family:var(--fh);font-size:1.3rem;font-weight:700;color:var(--acc);">AJÚA</div>
 <div style="font-size:.72rem;color:var(--muted2);margin-top:3px;">Sistema de Control Interno</div>
-<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 06/03/2026 — build 42 · 3 bugs críticos corregidos</div>
+<div style="font-size:.62rem;color:var(--muted2);margin-top:4px;opacity:.7;">v 06/03/2026 — build 43 · DB declaration fix · login funcional</div>
 </div>
 <div style="margin-bottom:14px;">
 <label style="font-size:.68rem;color:var(--muted2);display:block;margin-bottom:5px;">Usuario</label>
@@ -3946,9 +3946,24 @@ if ('caches' in window) {
 
 <script>
 
-
-
-
+// ══ DB — declaración global temprana ══════════════════════════════
+// Garantiza que DB exista antes de que cualquier código inline lo use.
+// Firebase sobreescribe esto con los datos reales al cargar.
+const DB_DEFAULT = {
+  tl:[],dt:[],bl:[],fum:[],rod:[],cap:[],ee:[],al:[],vis:[],vp:[],bas:[],lp:[],
+  conductores:[], clientes:[], empleados:[], calibraciones:[],
+  iproductos:[], ipresentaciones:[], iclientes:[], ientradas:[], isalidas:[],
+  cotizaciones:[], vgtVentas:[], vintVentas:[], maquila:[], usuarios:[],
+  gastosDiarios:[], gastosSemanales:[], cotizadorRapido:[],
+  pedidosWalmart:[], proveedores:[],
+};
+let DB = JSON.parse(JSON.stringify(DB_DEFAULT));
+// Intentar cargar desde localStorage de inmediato (antes de Firebase)
+try {
+  const _ls = localStorage.getItem('ajua_bpm_v2');
+  if (_ls) { const _parsed = JSON.parse(_ls); if (_parsed && typeof _parsed === 'object') DB = Object.assign({}, DB_DEFAULT, _parsed); }
+} catch(e) {}
+// ══════════════════════════════════════════════════════════════════
 
 
 // ── PWA Install ───────────────────────────────────────────────────
@@ -5818,6 +5833,10 @@ const DB_KEY      = 'ajua_bpm_v2';
 // Snapshots locales eliminados — Firebase es el único backup
 const BACKUP_DOC  = 'backup_auto';        // Documento separado en Firebase para backups
 
+// 🔒 FLAG CRÍTICO: save() bloqueado hasta que Firebase confirme que cargó datos
+// Evita que una DB vacía al inicio sobreescriba Firebase antes de que lleguen los datos
+let _fbLoaded = false;  // true solo cuando initFirebase terminó de leer y mergeó datos
+
 // ══════════════════════════════════════════════════════════════════
 // 🛡️ SISTEMA DE PROTECCIÓN ANTI-PÉRDIDA — 3 NIVELES
 // ══════════════════════════════════════════════════════════════════
@@ -6890,6 +6909,7 @@ async function initFirebase(firebaseConfig) {
                 toast('🔄 Auto-restauración: ' + restored + ' registros recuperados desde backup', false);
               }, 2000);
               _fbReady = true;
+              _fbLoaded = true; // ✅ Firebase cargó (auto-restore) — save() ya puede escribir
               startAutoBackup();
               try { authEnsureDB(); } catch(e) {}
               try { renderAll(); } catch(e) {}
@@ -6918,6 +6938,7 @@ async function initFirebase(firebaseConfig) {
       DB = Object.assign({}, DB_DEFAULT, cloud);
       try { localStorage.setItem(DB_KEY, JSON.stringify(DB)); } catch(e) { console.warn("localStorage full:", e); }
       _lastKnownTotal = _dbTotalRecords(DB); // fijar baseline sin snapshots
+      _fbLoaded = true; // ✅ Firebase cargó — save() ya puede escribir
       // Liberar espacio: eliminar snapshots locales de versiones anteriores
       try { localStorage.removeItem('ajua_bpm_snapshots'); } catch(e) {}
       const counts = Object.entries(DB)
@@ -6937,6 +6958,7 @@ async function initFirebase(firebaseConfig) {
     }
 
     _fbReady = true;
+    _fbLoaded = true; // ✅ Firebase listo — save() ya puede escribir
     startAutoBackup(); // 🛡️ Iniciar sistema de backup automático
     // ── authEnsureDB DESPUÉS de cargar cloud ──────────────────────
     try { authEnsureDB(); } catch(e) {}
@@ -7007,6 +7029,7 @@ async function initFirebase(firebaseConfig) {
     fbShowStatus('online');
   } catch(err) {
     console.error('❌ Firebase init error:', err);
+    _fbLoaded = true; // ✅ Fallback offline — permitir save() a localStorage al menos
     fbShowStatus('offline');
     try { authEnsureDB(); } catch(e) {}
   }
@@ -7016,6 +7039,14 @@ const EMPLEADOS=['MARIA VILLANUEVA','EDUARDO GARCIA','HENRY CU','OSCAR BA','AURE
 
 function save() {
   const currentTotal = _dbTotalRecords(DB);
+
+  // ══ GUARD 0: Nunca guardar nada hasta que Firebase haya cargado ══
+  // Esto evita que una DB vacía al inicio sobreescriba datos reales
+  if (!_fbLoaded) {
+    // Solo log — no hacer nada, ni siquiera localStorage
+    console.warn('⏸ save() bloqueado — Firebase aún no terminó de cargar');
+    return;
+  }
 
   // ══ GUARD 1: Nunca subir a Firebase antes de que cargue ══════════
   const canWriteFirebase = _fbReady;
