@@ -3241,16 +3241,15 @@ function salReadXML(input) {
         const nroLinea   = attr(item, 'NumeroLinea') || (idx+1);
 
         const cant    = parseFloat(cantStr)   || 1;
-        // PrecioUnitario en FEL SAT = precio SIN IVA por unidad
-        // Total en FEL SAT = cant × precioUnitario (sin IVA)
-        // Para el form de salidas necesitamos precio CON IVA
-        const precioSinIVA  = parseFloat(precioStr) || (parseFloat(totalStr) / cant) || 0;
-        const precioConIVA  = precioSinIVA * 1.12;
-
-        // MontoGravable e impuesto por línea
-        const montoGravable = parseFloat(txt(item, 'MontoGravable'))  || 0;
-        const montoImpuesto = parseFloat(txt(item, 'MontoImpuesto'))  || 0;
+        // En FEL SAT Guatemala: Total = cant × PrecioUnitario, y Total YA INCLUYE IVA
+        // MontoGravable = Total / 1.12 (base sin IVA)
+        // MontoImpuesto = MontoGravable × 0.12
         const totalLinea    = parseFloat(totalStr) || 0;
+        const montoGravable = parseFloat(txt(item, 'MontoGravable')) || (totalLinea / 1.12);
+        const montoImpuesto = parseFloat(txt(item, 'MontoImpuesto')) || (montoGravable * 0.12);
+        // precioConIVA = Total / Cantidad (precio unitario ya con IVA)
+        const precioConIVA  = cant > 0 ? totalLinea / cant : parseFloat(precioStr) || 0;
+        const precioSinIVA  = precioConIVA / 1.12;
 
         if (!desc && cant === 0) return; // saltar líneas vacías
 
@@ -3682,7 +3681,10 @@ function invGetStock() {
       const id = ensureEntry(l.productoId, l.productoNombre);
       const isUnit = stock[id]?.esPorUnidad;
       if (isUnit) {
-        stock[id].unidadesSalida = (stock[id].unidadesSalida || 0) + (l.bultos || 0);
+        // Para productos por unidad: deducir bultos × unidadesPorBulto (qty de la presentación)
+        const pres = (DB.ipresentaciones || []).find(p => p.id === l.presentacionId);
+        const unidadesPorBulto = (pres?.qty && pres.qty > 0) ? pres.qty : 1;
+        stock[id].unidadesSalida = (stock[id].unidadesSalida || 0) + (l.bultos || 0) * unidadesPorBulto;
       } else {
         stock[id].lbsSalida += l.totalLbs || 0;
       }
