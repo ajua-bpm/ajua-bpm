@@ -3226,6 +3226,34 @@ if ('caches' in window) {
 
 
 
+<!-- ══ PANEL DE BACKUPS ══════════════════════════════════════════ -->
+<div class="sec" id="sec-backups" style="display:none;">
+<div class="ph"><h1>🛡️ Backups & Seguridad</h1><p>Snapshots automáticos cada 6 horas en localStorage + descarga diaria + Firebase.</p></div>
+
+<div class="card" style="margin-bottom:14px;">
+  <div class="ct">📥 Acciones manuales</div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+    <button class="btn" onclick="backupSnapshotLS()" style="background:var(--acc);color:#fff;font-size:.78rem;">💾 Crear snapshot ahora</button>
+    <button class="btn bo" onclick="backupDownloadJSON(true)" style="font-size:.78rem;">📥 Descargar JSON ahora</button>
+    <label class="btn bo" style="cursor:pointer;font-size:.78rem;">
+      📂 Restaurar desde archivo
+      <input type="file" accept=".json" style="display:none" onchange="backupRestoreFile(this)">
+    </label>
+  </div>
+  <div style="font-size:.72rem;color:var(--muted2);">
+    ⏱ <span id="backup-next-time">Calculando...</span> · Los snapshots se guardan en este navegador
+  </div>
+</div>
+
+<div class="card">
+  <div class="ct">🕐 Historial de snapshots (últimas 48h)</div>
+  <div id="backup-snaps-list" style="margin-top:10px;">
+    <div style="font-size:.75rem;color:var(--muted2);">Cargando...</div>
+  </div>
+</div>
+</div>
+<!-- ════════════════════════════════════════════════════════════════ -->
+
 <script>
 
 // ══ DB — declaración global temprana ══════════════════════════════
@@ -4253,6 +4281,8 @@ window.addEventListener('DOMContentLoaded', () => {
   <script src="/src/modules/bulk/bulk.js"></script>
   <script src="/src/modules/cotizador/cotizador.js"></script>
   <script src="/src/modules/banco-import/banco-import.js"></script>
+  <script src="/src/modules/al-edit/al-edit.js"></script>
+  <script src="/src/modules/backup-auto/backup-auto.js"></script>
   <!-- ══════════════════════════════════════════════════════════════ -->
 
 <script>
