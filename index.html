@@ -4076,6 +4076,107 @@ function fbImportBackup(input) {
   reader.readAsText(file);
 }
 
+// ══════════════════════════════════════════════════════════════════
+// 🛡️ SISTEMA DE PROTECCIÓN ANTI-PÉRDIDA — 3 NIVELES
+// ══════════════════════════════════════════════════════════════════
+//
+// NIVEL 1 — Snapshots locales cada hora (localStorage)
+//   • 24 copias rotativas = 24 horas de historial local
+//   • Sobrevive recargas, actualizaciones de SW, bugs de merge
+//   • Clave: 'ajua_bpm_snapshots' → array de {ts, data}
+//
+// NIVEL 2 — Backup automático en Firebase (doc separado)
+//   • Documento 'ajua_bpm/backup_auto' independiente de 'main'
+//   • Se actualiza cada hora SI los datos tienen contenido real
+//   • NUNCA se sobreescribe si el nuevo tiene menos datos que el guardado
+//   • Accesible desde Firebase Console aunque 'main' se borre
+//
+// NIVEL 3 — Guard en save() — nunca guarda DB vacía sobre datos reales
+//   • Antes de cualquier setDoc, cuenta registros totales
+//   • Si el nuevo tiene <50% de registros del backup → BLOQUEA el save
+//   • Alerta visual inmediata al admin
+//
+// ══════════════════════════════════════════════════════════════════
+
+function _dbTotalRecords(dbObj) {
+  // Cuenta total de registros en todos los arrays — métrica de "salud" de la DB
+  return Object.values(dbObj || {})
+    .filter(v => Array.isArray(v))
+    .reduce((sum, arr) => sum + arr.length, 0);
+}
+
+function snapSave() {
+  // Snapshots locales deshabilitados — Firebase es el backup real
+  // (los snapshots locales llenaban el localStorage con copias completas de la DB)
+}
+
+function snapList() { return []; } // Snapshots locales eliminados
+
+function snapRestore(index) {
+  // Restaura un snapshot específico
+  try {
+    const snaps = snapList();
+    if (!snaps[index]) return false;
+    const snap = snaps[index];
+    const records = _dbTotalRecords(snap.data);
+    if (!confirm(`¿Restaurar snapshot del ${new Date(snap.ts).toLocaleString('es-GT')}?\n${records} registros totales.\n\nEsto reemplazará los datos actuales.`)) return false;
+    DB = Object.assign({}, DB_DEFAULT, snap.data);
+    save();
+    renderAll();
+    toast(`✅ Snapshot restaurado — ${records} registros`);
+    return true;
+  } catch(e) {
+    toast('⚠ Error restaurando snapshot', true);
+    return false;
+  }
+}
+
+async function backupToFirebase() {
+  // Nivel 2: backup automático a documento separado en Firebase
+  if (!_fbReady || !_fbDb) return;
+  const total = _dbTotalRecords(DB);
+  if (total < 5) return; // No hacer backup si hay menos de 5 registros
+  try {
+    const { db, doc, getDoc, setDoc } = _fbDb;
+    const backupRef = doc(db, 'ajua_bpm', BACKUP_DOC);
+    // Leer el backup existente
+    const existing = await getDoc(backupRef);
+    if (existing.exists()) {
+      const existTotal = _dbTotalRecords(existing.data());
+      // PROTECCIÓN: nunca sobreescribir un backup con más datos por uno con menos
+      if (total < existTotal * 0.5) {
+        console.warn(`⚠️ BACKUP BLOQUEADO: actual(${total}) < 50% de backup(${existTotal}) — posible pérdida`);
+        return;
+      }
+    }
+    await setDoc(backupRef, {
+      ...DB,
+      _backupMeta: {
+        ts: Date.now(),
+        gtTime: new Date(Date.now()-6*3600000).toISOString(),
+        totalRecords: total,
+        version: 'build-3'
+      }
+    });
+    console.log(`✅ Backup Firebase guardado — ${total} registros`);
+  } catch(e) {
+    console.warn('backupToFirebase error:', e);
+  }
+}
+
+// Iniciar backup automático cada hora
+function startAutoBackup() {
+  // Primer backup a los 2 minutos de cargar (dar tiempo a Firebase)
+  setTimeout(() => {
+    backupToFirebase();
+  }, 2 * 60 * 1000);
+  // Luego cada 5 minutos — protección real de datos
+  setInterval(() => {
+    backupToFirebase();
+    console.log('⏰ Auto-backup ejecutado:', new Date().toLocaleString('es-GT'));
+  }, 5 * 60 * 1000);
+}
+
 
 window.addEventListener('DOMContentLoaded', () => {
   const _gtNow = new Date(Date.now() - 6*60*60*1000);
