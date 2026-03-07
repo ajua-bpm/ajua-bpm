@@ -4170,18 +4170,6 @@ function startAutoBackup() {
   }, 5 * 60 * 1000);
 }
 
-
-  <!-- ═══ MÓDULOS AJÚA BPM — src/modules/ ═══════════════════════ -->
-  <script src="/src/modules/walmart/walmart.js"></script>
-  <script src="/src/modules/gastos-diarios/gastos-diarios.js"></script>
-  <script src="/src/modules/reportes/reportes.js"></script>
-  <script src="/src/modules/nomina/nomina.js"></script>
-  <script src="/src/modules/bpm/bpm.js"></script>
-  <script src="/src/modules/helpers/helpers.js"></script>
-  <script src="/src/modules/gastos-generales/gastos-generales.js"></script>
-  <script src="/src/modules/bulk/bulk.js"></script>
-  <script src="/src/modules/cotizador/cotizador.js"></script>
-  <!-- ══════════════════════════════════════════════════════════════ -->
 window.addEventListener('DOMContentLoaded', () => {
   const _gtNow = new Date(Date.now() - 6*60*60*1000);
   const td = _gtNow.toISOString().split('T')[0]; // Guatemala UTC-6
@@ -4231,6 +4219,19 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 </script>
+
+  <!-- ═══ MÓDULOS AJÚA BPM — src/modules/ ═══════════════════════ -->
+  <script src="/src/modules/walmart/walmart.js"></script>
+  <script src="/src/modules/gastos-diarios/gastos-diarios.js"></script>
+  <script src="/src/modules/reportes/reportes.js"></script>
+  <script src="/src/modules/nomina/nomina.js"></script>
+  <script src="/src/modules/bpm/bpm.js"></script>
+  <script src="/src/modules/helpers/helpers.js"></script>
+  <script src="/src/modules/gastos-generales/gastos-generales.js"></script>
+  <script src="/src/modules/bulk/bulk.js"></script>
+  <script src="/src/modules/cotizador/cotizador.js"></script>
+  <!-- ══════════════════════════════════════════════════════════════ -->
+
 <script>
   // SERVICE WORKER DESACTIVADO — index siempre fresco del servidor
   if ('serviceWorker' in navigator) {
