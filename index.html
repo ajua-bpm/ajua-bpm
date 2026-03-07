@@ -1182,6 +1182,21 @@ if ('caches' in window) {
 <div class="sec" id="sec-gastos-diarios">
 <div class="ph"><h1>💸 Gastos Diarios</h1><p>Registro de gastos operativos por día — gasolina, basura, mantenimiento, servicios. Reporte semanal y mensual acumulado.</p></div>
 
+<!-- Importar desde banco -->
+<div class="card" style="margin-bottom:14px;background:rgba(0,122,82,.04);border:1.5px dashed var(--acc);">
+  <div class="ct" style="color:var(--acc);">🏦 Importar Movimientos Bancarios</div>
+  <div style="font-size:.78rem;color:var(--muted2);margin-bottom:10px;">Cargá el Excel descargado de tu banco (formato estándar con columnas Fecha, Débito, Crédito). Solo se importan débitos como gastos.</div>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+    <label class="btn" style="cursor:pointer;background:var(--acc);color:#fff;font-size:.78rem;padding:8px 16px;border-radius:6px;">
+      📂 Seleccionar Excel del banco
+      <input type="file" accept=".xlsx,.xls" style="display:none" onchange="bancoImportExcel(this)">
+    </label>
+    <span style="font-size:.72rem;color:var(--muted2);">Solo importa gastos nuevos — no duplica por referencia bancaria</span>
+  </div>
+  <div id="banco-import-progress" style="display:none;margin-top:10px;"></div>
+  <div id="banco-import-result"   style="display:none;margin-top:10px;"></div>
+</div>
+
 <!-- Formulario nuevo gasto -->
 <div class="card" style="margin-bottom:14px;">
   <div class="ct">➕ Registrar Gasto</div>
@@ -4237,6 +4252,7 @@ window.addEventListener('DOMContentLoaded', () => {
   <script src="/src/modules/gastos-generales/gastos-generales.js"></script>
   <script src="/src/modules/bulk/bulk.js"></script>
   <script src="/src/modules/cotizador/cotizador.js"></script>
+  <script src="/src/modules/banco-import/banco-import.js"></script>
   <!-- ══════════════════════════════════════════════════════════════ -->
 
 <script>
