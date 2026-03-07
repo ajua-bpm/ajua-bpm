@@ -42,12 +42,15 @@ async function bancoImportExcel(input) {
     const ws  = wb.Sheets[wb.SheetNames[0]];
     const raw = window.XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
 
-    // Encontrar fila de headers (buscar "Fecha")
+    // Encontrar fila de headers: debe tener "fecha" Y ("debito" o "credito")
     let headerIdx = -1;
     for (let i = 0; i < Math.min(raw.length, 15); i++) {
-      if (raw[i].some(c => String(c).toLowerCase().includes('fecha'))) { headerIdx = i; break; }
+      const rowLower = raw[i].map(c => String(c||'').toLowerCase());
+      const hasFecha  = rowLower.some(c => c === 'fecha' || c.includes('fecha'));
+      const hasDebito = rowLower.some(c => c.includes('debito') || c.includes('débito') || c.includes('credito') || c.includes('crédito'));
+      if (hasFecha && hasDebito) { headerIdx = i; break; }
     }
-    if (headerIdx < 0) { toast('⚠ No se encontró fila de encabezados', true); return; }
+    if (headerIdx < 0) { toast('⚠ No se encontró fila de encabezados con Fecha y Débito/Crédito', true); return; }
 
     const headers = raw[headerIdx].map(h => String(h||'').toLowerCase());
     const colFecha   = headers.findIndex(h => h.includes('fecha'));
