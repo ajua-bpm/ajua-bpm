@@ -1031,21 +1031,6 @@ if ('caches' in window) {
 </div>
 <div class="tw">
 <div class="twh"><span class="twt">Historial</span><button class="btn bo bsm" onclick="exportCSV('tl')">↓ CSV</button></div>
-<div class="fa" style="margin-bottom:10px;gap:8px;align-items:flex-end;flex-wrap:wrap;">
-  <div class="fg" style="min-width:130px;">
-    <label>Ver período</label>
-    <select id="tl-filtro" onchange="bpmFiltroRender('tl')" style="font-size:.8rem;">
-      <option value="semana">Esta semana</option>
-      <option value="mes">Este mes</option>
-      <option value="todo">Todo el historial</option>
-      <option value="custom">Rango personalizado</option>
-    </select>
-  </div>
-  <div id="tl-filtro-custom" style="display:none;gap:6px;display:flex;flex-wrap:wrap;">
-    <div class="fg"><label>Desde</label><input type="date" id="tl-filtro-desde" onchange="bpmFiltroRender('tl')"></div>
-    <div class="fg"><label>Hasta</label><input type="date" id="tl-filtro-hasta" onchange="bpmFiltroRender('tl')"></div>
-  </div>
-</div>
 <div style="overflow-x:auto;">
 <table><thead><tr><th>Fecha</th><th>Responsable</th><th>Hora</th><th>Placa</th><th>Tipo</th><th>Ext.Furgón</th><th>Carrocería</th><th>Barrido</th><th>Desinfección</th><th>Cabina</th><th>Fotos</th><th>Obs</th><th></th></tr></thead>
 <tbody id="tl-tbody"></tbody></table>
@@ -1157,21 +1142,6 @@ if ('caches' in window) {
 <div class="tw">
 <div class="twh"><span class="twt">Historial de Inspecciones</span><button class="btn bo bsm" onclick="exportCSV('dt')">↓ CSV</button></div>
 <div style="overflow-x:auto;">
-<div class="fa" style="margin-bottom:10px;gap:8px;align-items:flex-end;flex-wrap:wrap;">
-  <div class="fg" style="min-width:130px;">
-    <label>Ver período</label>
-    <select id="dt-filtro" onchange="bpmFiltroRender('dt')" style="font-size:.8rem;">
-      <option value="semana">Esta semana</option>
-      <option value="mes">Este mes</option>
-      <option value="todo">Todo el historial</option>
-      <option value="custom">Rango personalizado</option>
-    </select>
-  </div>
-  <div id="dt-filtro-custom" style="display:none;gap:6px;display:flex;flex-wrap:wrap;">
-    <div class="fg"><label>Desde</label><input type="date" id="dt-filtro-desde" onchange="bpmFiltroRender('dt')"></div>
-    <div class="fg"><label>Hasta</label><input type="date" id="dt-filtro-hasta" onchange="bpmFiltroRender('dt')"></div>
-  </div>
-</div>
 <table><thead><tr><th>Fecha</th><th>Hora</th><th>Placa</th><th>Conductor</th><th>Cliente/Destino</th><th>Carga</th><th>Temp</th><th>Resultado</th><th>Autorizado</th><th>Fotos</th><th></th></tr></thead>
 <tbody id="dt-tbody"></tbody></table>
 </div>
@@ -1284,21 +1254,6 @@ if ('caches' in window) {
 </div>
 <div class="tw">
 <div class="twh"><span class="twt">Historial</span><button class="btn bo bsm" onclick="exportCSV('bl')">↓ CSV</button></div>
-<div class="fa" style="margin-bottom:10px;gap:8px;align-items:flex-end;flex-wrap:wrap;">
-  <div class="fg" style="min-width:130px;">
-    <label>Ver período</label>
-    <select id="bl-filtro" onchange="bpmFiltroRender('bl')" style="font-size:.8rem;">
-      <option value="semana">Esta semana</option>
-      <option value="mes">Este mes</option>
-      <option value="todo">Todo el historial</option>
-      <option value="custom">Rango personalizado</option>
-    </select>
-  </div>
-  <div id="bl-filtro-custom" style="display:none;gap:6px;display:flex;flex-wrap:wrap;">
-    <div class="fg"><label>Desde</label><input type="date" id="bl-filtro-desde" onchange="bpmFiltroRender('bl')"></div>
-    <div class="fg"><label>Hasta</label><input type="date" id="bl-filtro-hasta" onchange="bpmFiltroRender('bl')"></div>
-  </div>
-</div>
 <table><thead><tr><th>Fecha</th><th>Responsable</th><th>Hora</th><th>Cumpl.</th><th>No Cumpl.</th><th>N/A</th><th>Obs.</th><th></th></tr></thead>
 <tbody id="bl-tbody"></tbody></table>
 </div>
@@ -1333,21 +1288,6 @@ if ('caches' in window) {
 </div>
 <div class="tw">
 <div class="twh"><span class="twt">Cronograma 2026</span><button class="btn bo bsm" onclick="exportCSV('fum')">↓ CSV</button></div>
-<div class="fa" style="margin-bottom:10px;gap:8px;align-items:flex-end;flex-wrap:wrap;">
-  <div class="fg" style="min-width:130px;">
-    <label>Ver período</label>
-    <select id="fum-filtro" onchange="bpmFiltroRender('fum')" style="font-size:.8rem;">
-      <option value="semana">Esta semana</option>
-      <option value="mes">Este mes</option>
-      <option value="todo">Todo el historial</option>
-      <option value="custom">Rango personalizado</option>
-    </select>
-  </div>
-  <div id="fum-filtro-custom" style="display:none;gap:6px;display:flex;flex-wrap:wrap;">
-    <div class="fg"><label>Desde</label><input type="date" id="fum-filtro-desde" onchange="bpmFiltroRender('fum')"></div>
-    <div class="fg"><label>Hasta</label><input type="date" id="fum-filtro-hasta" onchange="bpmFiltroRender('fum')"></div>
-  </div>
-</div>
 <table><thead><tr><th>Instalación</th><th>Mes</th><th>Semana</th><th>Responsable</th><th>Fecha</th><th>Tipo</th><th>Estado</th><th>Obs</th><th></th></tr></thead>
 <tbody id="fum-tbody"></tbody></table>
 </div>
@@ -1392,21 +1332,6 @@ if ('caches' in window) {
 <div class="tw">
 <div class="twh"><span class="twt">Historial de Revisiones</span><button class="btn bo bsm" onclick="exportCSV('rod')">↓ CSV</button></div>
 <div style="overflow-x:auto;">
-<div class="fa" style="margin-bottom:10px;gap:8px;align-items:flex-end;flex-wrap:wrap;">
-  <div class="fg" style="min-width:130px;">
-    <label>Ver período</label>
-    <select id="rod-filtro" onchange="bpmFiltroRender('rod')" style="font-size:.8rem;">
-      <option value="semana">Esta semana</option>
-      <option value="mes">Este mes</option>
-      <option value="todo">Todo el historial</option>
-      <option value="custom">Rango personalizado</option>
-    </select>
-  </div>
-  <div id="rod-filtro-custom" style="display:none;gap:6px;display:flex;flex-wrap:wrap;">
-    <div class="fg"><label>Desde</label><input type="date" id="rod-filtro-desde" onchange="bpmFiltroRender('rod')"></div>
-    <div class="fg"><label>Hasta</label><input type="date" id="rod-filtro-hasta" onchange="bpmFiltroRender('rod')"></div>
-  </div>
-</div>
 <table>
 <thead><tr><th>Fecha</th><th>Hora</th><th>Responsable</th><th>Revisadas</th><th>En lugar</th><th>Novedades</th><th>Resultado</th><th>Obs.</th><th></th></tr></thead>
 <tbody id="rod-tbody"></tbody>
@@ -1626,21 +1551,6 @@ if ('caches' in window) {
 <button class="btn bo bsm" onclick="exportCSV('al')">↓ CSV</button>
 </div>
 </div>
-<div class="fa" style="margin-bottom:10px;gap:8px;align-items:flex-end;flex-wrap:wrap;">
-  <div class="fg" style="min-width:130px;">
-    <label>Ver período</label>
-    <select id="al-filtro" onchange="bpmFiltroRender('al')" style="font-size:.8rem;">
-      <option value="semana">Esta semana</option>
-      <option value="mes">Este mes</option>
-      <option value="todo">Todo el historial</option>
-      <option value="custom">Rango personalizado</option>
-    </select>
-  </div>
-  <div id="al-filtro-custom" style="display:none;gap:6px;display:flex;flex-wrap:wrap;">
-    <div class="fg"><label>Desde</label><input type="date" id="al-filtro-desde" onchange="bpmFiltroRender('al')"></div>
-    <div class="fg"><label>Hasta</label><input type="date" id="al-filtro-hasta" onchange="bpmFiltroRender('al')"></div>
-  </div>
-</div>
 <table>
 <thead><tr><th>Fecha</th><th>Turno</th><th>Ingreso</th><th>Salida</th><th>Empleados</th><th>Lavados completos</th><th>Excel</th><th></th></tr></thead>
 <tbody id="al-tbody"></tbody>
@@ -1736,21 +1646,6 @@ if ('caches' in window) {
 <button class="btn bo bsm" onclick="exportCSV('bas')">↓ CSV</button>
 </div>
 <div style="overflow-x:auto;">
-<div class="fa" style="margin-bottom:10px;gap:8px;align-items:flex-end;flex-wrap:wrap;">
-  <div class="fg" style="min-width:130px;">
-    <label>Ver período</label>
-    <select id="bas-filtro" onchange="bpmFiltroRender('bas')" style="font-size:.8rem;">
-      <option value="semana">Esta semana</option>
-      <option value="mes">Este mes</option>
-      <option value="todo">Todo el historial</option>
-      <option value="custom">Rango personalizado</option>
-    </select>
-  </div>
-  <div id="bas-filtro-custom" style="display:none;gap:6px;display:flex;flex-wrap:wrap;">
-    <div class="fg"><label>Desde</label><input type="date" id="bas-filtro-desde" onchange="bpmFiltroRender('bas')"></div>
-    <div class="fg"><label>Hasta</label><input type="date" id="bas-filtro-hasta" onchange="bpmFiltroRender('bas')"></div>
-  </div>
-</div>
 <table>
 <thead><tr><th>Fecha</th><th>Hora</th><th>Responsable</th><th>Báscula 1</th><th>Báscula 2</th><th>Báscula 3</th><th>Báscula 4</th><th>Resultado</th><th>Obs.</th><th></th></tr></thead>
 <tbody id="bas-tbody"></tbody>
@@ -6036,7 +5931,7 @@ function startAutoBackup() {
   setTimeout(() => {
     backupToFirebase();
   }, 2 * 60 * 1000);
-  // Luego cada 30 minutos — balance entre protección y rendimiento
+  // Luego cada 5 minutos — protección real de datos
   setInterval(() => {
     backupToFirebase();
     console.log('⏰ Auto-backup ejecutado:', new Date().toLocaleString('es-GT'));
@@ -7142,60 +7037,6 @@ async function initFirebase(firebaseConfig) {
 
 const EMPLEADOS=['MARIA VILLANUEVA','EDUARDO GARCIA','HENRY CU','OSCAR BA','AURELIO CHOC','ROLANDO ICAL','ROLANDO CHOCOJ','MANUEL SALAZAR','BYRON FAJARDO','RICARDO SAGASTUME','ANGELES QUEZADA'];
 
-// ══ FILTRO UNIVERSAL BPM ═══════════════════════════════════════
-function bpmGetRango(secId) {
-  const tipo = document.getElementById(secId + '-filtro')?.value || 'semana';
-  const gt   = new Date(Date.now() - 6*3600000);
-  const hoy  = gt.toISOString().split('T')[0];
-  const customDiv = document.getElementById(secId + '-filtro-custom');
-  if (customDiv) customDiv.style.display = tipo === 'custom' ? 'flex' : 'none';
-  if (tipo === 'semana') {
-    const dow = gt.getDay();
-    const lunes = new Date(gt); lunes.setDate(gt.getDate() - ((dow+6)%7));
-    const sab   = new Date(lunes); sab.setDate(lunes.getDate() + 6);
-    return { desde: lunes.toISOString().split('T')[0], hasta: sab.toISOString().split('T')[0] };
-  }
-  if (tipo === 'mes') {
-    return { desde: hoy.slice(0,7) + '-01', hasta: new Date(gt.getFullYear(), gt.getMonth()+1, 0).toISOString().split('T')[0] };
-  }
-  if (tipo === 'custom') {
-    return {
-      desde: document.getElementById(secId + '-filtro-desde')?.value || '2020-01-01',
-      hasta: document.getElementById(secId + '-filtro-hasta')?.value || hoy
-    };
-  }
-  return { desde: '2020-01-01', hasta: '2099-12-31' };
-}
-
-function bpmFiltroRender(secId) {
-  const { desde, hasta } = bpmGetRango(secId);
-  const dbKey = secId; // 'tl','dt','bl','fum','rod','al','bas'
-  const tb = document.getElementById(secId + '-tbody');
-  if (!tb) return;
-  const data = (DB[dbKey] || []).filter(r => {
-    const f = r.fecha || r.ts?.slice(0,10) || '';
-    return f >= desde && f <= hasta;
-  }).sort((a,b) => (b.fecha||b.ts||'').localeCompare(a.fecha||a.ts||''));
-  if (!data.length) {
-    tb.innerHTML = `<tr><td colspan="20"><div class="empty">Sin registros en este período</div></td></tr>`;
-    return;
-  }
-  // Re-use existing render logic by temporarily swapping DB[dbKey]
-  const original = DB[dbKey];
-  DB[dbKey] = data;
-  try {
-    if      (secId === 'tl')  renderTL();
-    else if (secId === 'dt')  renderDT();
-    else if (secId === 'bl')  renderBL();
-    else if (secId === 'fum') renderFum();
-    else if (secId === 'rod') renderRod();
-    else if (secId === 'al')  renderAL();
-    else if (secId === 'bas') renderBas();
-  } finally {
-    DB[dbKey] = original; // siempre restaurar
-  }
-}
-
 function save() {
   const currentTotal = _dbTotalRecords(DB);
 
@@ -7418,7 +7259,26 @@ function chipEstado(e){
   const m={baja:'<span class="chip cr">BAJA</span>',reintegrado:'<span class="chip ck">REINTEGRADO</span>',seguimiento:'<span class="chip cw">SEGUIMIENTO</span>',sin_actividad:'<span class="chip ck">SIN ACT.</span>',con_actividad:'<span class="chip cr">CON ACT.</span>',cebo_repuesto:'<span class="chip cw">CEBO REP.</span>',trampa_dañada:'<span class="chip cr">DAÑADA</span>',programada:'<span class="chip cb">PROGRAMADA</span>',ok:'<span class="chip ck">OK</span>',alerta:'<span class="chip cw">ALERTA</span>'};
   return m[e]||`<span class="chip cb">${e||'—'}</span>`;
 }
-function del(key,id){DB[key]=DB[key].filter(r=>r.id!==id);save();renderAll();}
+function del(key,id){
+  DB[key]=DB[key].filter(r=>r.id!==id);
+  save();
+  // Render solo la sección afectada, no todo
+  const keyToSec = {tl:'transporte-limpieza',dt:'despacho',bl:'bodega-limpieza',
+    rod:'roedores',fum:'fumigacion',al:'acceso-lavado',bas:'basculas',
+    vis:'visitas',vp:'vidrio',cap:'capacitacion',lp:'lavado-prod',
+    gastosDiarios:'gastos-diarios',empleados:'empleados-db',
+    iproductos:'inv-config',ipresentaciones:'inv-config',
+    pedidosWalmart:'pedidos-walmart',ientradas:'inv-entrada',isalidas:'inv-salida'};
+  const secId = keyToSec[key];
+  if (secId) {
+    const active = document.querySelector('.sec.active');
+    if (active && active.id === 'sec-' + secId) {
+      try { show(secId); } catch(e) { renderAll(); }
+    }
+  } else {
+    try { renderAll(); } catch(e) {}
+  }
+}
 
 const TL_ITEMS=[
   {cat:'EXTERIOR',item:'Lavado de Furgón'},
@@ -8140,6 +8000,10 @@ function delEmpleado(id){
 }
 
 function populateAllRespSelects(){
+  // Cache: solo reconstruir si cambió la lista de empleados
+  const _empHash = (DB.empleados||[]).length + '|' + (DB.empleados||[]).map(e=>e.id).join(',');
+  if (window._popRespHash === _empHash) return; // sin cambios — saltar
+  window._popRespHash = _empHash;
   const activos = (DB.empleados||[]).filter(e=>e.estado==='activo').sort((a,b)=>a.nombre.localeCompare(b.nombre));
   const optsAll = '<option value="">— Seleccionar responsable —</option>' +
     activos.map(e => '<option value="' + e.nombre + '">' + e.nombre + (e.cargo?' · '+e.cargo:'') + '</option>').join('');
