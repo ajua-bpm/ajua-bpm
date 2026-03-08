@@ -6036,7 +6036,7 @@ function startAutoBackup() {
   setTimeout(() => {
     backupToFirebase();
   }, 2 * 60 * 1000);
-  // Luego cada 5 minutos — protección real de datos
+  // Luego cada 30 minutos — balance entre protección y rendimiento
   setInterval(() => {
     backupToFirebase();
     console.log('⏰ Auto-backup ejecutado:', new Date().toLocaleString('es-GT'));
