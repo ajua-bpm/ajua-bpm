@@ -922,7 +922,8 @@ if ('caches' in window) {
 <div class="ns">⚙ Operaciones</div>
 <div class="ni" onclick="show('maquila',this)"><span class="ico">⚙️</span>Gastos Generales</div>
 <div class="ni" onclick="show('gastos-diarios',this)"><span class="ico">💸</span>Gastos Diarios</div>
-<div class="ni" onclick="show('cotizador-rapido',this)"><span class="ico">💼</span>Cotizador Rápido</div> <div class="ni" id="nav-guatecompras" onclick="show('guatecompras',this)"><span class="ico">🏛️</span>Guatecompras</div>
+<div class="ni" onclick="show('cotizador-rapido',this)"><span class="ico">💼</span>Cotizador Rápido</div>
+<div class="ni" id="nav-guatecompras" onclick="show('guatecompras',this)"><span class="ico">🏛️</span>Guatecompras</div>
 <div class="ns">🏭 Cotizador</div>
 <div class="ni" onclick="show('inv-cotizador',this);cotMainTab('interno',this)"><span class="ico">🏭</span>Cotizador Interno</div>
 <div class="ni" onclick="show('inv-cotizador',this);cotMainTab('terceros',this)"><span class="ico">🤝</span>Cotizador Terceros</div>
@@ -2146,6 +2147,17 @@ if ('caches' in window) {
   </table>
 </div>
 </div>
+<!-- ══ GUATECOMPRAS ════════════════════════════════════════════ -->
+<div id="sec-guatecompras" class="sec">
+  <div class="sh">
+    <div class="st">🏛️ Guatecompras</div>
+    <div class="ss">Concursos · Seguimiento · Documentos · Cotizador</div>
+  </div>
+  <div class="tabs" id="gc-tabs"></div>
+  <div id="gc-panel" style="margin-top:4px;"></div>
+  <div id="gc-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;align-items:center;justify-content:center;" onclick="if(event.target===this)gcCerrarModal()"></div>
+</div>
+
 <div class="sec" id="sec-cotizador-rapido">
 <div class="ph">
   <div class="ph-left"><h1>💼 Cotizador Rápido</h1><p>Ofertas comerciales · Guatecompras · Clientes privados — seguimiento de aceptación y calendario</p></div>
@@ -15697,5 +15709,6 @@ window.addEventListener('DOMContentLoaded', () => {
     if (btn) btn.style.display = 'none';
   });
   </script>
+<script src="src/modules/guatecompras/guatecompras.js"></script>
 </body>
 </html>
