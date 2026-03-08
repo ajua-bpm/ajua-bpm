@@ -922,7 +922,7 @@ if ('caches' in window) {
 <div class="ns">⚙ Operaciones</div>
 <div class="ni" onclick="show('maquila',this)"><span class="ico">⚙️</span>Gastos Generales</div>
 <div class="ni" onclick="show('gastos-diarios',this)"><span class="ico">💸</span>Gastos Diarios</div>
-<div class="ni" onclick="show('cotizador-rapido',this)"><span class="ico">💼</span>Cotizador Rápido</div>
+<div class="ni" onclick="show('cotizador-rapido',this)"><span class="ico">💼</span>Cotizador Rápido</div> <div class="ni" id="nav-guatecompras" onclick="show('guatecompras',this)"><span class="ico">🏛️</span>Guatecompras</div>
 <div class="ns">🏭 Cotizador</div>
 <div class="ni" onclick="show('inv-cotizador',this);cotMainTab('interno',this)"><span class="ico">🏭</span>Cotizador Interno</div>
 <div class="ni" onclick="show('inv-cotizador',this);cotMainTab('terceros',this)"><span class="ico">🤝</span>Cotizador Terceros</div>
@@ -3954,7 +3954,7 @@ const DB_DEFAULT = {
   conductores:[], clientes:[], empleados:[], calibraciones:[],
   iproductos:[], ipresentaciones:[], iclientes:[], ientradas:[], isalidas:[],
   cotizaciones:[], vgtVentas:[], vintVentas:[], maquila:[], usuarios:[],
-  gastosDiarios:[], gastosSemanales:[], cotizadorRapido:[],
+  gastosDiarios:[], gastosSemanales:[], cotizadorRapido:[], gcConcursos:[],
   pedidosWalmart:[], proveedores:[],
 };
 let DB = JSON.parse(JSON.stringify(DB_DEFAULT));
@@ -4231,7 +4231,7 @@ const AUTH_ALL_MODULES = [
   'capacitacion','empleados-enfermos','acceso-lavado','visitas','vidrio','basculas',
   'lavado-prod','inv-stock','inv-entrada','inv-cotizador','maquila','gastos-diarios','cotizador-rapido','inv-salida',
   'ventas-gt','ventas-int','reporte','inv-trazabilidad','inv-config',
-  'proveedores','pedidos-walmart','empleados-db','usuarios',
+  'proveedores','pedidos-walmart','empleados-db','usuarios',  'guatecompras',
 ];
 
 // Modules unlocked by role by default
@@ -7160,6 +7160,8 @@ function show(id,el){closeNavOnMobile();
         buildLPTanques(); renderLP(); populateAllRespSelects(); break;
       case 'fumigacion':
         renderFum(); populateAllRespSelects(); break;
+      case 'guatecompras':
+        renderGC(); break;
       case 'capacitacion':
         renderCap(); break;
       case 'empleados-enfermos':
