@@ -240,7 +240,7 @@ function gcRenderCards(list){
         <span class="nog">NOG: ${c.nog||'—'}</span>
         ${prods?`<div class="oprods"><strong>Renglones:</strong> ${prods}</div>`:''}
         ${c.notas?`<div style="margin-top:5px;font-size:.72rem;color:#607D8B;font-style:italic">📝 ${c.notas.slice(0,80)}${c.notas.length>80?'…':''}</div>`:''}
-        ${(venc&&c.sePresento===undefined)?`<div style="margin-top:7px;padding:6px 10px;background:#FBE9E7;border:1px solid #FFAB91;border-radius:5px;font-size:.72rem;color:#BF360C;font-weight:700">⚠️ Fecha vencida — ¿se presentó? <button class='btn bsm' style='margin-left:8px;background:#BF360C;color:#fff;border:none;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:.68rem;' onclick='event.stopPropagation();gcTogglePresento("${c.id}")'>Marcar ahora</button></div>`:''}`
+        ${(venc&&c.sePresento===undefined)?'<div style="margin-top:7px;padding:5px 10px;background:#FBE9E7;border:1px solid #FFAB91;border-radius:5px;font-size:.72rem;color:#BF360C;font-weight:700">⚠️ Vencido sin confirmar — usar botón arriba para marcar</div>':''}
       </div>
     </div>`;
   }).join('');
