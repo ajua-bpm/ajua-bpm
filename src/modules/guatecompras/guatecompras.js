@@ -24,7 +24,43 @@ const GC_DOCS_BASE=[
   {id:'foto_prod',label:'Fotografías del producto',cat:'tecnico'},
   {id:'reg_san',label:'Registro Sanitario (si aplica)',cat:'tecnico'},
 ];
-const GC_SCRIPT=`var gc={url:window.location.href,nog:'',titulo:'',entidad:'',monto:'',fechaPub:'',fechaCierre:'',modalidad:'',productos:[]};var m=location.href.match(/nog=([\w-]+)/i)||location.href.match(/noc=(\d+)/i);if(m)gc.nog=m[1];var all=Array.from(document.querySelectorAll('body *')).filter(function(el){return el.children.length===0&&el.innerText.trim().length>0;});for(var i=0;i<all.length;i++){var t=all[i].innerText.trim();if(/^Descripci/.test(t)&&all[i+1])gc.titulo=all[i+1].innerText.trim();if(/^Modalidad/.test(t)&&all[i+1])gc.modalidad=all[i+1].innerText.trim();if(/^Entidad:/i.test(t)&&all[i+1])gc.entidad=all[i+1].innerText.trim();if(/^Monto|^Valor estimado/i.test(t)&&all[i+1])gc.monto=all[i+1].innerText.trim();if(/^Fecha de publicaci/i.test(t)&&all[i+1])gc.fechaPub=all[i+1].innerText.trim();if(/^Fecha.*presentaci|^Fecha.*cierre/i.test(t)&&all[i+1])gc.fechaCierre=all[i+1].innerText.trim();}var seen=[];document.querySelectorAll('table').forEach(function(tbl){var hs=Array.from(tbl.querySelectorAll('th')).map(function(h){return h.innerText.trim();});if(!hs.some(function(h){return/descripci|producto|cantidad|nombre|rengl/i.test(h);}))return;tbl.querySelectorAll('tr').forEach(function(row){var cells=Array.from(row.querySelectorAll('td'));if(cells.length<2)return;var obj={};cells.forEach(function(c,i){if(hs[i])obj[hs[i]]=c.innerText.trim();});var desc=obj['Descripción']||obj['Descripcion']||obj['Nombre del Producto']||obj['Nombre']||Object.values(obj).find(function(v){return v&&v.length>3&&!/^\d+$/.test(v)})||'';var cant=obj['Cantidad']||obj['cantidad']||'';if(!desc||desc.length<2)return;if(/tipo de producto|unidad de medida|acciones|nombre cantidad/i.test(desc))return;var key=desc.toLowerCase().trim()+'|'+cant;if(seen.indexOf(key)>=0)return;seen.push(key);obj._desc=desc;obj._cant=cant;obj._num=obj['Renglón']||obj['No.']||obj['#']||'';gc.productos.push(obj);});});copy(JSON.stringify(gc,null,2));alert('AJUA OK!\nNOG: '+gc.nog+'\nTítulo: '+gc.titulo.substring(0,55)+'\nProductos únicos: '+gc.productos.length);`;
+const GC_SCRIPT=(function(){
+  var s='(function(){try{';
+  s+='var gc={url:window.location.href,nog:"",titulo:"",entidad:"",monto:"",fechaPub:"",fechaCierre:"",modalidad:"",productos:[]};';
+  s+='var mn=location.href.match(/nog=([\\w-]+)/i)||location.href.match(/noc=(\\d+)/i);if(mn)gc.nog=mn[1];';
+  s+='var all=Array.from(document.querySelectorAll("body *")).filter(function(el){return el.children.length===0&&el.innerText.trim().length>0;});';
+  s+='for(var i=0;i<all.length-1;i++){var t=all[i].innerText.trim();var tn=all[i+1].innerText.trim();';
+  s+='if(/^Descripci/.test(t))gc.titulo=tn;';
+  s+='if(/^Modalidad/.test(t))gc.modalidad=tn;';
+  s+='if(/^Entidad:/i.test(t))gc.entidad=tn;';
+  s+='if(/^(Monto|Valor estimado)/i.test(t))gc.monto=tn;';
+  s+='if(/^Fecha de publicaci/i.test(t))gc.fechaPub=tn;';
+  s+='if(/Fecha.*(presentaci|cierre)/i.test(t))gc.fechaCierre=tn;}';
+  s+='var seen=[];';
+  s+='Array.from(document.querySelectorAll("table")).forEach(function(tbl){';
+  s+='var hs=Array.from(tbl.querySelectorAll("th")).map(function(h){return h.innerText.trim();});';
+  s+='var hdSet=hs.map(function(h){return h.toLowerCase();});';
+  s+='if(!hdSet.some(function(h){return /descripci|producto|cantidad|nombre|rengl/.test(h);}))return;';
+  s+='Array.from(tbl.querySelectorAll("tr")).forEach(function(row){';
+  s+='var cells=Array.from(row.querySelectorAll("td,th")).map(function(c){return c.innerText.trim();});';
+  s+='if(cells.length<2)return;';
+  s+='var obj={};cells.forEach(function(v,j){if(hs[j])obj[hs[j]]=v;});';
+  s+='var desc=obj["Descripcion"]||obj["Nombre del Producto"]||obj["Nombre"]||Object.values(obj).find(function(v){return v&&v.length>3&&!/^\\d+$/.test(v);})||"";';
+  s+='var cant=obj["Cantidad"]||obj["cantidad"]||"";';
+  s+='if(!desc||desc.length<2)return;';
+  s+='if(/^(nombre|cantidad|descripcion|tipo|unidad|medida|acciones|no\\.|renglon|producto|#)$/i.test(desc.trim()))return;';
+  s+='var key=desc.toLowerCase().trim()+"|"+cant;';
+  s+='if(seen.indexOf(key)>=0)return;seen.push(key);';
+  s+='var num=obj["Renglon"]||obj["No."]||obj["#"]||"";';
+  s+='gc.productos.push({_desc:desc,_cant:cant,_num:num});';
+  s+='});});';
+  s+='var json=JSON.stringify(gc,null,2);';
+  s+='try{copy(json);}catch(e){}';
+  s+='console.log("AJUA_DATA:",json);';
+  s+='alert("AJUA OK!\\nNOG: "+gc.nog+"\\nTitulo: "+gc.titulo.substring(0,55)+"\\nProductos: "+gc.productos.length);';
+  s+='}catch(e){alert("ERROR: "+e.message);console.error(e);}})();';
+  return s;
+})();
 
 let _gcTab='concursos',_gcSegId='',_gcDocsId='',_gcCotId='',_gcEditId=null;
 
@@ -290,8 +326,9 @@ function gcVer(id){
   </div>`);
 }
 
-function gcOpenModal(html){const m=document.getElementById('gc-modal');if(!m)return;m.innerHTML=html;m.classList.add('open');}
-function gcCM(){const m=document.getElementById('gc-modal');if(m)m.classList.remove('open');}
+function gcOpenModal(html){const m=document.getElementById('gc-modal');if(!m)return;m.innerHTML=html;m.style.display='flex';m.classList.add('open');}
+function gcCM(){const m=document.getElementById('gc-modal');if(!m)return;m.style.display='none';m.classList.remove('open');}
+function gcCerrarModal(){gcCM();}
 
 // ── TAB 2: SEGUIMIENTO ────────────────────────────────────────
 function gcTabSeguimiento(p){
@@ -648,13 +685,13 @@ function gcImportF(data){
     url:data.url||'',etapa:'Identificado',notas:'',
     docs:GC_DOCS_BASE.map(d=>({...d,estado:'pendiente',obs:''})),
     renglones:(data.productos||[]).map((p,i)=>({id:uid(),
-      renglon:parseInt(p._num||p['Renglón']||p['No.'||'#']||i+1)||i+1,
-      desc:p._desc||p.Descripción||p.descripcion||p['Nombre del Producto']||p['Nombre']||Object.values(p).find(v=>v&&v.length>3&&!/^\d+$/.test(v))||'',
+      renglon:parseInt(p._num||p['Renglón']||p['No.']||p['#']||i+1)||i+1,
+      desc:p._desc||p['Descripción']||p['Descripcion']||p['descripcion']||p['Nombre del Producto']||p['Nombre']||Object.values(p).find(v=>v&&v.length>3&&!/^\d+$/.test(v))||'',
       especificaciones:p['Especificaciones']||p.especificaciones||p['Descripción Técnica']||'',
       cantidad:parseFloat(p._cant||p.Cantidad||p.cantidad||0)||0,
       unidad:p.Unidad||p['Unidad de Medida']||p.unidad||'Unidad',
       precioUnit:0,costoUnit:0,totalQ:0,totalCosto:0,
-    })),actividades:[],
+    })).filter(r=>r.desc&&r.desc.length>1&&!/^(nombre|cantidad|descripci[oó]n?|tipo de producto|unidad(?: de medida)?|acciones|no\.|rengl[oó]n|#|producto|costo|precio|total)$/i.test(r.desc.trim())),actividades:[],
   };
   DB.gcConcursos.unshift(rec);save();
   const st=document.getElementById('gc-is');
