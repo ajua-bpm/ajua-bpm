@@ -777,22 +777,17 @@ if ('caches' in window) {
   caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
 }
 </script>
-<!-- Firebase ESM — v10.12 con persistencia moderna -->
+<!-- Firebase ESM — v10.12 carga simple (sin persistencia, sin snapshot) -->
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-  import { getFirestore, doc, getDoc, setDoc, onSnapshot,
-           initializeFirestore, persistentLocalCache, persistentMultipleTabManager }
+  import { getFirestore, doc, getDoc, setDoc }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
   window._fbInitializeApp = initializeApp;
   window._fbGetFirestore  = getFirestore;
-  window._fbInitFirestore = initializeFirestore;
-  window._fbPersistCache  = persistentLocalCache;
-  window._fbMultiTab      = persistentMultipleTabManager;
   window._fbDoc           = doc;
   window._fbGetDoc        = getDoc;
   window._fbSetDoc        = setDoc;
-  window._fbOnSnapshot    = onSnapshot;
   window._fbModulesReady  = true;
   window.dispatchEvent(new Event('fb-modules-ready'));
 </script>
@@ -6844,42 +6839,26 @@ function fbShowStatus(status) {
 // ── Firebase init ─────────────────────────────────────────────────
 async function initFirebase(firebaseConfig) {
   try {
-    // ── Esperar módulos ESM (máx 12 segundos) ────────────────────
+    // Esperar módulos ESM (máx 10 s)
     if (!window._fbModulesReady) {
       await new Promise((resolve, reject) => {
-        const t = setTimeout(() => reject(new Error('Firebase modules timeout — revisa conexión')), 12000);
+        const t = setTimeout(() => reject(new Error('Firebase timeout')), 10000);
         window.addEventListener('fb-modules-ready', () => { clearTimeout(t); resolve(); }, {once:true});
       });
     }
 
-    const initializeApp       = window._fbInitializeApp;
-    const initializeFirestore = window._fbInitFirestore;
-    const getFirestore        = window._fbGetFirestore;
-    const persistentLocalCache     = window._fbPersistCache;
-    const persistentMultipleTabManager = window._fbMultiTab;
-    const doc        = window._fbDoc;
-    const getDoc     = window._fbGetDoc;
-    const setDoc     = window._fbSetDoc;
-    const onSnapshot = window._fbOnSnapshot;
+    const initializeApp = window._fbInitializeApp;
+    const getFirestore  = window._fbGetFirestore;
+    const doc           = window._fbDoc;
+    const getDoc        = window._fbGetDoc;
+    const setDoc        = window._fbSetDoc;
 
     const app = initializeApp(firebaseConfig);
-
-    // ── Persistencia offline moderna (reemplaza enableMultiTabIndexedDbPersistence) ──
-    let db;
-    try {
-      db = initializeFirestore(app, {
-        localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
-      });
-      console.log('✅ Firestore con persistencia multi-tab activada');
-    } catch(persistErr) {
-      // Si falla (otra pestaña ya la tiene), usar getFirestore normal
-      try { db = getFirestore(app); } catch(e) { db = getFirestore(); }
-      console.warn('⚠️ Persistencia multi-tab no disponible — usando modo normal:', persistErr.message);
-    }
+    const db  = getFirestore(app);
 
     _fbDb = { db, doc, getDoc, setDoc };
 
-    // ── Cargar datos desde Firestore ──────────────────────────────
+    // ── Cargar datos: una sola lectura, sin listener ──────────────
     fbShowStatus('loading');
     const docRef = doc(db, 'ajua_bpm', 'main');
     let snap;
@@ -6888,59 +6867,44 @@ async function initFirebase(firebaseConfig) {
     } catch(fetchErr) {
       console.error('❌ Error al leer Firestore:', fetchErr);
       fbShowStatus('offline');
+      _fbLoaded = true;
       try { authEnsureDB(); } catch(e) {}
       return;
     }
 
     if (snap.exists()) {
-      const cloud = snap.data();
+      const cloud      = snap.data();
       const cloudTotal = _dbTotalRecords(cloud);
-      console.log('✅ Firebase: documento encontrado —', Object.keys(cloud).length, 'colecciones —', cloudTotal, 'registros');
+      console.log('✅ Firebase: ' + cloudTotal + ' registros cargados');
 
-      // 🛡️ AUTO-RECOVERY: Si main tiene muy pocos datos, verificar backup_auto
-      // Esto maneja el caso donde main fue sobreescrito accidentalmente con DB vacía
+      // 🛡️ AUTO-RECOVERY: si main tiene muy pocos datos, intentar backup_auto
       if (cloudTotal < 10) {
         console.warn('⚠️ main tiene pocos datos (' + cloudTotal + ') — verificando backup_auto...');
         try {
-          const backupRef = doc(db, 'ajua_bpm', BACKUP_DOC);
+          const backupRef  = doc(db, 'ajua_bpm', BACKUP_DOC);
           const backupSnap = await getDoc(backupRef);
           if (backupSnap.exists()) {
-            const backupData = backupSnap.data();
+            const backupData  = backupSnap.data();
             const backupTotal = _dbTotalRecords(backupData);
-            console.log('📦 backup_auto tiene', backupTotal, 'registros');
             if (backupTotal > cloudTotal * 3) {
-              // Backup tiene significativamente más datos — auto-restaurar
-              console.warn('🔄 AUTO-RESTORE: backup_auto(' + backupTotal + ') >> main(' + cloudTotal + ') — restaurando automáticamente...');
+              console.warn('🔄 AUTO-RESTORE: backup(' + backupTotal + ') >> main(' + cloudTotal + ')');
               const clean = Object.assign({}, backupData);
               delete clean._backupMeta;
               DB = Object.assign({}, DB_DEFAULT, clean);
-              try { localStorage.setItem(DB_KEY, JSON.stringify(DB)); } catch(e) { console.warn("localStorage full:", e); }
-    // Restaurar main desde backup
-              try { await setDoc(docRef, DB); console.log('✅ main restaurado desde backup_auto'); } catch(e) { console.warn('Error restaurando main:', e); }
+              try { localStorage.setItem(DB_KEY, JSON.stringify(DB)); } catch(e) {}
+              try { await setDoc(docRef, DB); } catch(e) {}
+              _fbLoaded = true;
+              _fbReady  = true;
               fbShowStatus('online');
-              // Notificar al usuario
-              setTimeout(() => {
-                const restored = _dbTotalRecords(DB);
-                toast('🔄 Auto-restauración: ' + restored + ' registros recuperados desde backup', false);
-              }, 2000);
-              _fbReady = true;
-              _fbLoaded = true; // ✅ Firebase cargó (auto-restore) — save() ya puede escribir
               startAutoBackup();
               try { authEnsureDB(); } catch(e) {}
               try { renderAll(); } catch(e) {}
-              setTimeout(() => { try { renderAll(); } catch(e) {} try { populateAllRespSelects(); } catch(e) {} try { updateDash(); } catch(e) {} }, 400);
-              // Setup listener and return early
-              onSnapshot(docRef, (snap) => {
-                if (!snap.exists() || _fbSaving) return;
-                const cloud = snap.data();
-                const cloudTotal2 = _dbTotalRecords(cloud);
-                const currentTotal2 = _dbTotalRecords(DB);
-                if (currentTotal2 > 20 && cloudTotal2 < currentTotal2 * 0.4) { console.warn('🚨 onSnapshot BLOQUEADO post-restore'); return; }
-                Object.keys(cloud).forEach(k => { DB[k] = cloud[k]; });
-                try { localStorage.setItem(DB_KEY, JSON.stringify(DB)); } catch(e) { console.warn("localStorage full:", e); }
+              setTimeout(() => {
+                try { renderAll(); } catch(e) {}
+                try { populateAllRespSelects(); } catch(e) {}
                 try { updateDash(); } catch(e) {}
-                fbShowStatus('online');
-              });
+                toast('🔄 Auto-restauración: ' + _dbTotalRecords(DB) + ' registros recuperados');
+              }, 400);
               return;
             }
           }
@@ -6949,46 +6913,35 @@ async function initFirebase(firebaseConfig) {
         }
       }
 
-      // ── Merge: cloud es la fuente de verdad COMPLETA ────────────
+      // Merge normal: cloud es la fuente de verdad
       DB = Object.assign({}, DB_DEFAULT, cloud);
-      try { localStorage.setItem(DB_KEY, JSON.stringify(DB)); } catch(e) { console.warn("localStorage full:", e); }
-      _lastKnownTotal = _dbTotalRecords(DB); // fijar baseline sin snapshots
-      _fbLoaded = true; // ✅ Firebase cargó — save() ya puede escribir
-      // Liberar espacio: eliminar snapshots locales de versiones anteriores
-      try { localStorage.removeItem('ajua_bpm_snapshots'); } catch(e) {}
-      const counts = Object.entries(DB)
-        .filter(([,v]) => Array.isArray(v))
-        .map(([k,v]) => `${k}:${v.length}`)
-        .join(' | ');
-      console.log('✅ DB cargada desde Firebase:', counts);
+      try { localStorage.setItem(DB_KEY, JSON.stringify(DB)); } catch(e) {}
+      const counts = Object.entries(DB).filter(([,v])=>Array.isArray(v)).map(([k,v])=>k+':'+v.length).join(' | ');
+      console.log('✅ DB cargada:', counts);
+
     } else {
-      // Documento NO existe en Firestore
+      // Documento no existe — subir lo que hay localmente
       const hasData = Object.values(DB).some(v => Array.isArray(v) && v.length > 0);
       if (hasData) {
         await setDoc(docRef, DB);
-        console.log('✅ Firebase: datos locales subidos (primer registro)');
-      } else {
-        console.warn('⚠️ Firebase: documento no existe y DB local vacía — no se sube nada');
+        console.log('✅ Firebase: datos locales subidos');
       }
     }
 
-    _fbReady = true;
-    _fbLoaded = true; // ✅ Firebase listo — save() ya puede escribir
-    startAutoBackup(); // 🛡️ Iniciar sistema de backup automático
-    // ── authEnsureDB DESPUÉS de cargar cloud ──────────────────────
-    try { authEnsureDB(); } catch(e) {}
-    // Si ya hay sesión activa, re-validarla con datos reales de Firebase
-    // (puede haber hecho login antes de que Firebase cargara)
+    _fbLoaded = true;
+    _fbReady  = true;
+    fbShowStatus('online');
+    startAutoBackup();
+
+    // Re-validar sesión con datos reales
     if (AUTH_SESSION) {
       const user = (DB.usuarios||[]).find(u => u.id === AUTH_SESSION.id && u.activo !== false);
-      if (user) {
-        AUTH_SESSION = { id: user.id, nombre: user.nombre, rol: user.rol, modulos: user.modulos || [] };
-      }
+      if (user) AUTH_SESSION = { id:user.id, nombre:user.nombre, rol:user.rol, modulos:user.modulos||[] };
     }
+    try { authEnsureDB(); } catch(e) {}
 
-    // ── Refrescar toda la UI con datos cloud ──────────────────────
-    try { renderAll(); } catch(e) { console.error('renderAll:', e); }
-    // Re-render en cascada para asegurar que TODO se actualice
+    // Refrescar UI
+    try { renderAll(); } catch(e) {}
     setTimeout(() => {
       try { renderAll(); } catch(e) {}
       try { populateAllRespSelects(); } catch(e) {}
@@ -7001,50 +6954,10 @@ async function initFirebase(firebaseConfig) {
       try { populateProvSelects();    } catch(e) {}
       try { populateCotSelects();     } catch(e) {}
     }, 300);
-    // Segundo render para garantizar — algunos renders dependen de otros
-    setTimeout(() => {
-      try { renderAll(); } catch(e) {}
-      try { populateAllRespSelects(); } catch(e) {}
-    }, 800);
 
-    // ── Listener en tiempo real ───────────────────────────────────
-    onSnapshot(docRef, (snap) => {
-      if (!snap.exists() || _fbSaving) return;
-      const cloud = snap.data();
-      // 🛡️ GUARD: nunca dejar que un snapshot con menos datos sobreescriba la DB actual
-      const cloudTotal = _dbTotalRecords(cloud);
-      const currentTotal = _dbTotalRecords(DB);
-      if (currentTotal > 20 && cloudTotal < currentTotal * 0.4) {
-        console.warn(`🚨 onSnapshot BLOQUEADO: cloud(${cloudTotal}) << DB actual(${currentTotal}) — posible borrado accidental`);
-        return;
-      }
-      // Merge: cloud gana sobre DB actual
-      Object.keys(cloud).forEach(k => { DB[k] = cloud[k]; });
-      try { localStorage.setItem(DB_KEY, JSON.stringify(DB)); } catch(e) { console.warn("localStorage full:", e); }
-      try { updateDash(); } catch(e) {}
-      try {
-        const active = document.querySelector('.sec.active');
-        if (active) {
-          const id = active.id.replace('sec-','');
-          if (['inv-stock','inv-entrada','maquila','inv-salida','ventas-gt','ventas-int',
-               'reporte','inv-trazabilidad','pedidos-walmart','inv-config'].includes(id)) {
-            try { renderInvAll(); } catch(e) {}
-          }
-          if (id === 'usuarios') try { renderUsuarios(); } catch(e) {}
-        }
-      } catch(e) {}
-      try { populateAllRespSelects(); } catch(e) {}
-      try { alBuildEmpTable();        } catch(e) {}
-      try { capBuildAsistentesList(); } catch(e) {}
-      try { eePopulateSelect();       } catch(e) {}
-      fbShowStatus('online');
-      setTimeout(() => { try { authEnsureDB(); } catch(e) {} }, 500);
-    });
-
-    fbShowStatus('online');
   } catch(err) {
     console.error('❌ Firebase init error:', err);
-    _fbLoaded = true; // ✅ Fallback offline — permitir save() a localStorage al menos
+    _fbLoaded = true;
     fbShowStatus('offline');
     try { authEnsureDB(); } catch(e) {}
   }
