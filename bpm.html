@@ -3343,7 +3343,20 @@ if ('caches' in window) {
 <input id="ant-mxn-result" readonly style="color:var(--acc);cursor:default;font-weight:700;" placeholder="Auto con TC">
 </div>
 </div>
-<div class="fg" style="margin-top:8px;"><label>Notas</label><input id="ant-obs" placeholder="Banco utilizado, receptor, notas..."></div>
+<div class="fgrid g3" style="margin-top:8px;">
+<div class="fg"><label>Rubro de gasto</label>
+<select id="ant-rubro">
+<option value="producto">🥦 Producto / Mercancía</option>
+<option value="flete">🚛 Flete / Transporte</option>
+<option value="empaque">📦 Empaque / Materiales</option>
+<option value="agente">🧾 Agente Aduanal</option>
+<option value="aranceles">🏛️ Aranceles / Impuestos</option>
+<option value="servicios">⚙️ Servicios / Mano de obra</option>
+<option value="otro">📋 Otro</option>
+</select>
+</div>
+<div class="fg" style="grid-column:span 2;"><label>Notas</label><input id="ant-obs" placeholder="Banco utilizado, receptor, notas..."></div>
+</div>
 <div class="fa" style="margin-top:10px;">
 <button class="btn bp bsm" onclick="saveAnticipo()">+ Registrar Anticipo</button>
 </div>
@@ -3379,7 +3392,7 @@ if ('caches' in window) {
 </div>
 <div style="overflow-x:auto;">
 <table>
-<thead><tr><th>Fecha</th><th>Método</th><th>Enviado GTQ</th><th>TC GTQ/MXN</th><th>Recibido MXN</th><th>Referencia</th><th>Notas</th><th></th></tr></thead>
+<thead><tr><th>Fecha</th><th>Método</th><th>Rubro</th><th>Enviado GTQ</th><th>TC GTQ/MXN</th><th>Recibido MXN</th><th>Referencia</th><th>Notas</th><th></th></tr></thead>
 <tbody id="ant-tbody"></tbody>
 </table>
 </div>
@@ -10725,7 +10738,8 @@ function saveAnticipo() {
   const antId = uid();
 
   rec.anticipos = rec.anticipos || [];
-  rec.anticipos.push({ id:antId, ts:now(), fecha, metodo, gtq, tc, mxn, ref, obs });
+  const rubro = v('ant-rubro') || 'producto';
+  rec.anticipos.push({ id:antId, ts:now(), fecha, metodo, gtq, tc, mxn, ref, obs, rubro });
   if (rec.estado==='borrador') rec.estado = 'anticipos';
 
   // ── Registrar como gasto diario contable ─────────────────────
@@ -10736,6 +10750,7 @@ function saveAnticipo() {
     cat:    'imp-anticipo',
     monto:  gtq,
     desc:   'Anticipo MX — ' + (rec.nombre||rec.id) + (ref?' · '+ref:''),
+    rubro_anticipo: rubro,
     metodo: metodo === 'banco' ? 'banco' : 'efectivo',
     pagadoPor: 'empresa',
     devolucionPendiente: false,
@@ -10747,6 +10762,7 @@ function saveAnticipo() {
   });
 
   ['ant-gtq','ant-tc','ant-ref','ant-obs'].forEach(id=>set(id,''));
+  set('ant-rubro','producto');
   set('ant-mxn-result','');
   save(); renderAnticipos(rec); renderDetResumen(rec); renderCotList();
   toast('✓ Anticipo registrado — Q'+gtq.toFixed(2)+' → $'+mxn.toFixed(2)+' MXN · contabilizado en gastos');
@@ -10793,11 +10809,12 @@ function renderAnticipos(rec) {
   if (fd && !fd.value) fd.value = today();
 
   const METODO = { banco:'🏦 Banco', osmo:'📱 OSMO', cambista:'💵 Cambista' };
-  if (!ants.length) { tb.innerHTML='<tr><td colspan="8"><div class="empty">Sin anticipos registrados</div></td></tr>'; return; }
+  if (!ants.length) { tb.innerHTML='<tr><td colspan="9"><div class="empty">Sin anticipos registrados</div></td></tr>'; return; }
   tb.innerHTML = ants.map(a =>
     '<tr>' +
     '<td>'+a.fecha+'</td>' +
     '<td>'+(METODO[a.metodo]||a.metodo)+'</td>' +
+    '<td style="font-size:.72rem;">'+({producto:'🥦 Producto',flete:'🚛 Flete',empaque:'📦 Empaque',agente:'🧾 Agente',aranceles:'🏛️ Aranceles',servicios:'⚙️ Servicios',otro:'📋 Otro'}[a.rubro]||a.rubro||'—')+'</td>' +
     '<td style="color:var(--warn);font-weight:700;">Q '+a.gtq.toFixed(2)+'</td>' +
     '<td>'+a.tc+'</td>' +
     '<td style="color:var(--acc);font-weight:700;">$ '+a.mxn.toFixed(2)+'</td>' +
