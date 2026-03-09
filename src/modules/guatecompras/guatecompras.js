@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════
-// AJÚA BPM — Módulo Guatecompras v2  (build-78)
+// AJÚA BPM — Módulo Guatecompras v2  (build-75)
 // Visual mejorado: cards estilo dashboard, dias restantes, urgentes
 // ═══════════════════════════════════════════════════════════════════
 
@@ -132,8 +132,19 @@ function gcInjectCSS(){
   document.head.appendChild(s);
 }
 
-function gcDias(f){if(!f)return null;const h=new Date();h.setHours(0,0,0,0);return Math.ceil((new Date(f+'T12:00:00')-h)/86400000);}
-function gcDiasLabel(d){if(d===null)return'—';if(d<0)return`Vencido ${Math.abs(d)}d`;if(d===0)return'¡HOY!';if(d===1)return'¡Mañana!';return`${d} días`;}
+function gcParseDate(f){
+  if(!f)return null;
+  // Already ISO: 2026-03-10
+  if(/^\d{4}-\d{2}-\d{2}/.test(f))return new Date(f+'T12:00:00');
+  // Spanish: 10.marzo.2026 or 10/marzo/2026
+  const MESES={enero:1,febrero:2,marzo:3,abril:4,mayo:5,junio:6,julio:7,agosto:8,septiembre:9,octubre:10,noviembre:11,diciembre:12};
+  const m=f.match(/(\d{1,2})[.\/\s-]([a-záéíóú]+)[.\/\s-](\d{4})/i);
+  if(m){const mes=MESES[m[2].toLowerCase()];if(mes)return new Date(parseInt(m[3]),mes-1,parseInt(m[1]),12,0,0);}
+  // Fallback
+  const d=new Date(f);return isNaN(d)?null:d;
+}
+function gcDias(f){if(!f)return null;const d=gcParseDate(f);if(!d||isNaN(d))return null;const h=new Date();h.setHours(0,0,0,0);return Math.ceil((d-h)/86400000);}
+function gcDiasLabel(d){if(d===null)return'—';if(d<0)return`Vencido hace ${Math.abs(d)}d`;if(d===0)return'¡HOY!';if(d===1)return'Mañana';return`${d} días`;}
 function gcMpill(mod){if(!mod||mod==='—')return'';const m=mod.toLowerCase();const cls=m.includes('licitac')?'p-lic':m.includes('cotizac')?'p-cot':m.includes('directa')?'p-dir':'p-cot';const lbl=m.includes('licitac')?'Licitación':m.includes('cotizac')?'Cotización':m.includes('directa')?'C.Directa':mod.slice(0,10);return`<span class="pill ${cls}">${lbl}</span>`;}
 function gcBarCol(c){const d=gcDias(c.fechaCierre);if(c.adjudicado)return'#2E7D32';if(d!==null&&d<0)return'#9E9E9E';if(d!==null&&d<=3)return'#C62828';if(d!==null&&d<=7)return'#E65100';return GC_ETAPA_COL[c.etapa]||'#1565C0';}
 
@@ -173,10 +184,13 @@ function gcTabConcursos(p){
         ${GC_ETAPAS.map(e=>`<option>${e}</option>`).join('')}
       </select>
       <select id="gc-fs" onchange="gcFiltrar()">
+        <option value="vigente" selected>📋 Solo vigentes</option>
         <option value="">Todos</option>
-        <option value="activo">Solo activos</option>
-        <option value="urgente">Urgentes ≤7d</option>
+        <option value="urgente">⚠️ Urgentes ≤7d</option>
         <option value="vencido">Vencidos</option>
+        <option value="presentado">✅ Presentados</option>
+        <option value="no-presentado">❌ No presentados</option>
+        <option value="sin-confirmar">🔴 Vencidos sin confirmar</option>
       </select>
       <button class="btn bp bsm" onclick="gcNuevo()" style="margin-left:auto">➕ Nuevo</button>
     </div>
@@ -185,7 +199,14 @@ function gcTabConcursos(p){
 
 function gcRenderCards(list){
   if(!list.length)return`<div class="empty">Sin concursos — importá o creá uno</div>`;
-  return [...list].sort((a,b)=>(gcDias(a.fechaCierre)??999)-(gcDias(b.fechaCierre)??999)).map(c=>{
+  return [...list].sort((a,b)=>{
+    const da=gcDias(a.fechaCierre)??999;
+    const db=gcDias(b.fechaCierre)??999;
+    // Vencidos sin confirmar van al fondo
+    const pa=(da<0&&a.sePresento===undefined)?9999:da;
+    const pb=(db<0&&b.sePresento===undefined)?9999:db;
+    return pa-pb;
+  }).map(c=>{
     const d=gcDias(c.fechaCierre);
     const urg=d!==null&&d>=0&&d<=7;
     const venc=d!==null&&d<0;
@@ -219,6 +240,7 @@ function gcRenderCards(list){
         <span class="nog">NOG: ${c.nog||'—'}</span>
         ${prods?`<div class="oprods"><strong>Renglones:</strong> ${prods}</div>`:''}
         ${c.notas?`<div style="margin-top:5px;font-size:.72rem;color:#607D8B;font-style:italic">📝 ${c.notas.slice(0,80)}${c.notas.length>80?'…':''}</div>`:''}
+        ${(venc&&c.sePresento===undefined)?`<div style="margin-top:7px;padding:6px 10px;background:#FBE9E7;border:1px solid #FFAB91;border-radius:5px;font-size:.72rem;color:#BF360C;font-weight:700">⚠️ Fecha vencida — ¿se presentó? <button class='btn bsm' style='margin-left:8px;background:#BF360C;color:#fff;border:none;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:.68rem;' onclick='event.stopPropagation();gcTogglePresento("${c.id}")'>Marcar ahora</button></div>`:''}`
       </div>
     </div>`;
   }).join('');
@@ -234,7 +256,11 @@ function gcFiltrar(){
   if(fe)l=l.filter(c=>c.etapa===fe);
   if(fs==='activo')l=l.filter(c=>{const d=gcDias(c.fechaCierre);return d===null||d>=0;});
   if(fs==='urgente')l=l.filter(c=>{const d=gcDias(c.fechaCierre);return d!==null&&d>=0&&d<=7;});
+  if(fs==='vigente')l=l.filter(c=>{const d=gcDias(c.fechaCierre);return d===null||d>=0;});
   if(fs==='vencido')l=l.filter(c=>{const d=gcDias(c.fechaCierre);return d!==null&&d<0;});
+  if(fs==='presentado')l=l.filter(c=>c.sePresento===true);
+  if(fs==='no-presentado')l=l.filter(c=>c.sePresento===false);
+  if(fs==='sin-confirmar')l=l.filter(c=>{const d=gcDias(c.fechaCierre);return d!==null&&d<0&&c.sePresento===undefined;});
   const el=document.getElementById('gc-lista');if(el)el.innerHTML=gcRenderCards(l);
 }
 
