@@ -5848,6 +5848,9 @@ const BACKUP_DOC  = 'backup_auto';        // Documento separado en Firebase para
 // 🔒 FLAG CRÍTICO: save() bloqueado hasta que Firebase confirme que cargó datos
 // Evita que una DB vacía al inicio sobreescriba Firebase antes de que lleguen los datos
 let _fbLoaded = false;  // true solo cuando initFirebase terminó de leer y mergeó datos
+let _fbSaving = false;
+let _fbSaveQ  = null;
+let _fbDb     = null;
 
 // ══════════════════════════════════════════════════════════════════
 // 🛡️ SISTEMA DE PROTECCIÓN ANTI-PÉRDIDA — 3 NIVELES
