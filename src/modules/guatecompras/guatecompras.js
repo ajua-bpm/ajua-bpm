@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════
-// AJÚA BPM — Módulo Guatecompras v2  (build-75)
+// AJÚA BPM — Módulo Guatecompras v2  (build-78)
 // Visual mejorado: cards estilo dashboard, dias restantes, urgentes
 // ═══════════════════════════════════════════════════════════════════
 
