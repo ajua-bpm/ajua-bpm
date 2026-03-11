@@ -3,7 +3,7 @@
 // Visual mejorado: cards estilo dashboard, dias restantes, urgentes
 // ═══════════════════════════════════════════════════════════════════
 
-function gcEnsureDB(){if(!DB.gcConcursos)DB.gcConcursos=[];}
+function gcEnsureDB(){if(!DB.gcConcursos)DB.gcConcursos=[];if(!DB.gcDescubiertos)DB.gcDescubiertos=[];}
 
 const GC_ETAPAS=['Identificado','Analizando','Cotizando','Documentos','Presentado','Adjudicado','No adjudicado','Archivado'];
 const GC_ETAPA_COL={'Identificado':'#607D8B','Analizando':'#1565C0','Cotizando':'#E65100','Documentos':'#6A1B9A','Presentado':'#0288D1','Adjudicado':'#2E7D32','No adjudicado':'#C62828','Archivado':'#9E9E9E'};
@@ -132,19 +132,8 @@ function gcInjectCSS(){
   document.head.appendChild(s);
 }
 
-function gcParseDate(f){
-  if(!f)return null;
-  // Already ISO: 2026-03-10
-  if(/^\d{4}-\d{2}-\d{2}/.test(f))return new Date(f+'T12:00:00');
-  // Spanish: 10.marzo.2026 or 10/marzo/2026
-  const MESES={enero:1,febrero:2,marzo:3,abril:4,mayo:5,junio:6,julio:7,agosto:8,septiembre:9,octubre:10,noviembre:11,diciembre:12};
-  const m=f.match(/(\d{1,2})[.\/\s-]([a-záéíóú]+)[.\/\s-](\d{4})/i);
-  if(m){const mes=MESES[m[2].toLowerCase()];if(mes)return new Date(parseInt(m[3]),mes-1,parseInt(m[1]),12,0,0);}
-  // Fallback
-  const d=new Date(f);return isNaN(d)?null:d;
-}
-function gcDias(f){if(!f)return null;const d=gcParseDate(f);if(!d||isNaN(d))return null;const h=new Date();h.setHours(0,0,0,0);return Math.ceil((d-h)/86400000);}
-function gcDiasLabel(d){if(d===null)return'—';if(d<0)return`Vencido hace ${Math.abs(d)}d`;if(d===0)return'¡HOY!';if(d===1)return'Mañana';return`${d} días`;}
+function gcDias(f){if(!f)return null;const h=new Date();h.setHours(0,0,0,0);return Math.ceil((new Date(f+'T12:00:00')-h)/86400000);}
+function gcDiasLabel(d){if(d===null)return'—';if(d<0)return`Vencido ${Math.abs(d)}d`;if(d===0)return'¡HOY!';if(d===1)return'¡Mañana!';return`${d} días`;}
 function gcMpill(mod){if(!mod||mod==='—')return'';const m=mod.toLowerCase();const cls=m.includes('licitac')?'p-lic':m.includes('cotizac')?'p-cot':m.includes('directa')?'p-dir':'p-cot';const lbl=m.includes('licitac')?'Licitación':m.includes('cotizac')?'Cotización':m.includes('directa')?'C.Directa':mod.slice(0,10);return`<span class="pill ${cls}">${lbl}</span>`;}
 function gcBarCol(c){const d=gcDias(c.fechaCierre);if(c.adjudicado)return'#2E7D32';if(d!==null&&d<0)return'#9E9E9E';if(d!==null&&d<=3)return'#C62828';if(d!==null&&d<=7)return'#E65100';return GC_ETAPA_COL[c.etapa]||'#1565C0';}
 
@@ -153,14 +142,15 @@ function renderGC(){gcEnsureDB();gcInjectCSS();gcRenderTabs();gcShowTab(_gcTab);
 function gcRenderTabs(){
   const el=document.getElementById('gc-tabs');if(!el)return;
   const act=DB.gcConcursos.filter(c=>c.etapa!=='Archivado').length;
-  const tabs=[{id:'concursos',l:'📋 Concursos',b:DB.gcConcursos.length},{id:'seguimiento',l:'⭐ Seguimiento',b:act},{id:'documentos',l:'📁 Documentos'},{id:'cotizador',l:'🧮 Cotizador'},{id:'importar',l:'⬇ Importar'}];
-  el.innerHTML=tabs.map(t=>`<button class="tab${_gcTab===t.id?' active':''}" onclick="gcShowTab('${t.id}')">${t.l}${t.b!=null?`<span style="background:rgba(255,255,255,.25);border-radius:10px;padding:0 6px;font-size:.65rem;margin-left:4px;">${t.b}</span>`:''}</button>`).join('');
+  const descPend=(DB.gcDescubiertos||[]).filter(d=>!d.importado&&!d.descartado).length;
+  const tabs=[{id:'concursos',l:'📋 Concursos',b:DB.gcConcursos.length},{id:'seguimiento',l:'⭐ Seguimiento',b:act},{id:'documentos',l:'📁 Documentos'},{id:'cotizador',l:'🧮 Cotizador'},{id:'descubiertos',l:'🔍 Descubiertos',b:descPend,bBg:'#1565C0'},{id:'importar',l:'⬇ Importar'}];
+  el.innerHTML=tabs.map(t=>`<button class="tab${_gcTab===t.id?' active':''}" onclick="gcShowTab('${t.id}')">${t.l}${t.b!=null?`<span style="background:${_gcTab===t.id?'rgba(255,255,255,.25)':t.bBg||'rgba(255,255,255,.2)'};color:#fff;border-radius:10px;padding:0 6px;font-size:.65rem;margin-left:4px;">${t.b}</span>`:''}</button>`).join('');
 }
 
 function gcShowTab(tab){
   _gcTab=tab;gcRenderTabs();
   const p=document.getElementById('gc-panel');if(!p)return;
-  ({concursos:gcTabConcursos,seguimiento:gcTabSeguimiento,documentos:gcTabDocumentos,cotizador:gcTabCotizador,importar:gcTabImportar})[tab]?.(p);
+  ({concursos:gcTabConcursos,seguimiento:gcTabSeguimiento,documentos:gcTabDocumentos,cotizador:gcTabCotizador,descubiertos:gcTabDescubiertos,importar:gcTabImportar})[tab]?.(p);
 }
 
 // ── TAB 1: CONCURSOS ──────────────────────────────────────────
@@ -184,13 +174,10 @@ function gcTabConcursos(p){
         ${GC_ETAPAS.map(e=>`<option>${e}</option>`).join('')}
       </select>
       <select id="gc-fs" onchange="gcFiltrar()">
-        <option value="vigente" selected>📋 Solo vigentes</option>
         <option value="">Todos</option>
-        <option value="urgente">⚠️ Urgentes ≤7d</option>
+        <option value="activo">Solo activos</option>
+        <option value="urgente">Urgentes ≤7d</option>
         <option value="vencido">Vencidos</option>
-        <option value="presentado">✅ Presentados</option>
-        <option value="no-presentado">❌ No presentados</option>
-        <option value="sin-confirmar">🔴 Vencidos sin confirmar</option>
       </select>
       <button class="btn bp bsm" onclick="gcNuevo()" style="margin-left:auto">➕ Nuevo</button>
     </div>
@@ -199,14 +186,7 @@ function gcTabConcursos(p){
 
 function gcRenderCards(list){
   if(!list.length)return`<div class="empty">Sin concursos — importá o creá uno</div>`;
-  return [...list].sort((a,b)=>{
-    const da=gcDias(a.fechaCierre)??999;
-    const db=gcDias(b.fechaCierre)??999;
-    // Vencidos sin confirmar van al fondo
-    const pa=(da<0&&a.sePresento===undefined)?9999:da;
-    const pb=(db<0&&b.sePresento===undefined)?9999:db;
-    return pa-pb;
-  }).map(c=>{
+  return [...list].sort((a,b)=>(gcDias(a.fechaCierre)??999)-(gcDias(b.fechaCierre)??999)).map(c=>{
     const d=gcDias(c.fechaCierre);
     const urg=d!==null&&d>=0&&d<=7;
     const venc=d!==null&&d<0;
@@ -240,7 +220,6 @@ function gcRenderCards(list){
         <span class="nog">NOG: ${c.nog||'—'}</span>
         ${prods?`<div class="oprods"><strong>Renglones:</strong> ${prods}</div>`:''}
         ${c.notas?`<div style="margin-top:5px;font-size:.72rem;color:#607D8B;font-style:italic">📝 ${c.notas.slice(0,80)}${c.notas.length>80?'…':''}</div>`:''}
-        ${(venc&&c.sePresento===undefined)?'<div style="margin-top:7px;padding:5px 10px;background:#FBE9E7;border:1px solid #FFAB91;border-radius:5px;font-size:.72rem;color:#BF360C;font-weight:700">⚠️ Vencido sin confirmar — usar botón arriba para marcar</div>':''}
       </div>
     </div>`;
   }).join('');
@@ -256,11 +235,7 @@ function gcFiltrar(){
   if(fe)l=l.filter(c=>c.etapa===fe);
   if(fs==='activo')l=l.filter(c=>{const d=gcDias(c.fechaCierre);return d===null||d>=0;});
   if(fs==='urgente')l=l.filter(c=>{const d=gcDias(c.fechaCierre);return d!==null&&d>=0&&d<=7;});
-  if(fs==='vigente')l=l.filter(c=>{const d=gcDias(c.fechaCierre);return d===null||d>=0;});
   if(fs==='vencido')l=l.filter(c=>{const d=gcDias(c.fechaCierre);return d!==null&&d<0;});
-  if(fs==='presentado')l=l.filter(c=>c.sePresento===true);
-  if(fs==='no-presentado')l=l.filter(c=>c.sePresento===false);
-  if(fs==='sin-confirmar')l=l.filter(c=>{const d=gcDias(c.fechaCierre);return d!==null&&d<0&&c.sePresento===undefined;});
   const el=document.getElementById('gc-lista');if(el)el.innerHTML=gcRenderCards(l);
 }
 
@@ -725,6 +700,150 @@ function gcImportF(data){
   if(document.getElementById('gc-ij'))document.getElementById('gc-ij').value='';
   toast(`✓ NOG ${rec.nog} importado`);
   setTimeout(()=>{_gcCotId=rec.id;gcShowTab('cotizador');},1200);
+}
+
+// ── TAB DESCUBIERTOS ──────────────────────────────────────────────────────────
+var _gcDescFiltro='pendientes';
+
+function gcTabDescubiertos(p){
+  gcEnsureDB();
+  const all=DB.gcDescubiertos||[];
+  const pend=all.filter(d=>!d.importado&&!d.descartado);
+  const imp=all.filter(d=>d.importado);
+  const desc=all.filter(d=>d.descartado&&!d.importado);
+  const filtros=[
+    {id:'pendientes',l:'🔍 Nuevos',n:pend.length,c:'#1565C0'},
+    {id:'importados',l:'✅ Importados',n:imp.length,c:'#2E7D32'},
+    {id:'descartados',l:'🗑 Descartados',n:desc.length,c:'#757575'},
+    {id:'todos',l:'📋 Todos',n:all.length,c:'#37474F'},
+  ];
+  const lista=_gcDescFiltro==='pendientes'?pend:_gcDescFiltro==='importados'?imp:_gcDescFiltro==='descartados'?desc:all;
+  lista.sort((a,b)=>(a.fechaCierre||'9999')<(b.fechaCierre||'9999')?-1:1);
+
+  p.innerHTML=`<div style="max-width:860px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <div>
+        <h4 style="font-family:var(--f-display);color:var(--forest);margin:0 0 2px">🔍 Concursos Descubiertos</h4>
+        <div style="font-size:.75rem;color:var(--muted)">Detectados por el scraper automático de Guatecompras</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn bo bsm" onclick="gcDescRefresh()">↻ Actualizar</button>
+        <button class="btn bp bsm" onclick="gcDescImportarTodos()" ${pend.length===0?'disabled':''}>⬇ Importar todos (${pend.length})</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+      ${filtros.map(f=>`<button onclick="gcDescSetFiltro('${f.id}')" style="border:none;padding:5px 12px;border-radius:20px;font-size:.75rem;cursor:pointer;font-weight:600;background:${_gcDescFiltro===f.id?f.c:'#EEF2F7'};color:${_gcDescFiltro===f.id?'#fff':'#37474F'}">${f.l} ${f.n}</button>`).join('')}
+    </div>
+    ${lista.length===0?`
+    <div style="background:#fff;border:1.5px solid var(--br);border-radius:10px;padding:40px;text-align:center">
+      <div style="font-size:2rem;margin-bottom:10px">${_gcDescFiltro==='pendientes'?'🎉':'📭'}</div>
+      <div style="font-weight:600;color:var(--forest);margin-bottom:6px">${_gcDescFiltro==='pendientes'?'Sin concursos nuevos todavía':'Sin resultados'}</div>
+      <div style="font-size:.78rem;color:var(--muted)">${_gcDescFiltro==='pendientes'?'El scraper corre cada mañana (lun–vie) y busca concursos activos de vegetales y frutas':'Cambiá el filtro para ver otros'}</div>
+    </div>`:`<div style="display:grid;gap:10px">${lista.map(d=>gcDescCard(d)).join('')}</div>`}
+    <div style="background:#F8F9FA;border:1.5px solid #DEE2E6;border-radius:8px;padding:12px 16px;margin-top:16px;font-size:.75rem;color:#6C757D">
+      <strong style="color:#37474F">⚙️ Cómo funciona:</strong>
+      El scraper corre automáticamente lun–vie a las 6am. Busca en Guatecompras por palabras clave: verduras, hortalizas, frutas, alimentos.
+      Los nuevos aparecen aquí para que vos decidás cuáles importar.
+      <a href="https://github.com/ajua-bpm/gc-scraper/actions" target="_blank" style="color:#1565C0;font-weight:600;margin-left:6px">Ver logs →</a>
+    </div>
+  </div>`;
+}
+
+function gcDescCard(d){
+  const dias=gcDias(d.fechaCierre);
+  const lbl=gcDiasLabel(dias);
+  const urg=dias!==null&&dias>=0&&dias<=7;
+  const venc=dias!==null&&dias<0;
+  const brd=venc?'#9E9E9E':urg?'#C62828':'var(--br)';
+  return `<div style="background:#fff;border:1.5px solid ${brd};border-radius:10px;padding:14px 16px;${d.importado?'background:#F0FFF4;':''}">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:.88rem;color:var(--forest);margin-bottom:4px;line-height:1.3">${d.titulo||'Sin título'}</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-bottom:6px">
+          ${d.entidad?`🏛 ${d.entidad} &nbsp;·&nbsp; `:''}${d.nog?`NOG: <strong>${d.nog}</strong> &nbsp;·&nbsp; `:''}${d.modalidad&&d.modalidad!=='—'?gcMpill(d.modalidad)+' &nbsp;·&nbsp; ':''}${d.monto&&d.monto!=='—'?`💰 ${d.monto}`:''}
+        </div>
+        <div style="display:flex;gap:10px;font-size:.73rem;flex-wrap:wrap">
+          ${d.fechaPub?`<span style="color:#546E7A">📅 ${d.fechaPub}</span>`:''}
+          ${d.fechaCierre?`<span style="color:${venc?'#9E9E9E':urg?'#C62828':'#1565C0'};font-weight:${urg?'700':'400'}">⏰ Cierra: ${d.fechaCierre} (${lbl})</span>`:''}
+          ${d.keyword?`<span style="color:#BDBDBD">🔑 "${d.keyword}"</span>`:''}
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex-shrink:0">
+        ${d.importado
+          ?`<span style="color:#2E7D32;font-size:.75rem;font-weight:600">✅ Importado</span>`
+          :d.descartado
+          ?`<div style="display:flex;gap:5px;align-items:center">
+              <span style="color:#9E9E9E;font-size:.75rem">Descartado</span>
+              <button onclick="gcDescReactivar('${d.id}')" style="border:1px solid #9E9E9E;background:#fff;color:#546E7A;padding:3px 8px;border-radius:5px;font-size:.7rem;cursor:pointer">↩ Restaurar</button>
+            </div>`
+          :`<div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end">
+              ${d.url?`<a href="${d.url}" target="_blank" class="btn bo bsm" style="font-size:.7rem;text-decoration:none">🔗 Ver</a>`:''}
+              <button onclick="gcDescDescartar('${d.id}')" style="border:1px solid #EF5350;background:#fff;color:#C62828;padding:4px 10px;border-radius:5px;font-size:.72rem;cursor:pointer">🗑 Descartar</button>
+              <button onclick="gcDescImportar('${d.id}')" style="background:#1565C0;color:#fff;border:none;padding:4px 12px;border-radius:5px;font-size:.72rem;cursor:pointer;font-weight:600">⬇ Importar</button>
+            </div>`}
+      </div>
+    </div>
+  </div>`;
+}
+
+function gcDescSetFiltro(f){_gcDescFiltro=f;const p=document.getElementById('gc-panel');if(p)gcTabDescubiertos(p);}
+
+function gcDescRefresh(){
+  // Solo re-renderiza la vista con los datos en memoria — NO llama save()
+  const p=document.getElementById('gc-panel');
+  if(p)gcTabDescubiertos(p);
+  toast('✓ Vista actualizada');
+}
+
+function gcDescImportar(id){
+  gcEnsureDB();
+  const d=(DB.gcDescubiertos||[]).find(x=>x.id===id);
+  if(!d){toast('⚠ No encontrado',true);return;}
+  if(d.nog&&DB.gcConcursos.find(c=>c.nog===d.nog)){
+    d.importado=true;save();
+    toast(`⚠ NOG ${d.nog} ya existe en concursos`,true);
+    gcRenderTabs();gcTabDescubiertos(document.getElementById('gc-panel'));
+    return;
+  }
+  gcImportF({
+    nog:d.nog||'',titulo:d.titulo||'Sin título',entidad:d.entidad||'—',
+    monto:d.monto||'',modalidad:d.modalidad||'—',fechaPub:d.fechaPub||'',
+    fechaCierre:d.fechaCierre||'',url:d.url||'',productos:[],
+  });
+  d.importado=true;save();
+  gcRenderTabs();
+  gcTabDescubiertos(document.getElementById('gc-panel'));
+}
+
+function gcDescImportarTodos(){
+  gcEnsureDB();
+  const pend=(DB.gcDescubiertos||[]).filter(x=>!x.importado&&!x.descartado);
+  if(!pend.length){toast('Sin pendientes',true);return;}
+  let n=0;
+  for(const d of pend){
+    if(d.nog&&DB.gcConcursos.find(c=>c.nog===d.nog)){d.importado=true;continue;}
+    gcImportF({
+      nog:d.nog||'',titulo:d.titulo||'Sin título',entidad:d.entidad||'—',
+      monto:d.monto||'',modalidad:d.modalidad||'—',fechaPub:d.fechaPub||'',
+      fechaCierre:d.fechaCierre||'',url:d.url||'',productos:[],
+    });
+    d.importado=true;n++;
+  }
+  save();gcRenderTabs();
+  toast(`✓ ${n} concursos importados`);
+  gcTabDescubiertos(document.getElementById('gc-panel'));
+}
+
+function gcDescDescartar(id){
+  gcEnsureDB();
+  const d=(DB.gcDescubiertos||[]).find(x=>x.id===id);
+  if(d){d.descartado=true;save();gcRenderTabs();gcTabDescubiertos(document.getElementById('gc-panel'));}
+}
+
+function gcDescReactivar(id){
+  gcEnsureDB();
+  const d=(DB.gcDescubiertos||[]).find(x=>x.id===id);
+  if(d){d.descartado=false;save();gcRenderTabs();gcTabDescubiertos(document.getElementById('gc-panel'));}
 }
 
 window.renderGC=renderGC;
