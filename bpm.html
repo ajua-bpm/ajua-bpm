@@ -2866,6 +2866,7 @@ if ('caches' in window) {
 <div class="tab"        id="rep-tab-canal"    onclick="repTab('canal',this)">📤 Por Canal</div>
 <div class="tab"        id="rep-tab-consolidado" onclick="repTab('consolidado',this)">📋 Consolidado Ventas</div>
 <div class="tab"        id="rep-tab-detalle"  onclick="repTab('detalle',this)">📑 Detalle completo</div>
+<div class="tab"        id="rep-tab-descargas" onclick="repTab('descargas',this)">📥 Descarga Excel BPM</div>
 </div>
 <div id="rep-panel-resumen" class="card" style="border-top:none;border-radius:0 0 4px 4px;">
 <div id="rep-resumen-html"><div class="empty">Selecciona un período y genera el reporte</div></div>
@@ -2897,6 +2898,45 @@ if ('caches' in window) {
 </div>
 <div id="rep-panel-detalle" class="card" style="display:none;border-top:none;border-radius:0 0 4px 4px;">
 <div id="rep-detalle-html"></div>
+</div>
+<div id="rep-panel-descargas" class="card" style="display:none;border-top:none;border-radius:0 0 4px 4px;padding:20px;">
+<div style="font-size:.82rem;color:var(--muted);margin-bottom:18px;">
+  Descargá <strong>todos los módulos BPM</strong> en un archivo Excel con hojas separadas por módulo.
+  No requiere filtro de fecha previo — seleccioná el período directamente aquí.
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;">
+  <div style="border:1px solid var(--br);border-radius:8px;padding:18px;">
+    <div style="font-size:1.4rem;margin-bottom:6px;">📅</div>
+    <div style="font-weight:700;font-size:.88rem;color:var(--forest,#1B5E20);margin-bottom:4px;">Esta semana</div>
+    <div style="font-size:.72rem;color:var(--muted);margin-bottom:12px;">Registros Lun–Dom de la semana actual</div>
+    <button onclick="rpDescargar('semana')" id="rp-btn-semana"
+      style="width:100%;background:var(--forest,#1B5E20);color:#fff;border:none;padding:8px;border-radius:6px;font-size:.82rem;font-weight:700;cursor:pointer;">📥 Descargar</button>
+  </div>
+  <div style="border:1px solid var(--br);border-radius:8px;padding:18px;">
+    <div style="font-size:1.4rem;margin-bottom:6px;">🗓️</div>
+    <div style="font-weight:700;font-size:.88rem;color:var(--forest,#1B5E20);margin-bottom:4px;">Este mes</div>
+    <div style="font-size:.72rem;color:var(--muted);margin-bottom:12px;">Todos los registros del mes en curso</div>
+    <button onclick="rpDescargar('mes')" id="rp-btn-mes"
+      style="width:100%;background:var(--forest,#1B5E20);color:#fff;border:none;padding:8px;border-radius:6px;font-size:.82rem;font-weight:700;cursor:pointer;">📥 Descargar</button>
+  </div>
+  <div style="border:1px solid var(--br);border-radius:8px;padding:18px;">
+    <div style="font-size:1.4rem;margin-bottom:6px;">📆</div>
+    <div style="font-weight:700;font-size:.88rem;color:var(--forest,#1B5E20);margin-bottom:4px;">Este año</div>
+    <div style="font-size:.72rem;color:var(--muted);margin-bottom:12px;">Todos los registros del año actual</div>
+    <button onclick="rpDescargar('anio')" id="rp-btn-anio"
+      style="width:100%;background:var(--forest,#1B5E20);color:#fff;border:none;padding:8px;border-radius:6px;font-size:.82rem;font-weight:700;cursor:pointer;">📥 Descargar</button>
+  </div>
+  <div style="border:1px solid var(--br);border-radius:8px;padding:18px;">
+    <div style="font-size:1.4rem;margin-bottom:6px;">🗂️</div>
+    <div style="font-weight:700;font-size:.88rem;color:var(--forest,#1B5E20);margin-bottom:4px;">Histórico completo</div>
+    <div style="font-size:.72rem;color:var(--muted);margin-bottom:12px;">Toda la base de datos sin filtro</div>
+    <button onclick="rpDescargar('todo')" id="rp-btn-todo"
+      style="width:100%;background:#555;color:#fff;border:none;padding:8px;border-radius:6px;font-size:.82rem;font-weight:700;cursor:pointer;">📥 Descargar todo</button>
+  </div>
+</div>
+<div style="margin-top:16px;background:#F1F8E9;border:1px solid #A5D6A7;border-radius:6px;padding:12px 16px;font-size:.74rem;color:#33691E;">
+  <strong>Hojas incluidas:</strong> 📊 Resumen · Gastos Diarios · Maquila Semanal · Ventas GT · Ventas Export · Pedidos Walmart · Control TL · Control DT · Control AL · Control BAS · Control ROD · Control FUM
+</div>
 </div>
 </div>
 <div class="sec" id="sec-inv-trazabilidad">
@@ -15645,5 +15685,6 @@ window.addEventListener('DOMContentLoaded', () => {
   </script>
 <script src="src/modules/banco-import/banco-import.js"></script>
 <script src="src/modules/guatecompras/guatecompras.js"></script>
+<script src="src/modules/reportes/descarga-excel.js"></script>
 </body>
 </html>
