@@ -217,7 +217,7 @@ function biRowHtml(m) {
 }
 
 function buildCatOptions(selected) {
-  if (!window.GD_CATS) return `<option value="${selected}">${selected}</option>`;
+  if (typeof GD_CATS === 'undefined') return `<option value="${selected}">${selected}</option>`;
   const grupos = {};
   for (const [k,v] of Object.entries(GD_CATS)) {
     if (!grupos[v.grupo]) grupos[v.grupo] = [];
