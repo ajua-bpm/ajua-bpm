@@ -2084,6 +2084,7 @@ if ('caches' in window) {
   <div class="fa">
     <button class="btn bp" onclick="gdSave()">💾 Guardar Gasto</button>
     <button class="btn bo" id="gd-cancel-btn" style="display:none;" onclick="gdCancelEdit()">✕ Cancelar</button>
+    <button class="btn bo" onclick="biAbrir()" title="Importar movimientos del Excel del banco" style="border-color:#1565C0;color:#1565C0;">🏦 Importar banco</button>
   </div>
 </div>
 
@@ -15642,6 +15643,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (btn) btn.style.display = 'none';
   });
   </script>
+<script src="src/modules/banco-import/banco-import.js"></script>
 <script src="src/modules/guatecompras/guatecompras.js"></script>
 </body>
 </html>
