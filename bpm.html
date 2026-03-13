@@ -2300,6 +2300,8 @@ if ('caches' in window) {
   </div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;">
     <button class="btn bp bsm" onclick="pwNuevoPedido()">+ Nuevo Pedido</button>
+    <button class="btn bo bsm" onclick="wiAbrir()">📧 Desde correo</button>
+    <button class="btn bo bsm" id="wi-btn-queue" onclick="wiImportarQueue()" style="display:none;background:#1565C0;color:#fff;border-color:#1565C0;"></button>
     <button class="btn bo bsm" onclick="pwTab('calendario',document.getElementById('pw-tab-cal'))">📅 Calendario</button>
   </div>
 </div>
@@ -2935,7 +2937,7 @@ if ('caches' in window) {
   </div>
 </div>
 <div style="margin-top:16px;background:#F1F8E9;border:1px solid #A5D6A7;border-radius:6px;padding:12px 16px;font-size:.74rem;color:#33691E;">
-  <strong>Hojas incluidas:</strong> 📊 Resumen · Gastos Diarios · Maquila Semanal · Ventas GT · Ventas Export · Pedidos Walmart · Control TL · Control DT · Control AL · Control BAS · Control ROD · Control FUM
+  <strong>Hojas incluidas:</strong> 📊 Resumen · Gastos Diarios · Maquila Semanal · Ventas GT · Ventas Export · Pedidos Walmart · Control TL · Control DT · Control AL · Control BAS · Control ROD · Control FUM · Inv Entradas · Inv Salidas · GC Concursos · GC Descubiertos
 </div>
 </div>
 </div>
@@ -2987,10 +2989,11 @@ if ('caches' in window) {
 
   <!-- NIVEL 3: Export/Import manual -->
   <div style="background:rgba(0,100,200,.06);border:1.5px solid rgba(0,100,200,.15);border-radius:8px;padding:14px;margin-bottom:10px;">
-    <div style="font-weight:700;font-size:.82rem;margin-bottom:8px;">💾 Nivel 3 — Respaldo Manual JSON</div>
-    <div style="font-size:.75rem;color:var(--muted);margin-bottom:10px;">Descarga un archivo JSON completo a tu computadora. Guárdalo en Drive, WhatsApp, correo — donde quieras.</div>
+    <div style="font-weight:700;font-size:.82rem;margin-bottom:8px;">💾 Nivel 3 — Respaldo Manual</div>
+    <div style="font-size:.75rem;color:var(--muted);margin-bottom:10px;">Descarga JSON o Excel completo a tu computadora. El Excel se descarga automáticamente 1 vez por día al abrir la app.</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="btn bsm" style="background:var(--green-deep);color:var(--cream);font-weight:700;" onclick="fbExportBackup()">⬇ Descargar JSON ahora</button>
+      <button class="btn bsm" style="background:var(--green-deep);color:var(--cream);font-weight:700;" onclick="fbExportBackup()">⬇ JSON ahora</button>
+      <button class="btn bsm" style="background:#1565C0;color:#fff;font-weight:700;" onclick="backupDownloadExcel(true)">📊 Excel ahora</button>
       <label class="btn bsm bo" style="cursor:pointer;">⬆ Restaurar desde JSON <input type="file" accept=".json" style="display:none;" onchange="fbImportBackup(this)"></label>
     </div>
   </div>
@@ -15730,5 +15733,7 @@ window.addEventListener('DOMContentLoaded', () => {
 <script src="src/modules/banco-import/banco-import.js"></script>
 <script src="src/modules/guatecompras/guatecompras.js"></script>
 <script src="src/modules/reportes/descarga-excel.js"></script>
+<script src="src/modules/reportes/descarga-excel-gc.js"></script>
+<script src="src/modules/walmart-import/walmart-import.js"></script>
 </body>
 </html>
