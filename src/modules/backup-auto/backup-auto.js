@@ -7,10 +7,11 @@
 // Build 63 — Marzo 2026
 // ══════════════════════════════════════════════════════════════════
 
-const BACKUP_LS_KEY    = 'ajua_backups_v1';   // array de snapshots en localStorage
-const BACKUP_MAX_SNAPS = 8;                    // máximo 8 snapshots (48 horas a c/6h)
-const BACKUP_INTERVAL  = 6 * 60 * 60 * 1000;  // cada 6 horas
-const BACKUP_DAILY_KEY = 'ajua_last_daily_backup';
+const BACKUP_LS_KEY         = 'ajua_backups_v1';   // array de snapshots en localStorage
+const BACKUP_MAX_SNAPS      = 8;                    // máximo 8 snapshots (48 horas a c/6h)
+const BACKUP_INTERVAL       = 6 * 60 * 60 * 1000;  // cada 6 horas
+const BACKUP_DAILY_KEY      = 'ajua_last_daily_backup';
+const BACKUP_DAILY_XLSX_KEY = 'ajua_last_excel_backup';
 
 // ── Snapshot a localStorage ────────────────────────────────────────
 function backupSnapshotLS() {
@@ -56,6 +57,52 @@ function backupDownloadJSON(manual = false) {
     console.log(`📥 Backup diario descargado: ${today}`);
   } catch(e) {
     console.warn('⚠ Descarga backup falló:', e.message);
+  }
+}
+
+// ── Descarga Excel diaria ──────────────────────────────────────────
+function backupDownloadExcel(manual) {
+  try {
+    var today = new Date(Date.now() - 6*3600000).toISOString().split('T')[0];
+    if (!manual) {
+      if (localStorage.getItem(BACKUP_DAILY_XLSX_KEY) === today) return; // ya se descargó hoy
+    }
+    if (typeof rpEnsureXLSX !== 'function' || typeof rpSheetGastosDiarios !== 'function') {
+      console.warn('⚠ Módulo Excel no disponible aún, reintentando en 30s');
+      setTimeout(function() { backupDownloadExcel(manual); }, 30000);
+      return;
+    }
+    rpEnsureXLSX(function() {
+      try {
+        var wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, rpSheetResumen('2020-01-01','2099-12-31','Historico'), 'Resumen');
+        XLSX.utils.book_append_sheet(wb, rpSheetGastosDiarios('2020-01-01','2099-12-31'),      'Gastos Diarios');
+        XLSX.utils.book_append_sheet(wb, rpSheetMaquila('2020-01-01','2099-12-31'),            'Maquila Semanal');
+        XLSX.utils.book_append_sheet(wb, rpSheetVentasGT('2020-01-01','2099-12-31'),           'Ventas GT');
+        XLSX.utils.book_append_sheet(wb, rpSheetVentasExport('2020-01-01','2099-12-31'),       'Ventas Export');
+        XLSX.utils.book_append_sheet(wb, rpSheetWalmart('2020-01-01','2099-12-31'),            'Pedidos Walmart');
+        XLSX.utils.book_append_sheet(wb, rpSheetTL('2020-01-01','2099-12-31'),                 'Control TL');
+        XLSX.utils.book_append_sheet(wb, rpSheetDT('2020-01-01','2099-12-31'),                 'Control DT');
+        XLSX.utils.book_append_sheet(wb, rpSheetAL('2020-01-01','2099-12-31'),                 'Control AL');
+        XLSX.utils.book_append_sheet(wb, rpSheetBAS('2020-01-01','2099-12-31'),                'Control BAS');
+        XLSX.utils.book_append_sheet(wb, rpSheetROD('2020-01-01','2099-12-31'),                'Control ROD');
+        XLSX.utils.book_append_sheet(wb, rpSheetFUM('2020-01-01','2099-12-31'),                'Control FUM');
+        XLSX.utils.book_append_sheet(wb, rpSheetIentradas('2020-01-01','2099-12-31'),          'Inv Entradas');
+        XLSX.utils.book_append_sheet(wb, rpSheetIsalidas('2020-01-01','2099-12-31'),           'Inv Salidas');
+        if (typeof rpSheetGCConcursos    === 'function') XLSX.utils.book_append_sheet(wb, rpSheetGCConcursos(),    'GC Concursos');
+        if (typeof rpSheetGCDescubiertos === 'function') XLSX.utils.book_append_sheet(wb, rpSheetGCDescubiertos(), 'GC Descubiertos');
+        var nombre = 'AJUA_backup_' + today + '.xlsx';
+        XLSX.writeFile(wb, nombre);
+        localStorage.setItem(BACKUP_DAILY_XLSX_KEY, today);
+        if (manual) toast('✅ Backup Excel descargado');
+        console.log('📊 Backup Excel descargado: ' + nombre);
+      } catch(e) {
+        console.warn('⚠ Backup Excel falló:', e.message);
+        if (manual) toast('⚠ Error backup Excel: ' + e.message, true);
+      }
+    });
+  } catch(e) {
+    console.warn('⚠ backupDownloadExcel error:', e.message);
   }
 }
 
@@ -133,17 +180,20 @@ function backupUpdateUI() {
 
 // ── Iniciar sistema de backup ──────────────────────────────────────
 function backupInit() {
-  // Primer snapshot inmediato si hay datos
+  // Primer snapshot + backups diarios al cargar (si hay datos y no se hicieron hoy)
   setTimeout(() => {
     if (_dbTotalRecords(DB) > 10) {
       backupSnapshotLS();
+      backupDownloadJSON(false);
+      backupDownloadExcel(false);
     }
   }, 30000); // 30 segundos después de cargar
 
   // Snapshot cada 6 horas
   setInterval(() => {
     backupSnapshotLS();
-    backupDownloadJSON(false); // descarga automática diaria
+    backupDownloadJSON(false);   // backup JSON diario
+    backupDownloadExcel(false);  // backup Excel diario
   }, BACKUP_INTERVAL);
 
   console.log('🛡️ Sistema de backup automático iniciado');

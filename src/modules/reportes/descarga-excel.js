@@ -51,11 +51,15 @@ function rpSheetResumen(desde, hasta, label) {
   var vint = rpFilt(DB.vintVentas || [], 'fecha', desde, hasta);
   var pw   = rpFilt(DB.pedidosWalmart || [], 'fechaEntrega', desde, hasta);
   var gs   = rpFilt(DB.gastosSemanales || [], 'semanaInicio', desde, hasta);
+  var ien  = rpFilt(DB.ientradas || [], 'fecha', desde, hasta);
+  var isal = rpFilt(DB.isalidas || [], 'fecha', desde, hasta);
 
   var totalGastos    = gd.reduce(function(s,r) { return s + (r.monto||0); }, 0);
   var totalVentasGT  = vgt.reduce(function(s,r) { return s + (r.totalQ||0); }, 0);
   var totalVentasExp = vint.reduce(function(s,r) { return s + (r.totalGtq||0); }, 0);
   var totalMaquila   = gs.reduce(function(s,r) { return s + (r.grandTotal||0); }, 0);
+  var totalEntradas  = ien.reduce(function(s,r) { return s + (r.costoTotal||r.totalQ||0); }, 0);
+  var totalSalidas   = isal.reduce(function(s,r) { return s + (r.totalConIVA||r.totalQ||0); }, 0);
 
   var porCat = {};
   gd.forEach(function(r) { var k = rpCatLabel(r.cat); porCat[k] = (porCat[k]||0) + (r.monto||0); });
@@ -73,6 +77,8 @@ function rpSheetResumen(desde, hasta, label) {
     ['Ventas Exportacion', vint.length, totalVentasExp],
     ['Maquila Semanal', gs.length, totalMaquila],
     ['Pedidos Walmart', pw.length, '---'],
+    ['Entradas Inventario', ien.length, totalEntradas],
+    ['Salidas Inventario (Walmart)', isal.length, totalSalidas],
     [],
     ['CONTROLES BPM', 'Registros'],
     ['Limpieza Transporte', rpFilt(DB.tl||[], 'fecha', desde, hasta).length],
@@ -230,6 +236,47 @@ function rpSheetFUM(desde, hasta) {
   );
 }
 
+function rpSheetIentradas(desde, hasta) {
+  var rows = rpFilt(DB.ientradas || [], 'fecha', desde, hasta);
+  return rpMakeSheet(
+    ['Fecha','Producto','Origen','Productor','Proveedor','Bultos','Lbs','Kg','Q/lb','Total Q','DUCA','Cotizacion','F.Productor','F.Proveedor','Fuente','Obs'],
+    rows.map(function(r) { return [
+      r.fecha||'', r.productoNombre||'', r.origen||'',
+      r.productorNombre||'', r.proveedorNombre||'',
+      r.bultos||0,
+      r.lbsTotal||r.lbsBruto||0,
+      r.kgTotal||r.kgBruto||0,
+      r.costoLb||r.cxlb||0,
+      r.costoTotal||r.totalQ||0,
+      r.duca||'', r.cotizacionNom||r.cotRef||'',
+      r.factProductor||'', r.factProveedor||'',
+      r.source||'', r.obs||''
+    ]; }),
+    [12,28,16,22,22,8,10,10,10,12,14,22,16,16,10,30]
+  );
+}
+
+function rpSheetIsalidas(desde, hasta) {
+  var rows = rpFilt(DB.isalidas || [], 'fecha', desde, hasta);
+  var data = [['Fecha','Cliente','Total Lbs','Neto Q','IVA Q','Total c/IVA','Retencion','A Cobrar','Factura','OC','Obs']];
+  rows.forEach(function(r) {
+    data.push([
+      r.fecha||'', r.clienteNombre||'',
+      r.totalLbs||0, r.totalNeto||0, r.totalIVA||0,
+      r.totalConIVA||r.totalQ||0, r.totalRetencion||0, r.totalACobrar||0,
+      r.factura||'', r.oc||'', r.obs||''
+    ]);
+    (r.lineas||[]).forEach(function(l) {
+      data.push(['', '  > '+(l.productoNombre||''), l.totalLbs||l.lbs||0,
+                 l.totalNeto||l.neto||0, '', l.totalConIva||l.totalConIVA||0,
+                 '', '', '', '', '']);
+    });
+  });
+  var ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{wch:12},{wch:28},{wch:10},{wch:12},{wch:10},{wch:14},{wch:12},{wch:12},{wch:16},{wch:14},{wch:30}];
+  return ws;
+}
+
 function rpEnsureXLSX(cb) {
   if (window.XLSX) { cb(); return; }
   var s = document.createElement('script');
@@ -261,6 +308,11 @@ function rpDescargar(periodo) {
       XLSX.utils.book_append_sheet(wb, rpSheetBAS(desde, hasta),             'Control BAS');
       XLSX.utils.book_append_sheet(wb, rpSheetROD(desde, hasta),             'Control ROD');
       XLSX.utils.book_append_sheet(wb, rpSheetFUM(desde, hasta),             'Control FUM');
+      XLSX.utils.book_append_sheet(wb, rpSheetIentradas(desde, hasta),       'Inv Entradas');
+      XLSX.utils.book_append_sheet(wb, rpSheetIsalidas(desde, hasta),        'Inv Salidas');
+
+      if (typeof rpSheetGCConcursos    === 'function') XLSX.utils.book_append_sheet(wb, rpSheetGCConcursos(),    'GC Concursos');
+      if (typeof rpSheetGCDescubiertos === 'function') XLSX.utils.book_append_sheet(wb, rpSheetGCDescubiertos(), 'GC Descubiertos');
 
       var nombre = 'AJUA_BPM_' + label + '_' + new Date().toISOString().slice(0,10) + '.xlsx';
       XLSX.writeFile(wb, nombre);
