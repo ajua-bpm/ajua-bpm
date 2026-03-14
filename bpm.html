@@ -782,13 +782,19 @@ if ('caches' in window) {
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
   import { getFirestore, doc, getDoc, setDoc }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+  import { getStorage, ref, uploadBytes, getDownloadURL }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
-  window._fbInitializeApp = initializeApp;
-  window._fbGetFirestore  = getFirestore;
-  window._fbDoc           = doc;
-  window._fbGetDoc        = getDoc;
-  window._fbSetDoc        = setDoc;
-  window._fbModulesReady  = true;
+  window._fbInitializeApp  = initializeApp;
+  window._fbGetFirestore   = getFirestore;
+  window._fbDoc            = doc;
+  window._fbGetDoc         = getDoc;
+  window._fbSetDoc         = setDoc;
+  window._fbGetStorage     = getStorage;
+  window._fbStorageRef     = ref;
+  window._fbUploadBytes    = uploadBytes;
+  window._fbGetDownloadURL = getDownloadURL;
+  window._fbModulesReady   = true;
   window.dispatchEvent(new Event('fb-modules-ready'));
 </script>
 </head>
@@ -6959,6 +6965,11 @@ async function initFirebase(firebaseConfig) {
     const db  = getFirestore(app);
 
     _fbDb = { db, doc, getDoc, setDoc };
+
+    // Storage — disponible para migración de docs/fotos
+    if (window._fbGetStorage) {
+      try { window._fbStorage = window._fbGetStorage(app); } catch(e) {}
+    }
 
     // ── Cargar datos: una sola lectura, sin listener ──────────────
     fbShowStatus('loading');
@@ -15736,5 +15747,6 @@ window.addEventListener('DOMContentLoaded', () => {
 <script src="src/modules/reportes/descarga-excel.js"></script>
 <script src="src/modules/reportes/descarga-excel-gc.js"></script>
 <script src="src/modules/walmart-import/walmart-import.js"></script>
+<script src="src/modules/storage-migrate/storage-migrate.js"></script>
 </body>
 </html>
