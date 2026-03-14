@@ -39,7 +39,13 @@ function processWalmartEmails() {
   var nextCorr     = queueDoc.nextCorrelativo || 1;
   var docModificado = false;
 
-  WM_SENDERS.forEach(function(sender) {
+  // Usar lista dinámica de Firestore si existe; si no, la hardcodeada
+  var senders = (queueDoc.senders && queueDoc.senders.length)
+    ? queueDoc.senders.filter(function(s) { return s.activo !== false; })
+    : WM_SENDERS;
+  Logger.log('Remitentes activos: ' + senders.map(function(s) { return s.nombre; }).join(', '));
+
+  senders.forEach(function(sender) {
     var query   = 'from:' + sender.email + ' subject:"' + WM_SUBJECT + '" is:unread';
     var threads = GmailApp.search(query, 0, 20);
 
@@ -398,10 +404,11 @@ function getQueueDoc(token) {
     return {
       queue:           decodeFS(doc.fields.queue)           || [],
       nextCorrelativo: decodeFS(doc.fields.nextCorrelativo) || 1,
+      senders:         decodeFS(doc.fields.senders)         || null,
     };
   } catch(e) {
     Logger.log('getQueueDoc error: ' + e.message);
-    return { queue: [], nextCorrelativo: 1 };
+    return { queue: [], nextCorrelativo: 1, senders: null };
   }
 }
 

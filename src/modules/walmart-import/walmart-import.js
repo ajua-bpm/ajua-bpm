@@ -422,6 +422,159 @@ function wiImportarQueue() {
   toast('✅ ' + importados + ' pedido(s) importados desde Gmail');
 }
 
+// ══ GESTIÓN DE REMITENTES ═════════════════════════════════════════
+// Lista dinámica — se guarda en Firestore walmart_queue.senders
+// El Apps Script la lee al arrancar para saber a quién buscar
+
+var _wiTempSenders = null;  // lista temporal en edición
+
+function _wiDefaultSenders() {
+  return [
+    { email: 'Willy.Galvez@walmart.com',   nombre: 'Willy Galvez',   activo: true },
+    { email: 'JORGE.GRANADOS@walmart.com', nombre: 'Jorge Granados',  activo: true },
+    { email: 'Astrid.Tujab@walmart.com',   nombre: 'Astrid Tujab',   activo: true },
+  ];
+}
+
+function wiAbrirRemitentes() {
+  // Leer lista actual desde Firestore
+  if (typeof _fbDb === 'undefined' || !_fbDb || !_fbDb.db) {
+    _wiRenderModalRemitentes(_wiDefaultSenders());
+    return;
+  }
+  _fbDb.getDoc(_fbDb.doc(_fbDb.db, 'ajua_bpm', 'walmart_queue'))
+    .then(function(snap) {
+      var data    = snap.exists() ? snap.data() : {};
+      var senders = (data.senders && data.senders.length) ? data.senders : _wiDefaultSenders();
+      _wiRenderModalRemitentes(senders);
+    })
+    .catch(function() { _wiRenderModalRemitentes(_wiDefaultSenders()); });
+}
+
+function _wiRenderModalRemitentes(senders) {
+  _wiTempSenders = senders.map(function(s) { return { email: s.email, nombre: s.nombre, activo: s.activo !== false }; });
+
+  var modal = document.getElementById('wi-modal-rem');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'wi-modal-rem';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9300;display:flex;align-items:center;justify-content:center;padding:12px;';
+    document.body.appendChild(modal);
+  }
+  modal.style.display = 'flex';
+
+  var filas = _wiTempSenders.map(function(s, i) {
+    var estadoBadge = s.activo
+      ? '<span style="background:#e8f5e9;color:#1B5E20;padding:2px 8px;border-radius:10px;font-size:.65rem;font-weight:600;">Activo</span>'
+      : '<span style="background:#fafafa;color:#aaa;padding:2px 8px;border-radius:10px;font-size:.65rem;">Inactivo</span>';
+    return '<tr>' +
+      '<td style="padding:9px 10px;border:1px solid var(--br,#ddd);font-weight:600;">' + s.nombre + '</td>' +
+      '<td style="padding:9px 10px;border:1px solid var(--br,#ddd);font-family:monospace;font-size:.75rem;">' + s.email + '</td>' +
+      '<td style="padding:9px 10px;border:1px solid var(--br,#ddd);text-align:center;">' +
+        '<label style="cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;">' +
+          '<input type="checkbox" ' + (s.activo ? 'checked' : '') + ' onchange="_wiToggleSender(' + i + ',this.checked)">' +
+          estadoBadge +
+        '</label>' +
+      '</td>' +
+      '<td style="padding:9px 10px;border:1px solid var(--br,#ddd);text-align:center;">' +
+        '<button onclick="_wiEliminarSender(' + i + ')" style="background:none;border:none;font-size:1rem;cursor:pointer;color:#e53935;" title="Eliminar">🗑️</button>' +
+      '</td>' +
+    '</tr>';
+  }).join('');
+
+  modal.innerHTML =
+    '<div style="background:var(--s1,#fff);border-radius:12px;width:100%;max-width:620px;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);">' +
+    '<div style="padding:18px 20px 0;display:flex;justify-content:space-between;align-items:center;">' +
+      '<div>' +
+        '<div style="font-family:var(--fh,Georgia);font-size:1.05rem;font-weight:700;color:var(--forest,#1B5E20);">⚙️ Correos autorizados — Pedidos Walmart</div>' +
+        '<div style="font-size:.72rem;color:var(--muted,#888);margin-top:2px;">El sistema acepta pedidos de estos correos automáticamente</div>' +
+      '</div>' +
+      '<button onclick="wiCerrarRemitentes()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--muted,#aaa);">✕</button>' +
+    '</div>' +
+    '<div style="padding:16px 20px;">' +
+      '<table style="width:100%;border-collapse:collapse;font-size:.82rem;margin-bottom:16px;">' +
+        '<thead><tr style="background:var(--green-pale,#f1f8e9);">' +
+          '<th style="padding:8px 10px;text-align:left;border:1px solid var(--br,#ddd);font-size:.65rem;color:var(--forest,#1B5E20);">Nombre</th>' +
+          '<th style="padding:8px 10px;text-align:left;border:1px solid var(--br,#ddd);font-size:.65rem;color:var(--forest,#1B5E20);">Correo electrónico</th>' +
+          '<th style="padding:8px 10px;text-align:center;border:1px solid var(--br,#ddd);font-size:.65rem;color:var(--forest,#1B5E20);">Estado</th>' +
+          '<th style="padding:8px 10px;border:1px solid var(--br,#ddd);width:40px;"></th>' +
+        '</tr></thead>' +
+        '<tbody id="wi-rem-tbody">' + filas + '</tbody>' +
+      '</table>' +
+      '<div style="background:var(--s2,#f5f5f5);border-radius:8px;padding:14px;margin-bottom:14px;">' +
+        '<div style="font-size:.7rem;font-weight:700;color:var(--forest,#1B5E20);margin-bottom:10px;">➕ Agregar remitente</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">' +
+          '<div>' +
+            '<label style="font-size:.65rem;display:block;color:var(--muted,#888);margin-bottom:3px;">Nombre</label>' +
+            '<input id="wi-rem-nombre" placeholder="Ej: Maria Lopez" style="width:100%;box-sizing:border-box;background:#fff;border:1.5px solid var(--br,#ddd);border-radius:4px;color:var(--txt,#333);padding:7px 9px;font-size:.82rem;">' +
+          '</div>' +
+          '<div>' +
+            '<label style="font-size:.65rem;display:block;color:var(--muted,#888);margin-bottom:3px;">Correo electrónico</label>' +
+            '<input id="wi-rem-email" placeholder="Ej: Maria.Lopez@walmart.com" style="width:100%;box-sizing:border-box;background:#fff;border:1.5px solid var(--br,#ddd);border-radius:4px;color:var(--txt,#333);padding:7px 9px;font-size:.82rem;">' +
+          '</div>' +
+        '</div>' +
+        '<button onclick="_wiAgregarSender()" style="background:var(--forest,#1B5E20);color:#fff;border:none;padding:7px 16px;border-radius:5px;cursor:pointer;font-size:.8rem;font-weight:600;">➕ Agregar</button>' +
+      '</div>' +
+      '<div style="font-size:.68rem;color:var(--muted,#888);margin-bottom:12px;padding:8px 10px;background:#fff3e0;border-radius:5px;border-left:3px solid #f26822;">' +
+        '⚠ Después de guardar, el Apps Script usará esta lista la próxima vez que corra (cada 30 min).' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end;">' +
+        '<button onclick="wiCerrarRemitentes()" class="btn bo bsm">Cancelar</button>' +
+        '<button onclick="wiGuardarRemitentes()" style="background:var(--forest,#1B5E20);color:#fff;border:none;padding:9px 22px;border-radius:6px;font-weight:700;cursor:pointer;font-size:.85rem;">💾 Guardar</button>' +
+      '</div>' +
+    '</div>' +
+    '</div>';
+}
+
+function _wiToggleSender(i, activo) {
+  if (_wiTempSenders && _wiTempSenders[i]) {
+    _wiTempSenders[i].activo = activo;
+  }
+}
+
+function _wiEliminarSender(i) {
+  if (!_wiTempSenders) return;
+  if (!confirm('¿Eliminar a ' + _wiTempSenders[i].nombre + '?')) return;
+  _wiTempSenders.splice(i, 1);
+  _wiRenderModalRemitentes(_wiTempSenders);
+}
+
+function _wiAgregarSender() {
+  var nombre = (document.getElementById('wi-rem-nombre') || {}).value.trim();
+  var email  = (document.getElementById('wi-rem-email')  || {}).value.trim();
+  if (!nombre || !email) { toast('⚠ Ingresa nombre y correo', true); return; }
+  if (email.indexOf('@') < 0) { toast('⚠ Correo inválido', true); return; }
+  if (!_wiTempSenders) _wiTempSenders = [];
+  _wiTempSenders.push({ email: email, nombre: nombre, activo: true });
+  _wiRenderModalRemitentes(_wiTempSenders);
+}
+
+function wiGuardarRemitentes() {
+  var senders = _wiTempSenders || [];
+  if (!senders.length) { toast('⚠ Agrega al menos un remitente', true); return; }
+  if (typeof _fbDb === 'undefined' || !_fbDb || !_fbDb.db) { toast('⚠ Firebase no disponible', true); return; }
+
+  var qRef = _fbDb.doc(_fbDb.db, 'ajua_bpm', 'walmart_queue');
+  _fbDb.getDoc(qRef).then(function(snap) {
+    var data = snap.exists() ? snap.data() : { queue: [], nextCorrelativo: 1 };
+    data.senders       = senders;
+    data.sendersUpdate = now();
+    return _fbDb.setDoc(qRef, data);
+  }).then(function() {
+    wiCerrarRemitentes();
+    var activos = senders.filter(function(s) { return s.activo; }).length;
+    toast('✅ ' + activos + ' remitente(s) activos guardados — Apps Script los usará en el próximo ciclo');
+  }).catch(function(e) {
+    toast('⚠ Error al guardar: ' + e.message, true);
+  });
+}
+
+function wiCerrarRemitentes() {
+  var modal = document.getElementById('wi-modal-rem');
+  if (modal) modal.style.display = 'none';
+  _wiTempSenders = null;
+}
+
 // Verificar cola 8 segundos después de que Firebase cargue
 var _wiInitCheck = setInterval(function() {
   if (typeof _fbLoaded !== 'undefined' && _fbLoaded) {
@@ -430,10 +583,16 @@ var _wiInitCheck = setInterval(function() {
   }
 }, 2000);
 
-window.wiAbrir           = wiAbrir;
-window.wiCerrar          = wiCerrar;
-window.wiParsearYMostrar = wiParsearYMostrar;
-window.wiConfirmar       = wiConfirmar;
-window.wiImportarQueue   = wiImportarQueue;
+window.wiAbrir             = wiAbrir;
+window.wiCerrar            = wiCerrar;
+window.wiParsearYMostrar   = wiParsearYMostrar;
+window.wiConfirmar         = wiConfirmar;
+window.wiImportarQueue     = wiImportarQueue;
+window.wiAbrirRemitentes   = wiAbrirRemitentes;
+window.wiCerrarRemitentes  = wiCerrarRemitentes;
+window.wiGuardarRemitentes = wiGuardarRemitentes;
+window._wiToggleSender     = _wiToggleSender;
+window._wiEliminarSender   = _wiEliminarSender;
+window._wiAgregarSender    = _wiAgregarSender;
 
 console.log('✅ walmart-import.js cargado');
