@@ -1,8 +1,9 @@
 // ═══════════════════════════════════════════════════════════════════
-// AJÚA BPM — Módulo Walmart Import (build-82)
-// Importa pedidos desde correo de Willy.Galvez@walmart.com
+// AJÚA BPM — Módulo Walmart Import (build-83)
+// Remitentes: Willy Galvez, Jorge Granados, Astrid Tujab
 // Soporta formato PIPE |, TAB y línea por línea
 // Cola automática via Google Apps Script → Firestore → BPM
+// PDF + email automático a gerenciaajua@gmail.com
 // ═══════════════════════════════════════════════════════════════════
 
 var _wiParsed        = null;  // datos parseados pendientes de confirmar
@@ -144,7 +145,7 @@ function wiAbrir() {
     '<div style="padding:18px 20px 0;display:flex;justify-content:space-between;align-items:flex-start;">' +
       '<div>' +
         '<div style="font-family:var(--fh,Georgia);font-size:1.05rem;font-weight:700;color:var(--forest,#1B5E20);">📧 Importar pedido desde correo</div>' +
-        '<div style="font-size:.72rem;color:var(--muted,#888);margin-top:2px;">Copia y pega el texto del email de <strong>Willy.Galvez@walmart.com</strong></div>' +
+        '<div style="font-size:.72rem;color:var(--muted,#888);margin-top:2px;">Acepta correos de: <strong>Willy Galvez · Jorge Granados · Astrid Tujab</strong></div>' +
       '</div>' +
       '<button onclick="wiCerrar()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--muted,#aaa);line-height:1;">✕</button>' +
     '</div>' +
@@ -239,37 +240,109 @@ function wiConfirmar() {
   var fechaEntrega = fechaEl ? fechaEl.value : '';
   if (!fechaEntrega) { toast('⚠ Ingresa la fecha de entrega', true); return; }
 
-  var c = _wiParsed.campos;
-  var rec = {
-    id:           uid(),
-    ts:           now(),
-    fechaEntrega: fechaEntrega,
-    horaEntrega:  horaEl  ? horaEl.value  : (c.hora  || '16:00'),
-    rampa:        rampaEl ? rampaEl.value : (c.rampa || ''),
-    oc:           '',
-    atlas:        '',
-    nota:         c.dia || '',
-    obs:          'Importado desde correo',
-    rubros:       _wiParsed.rubros.map(function(r, i) {
-      return { n: r.item || String(i + 1), desc: r.desc, cajas: r.cajas,
-               prodId: r.prodId || '', estado: 'pendiente' };
-    }),
-    estado:     'pendiente',
-    esAgregado: false,
-    baseId:     null,
-    albaranDoc: null,
-    rechazoDoc: null,
-    cierreTs:   null,
+  var c        = _wiParsed.campos;
+  var horaVal  = horaEl  ? horaEl.value  : (c.hora  || '16:00');
+  var rampaVal = rampaEl ? rampaEl.value : (c.rampa || '');
+
+  // Obtener correlativo desde Firestore (async), luego guardar
+  _wiObtenerCorrelativo(function(correlativo, nextN) {
+    var rec = {
+      id:              uid(),
+      ts:              now(),
+      correlativo:     correlativo,
+      fechaEntrega:    fechaEntrega,
+      horaEntrega:     horaVal,
+      rampa:           rampaVal,
+      oc:              '',
+      atlas:           '',
+      nota:            c.dia || '',
+      obs:             'Importado desde correo',
+      solicitante:     'Manual BPM',
+      solicitanteEmail: '',
+      rubros:          _wiParsed.rubros.map(function(r, i) {
+        return { n: r.item || String(i + 1), desc: r.desc, cajas: r.cajas,
+                 prodId: r.prodId || '', estado: 'pendiente' };
+      }),
+      estado:     'pendiente',
+      esAgregado: false,
+      baseId:     null,
+      albaranDoc: null,
+      rechazoDoc: null,
+      cierreTs:   null,
+    };
+
+    DB.pedidosWalmart.unshift(rec);
+    save();
+    wiCerrar();
+    try { pwRenderLista(); }      catch(e) {}
+    try { pwRenderCalendario(); } catch(e) {}
+
+    var total = rec.rubros.reduce(function(s, r) { return s + r.cajas; }, 0);
+    toast('✅ ' + correlativo + ' guardado — ' + rec.rubros.length + ' rubros · ' + total + ' cajas · 📧 Email a gerencia en camino');
+
+    // Actualizar contador en Firestore y encolar email para el Apps Script
+    if (nextN !== null) _wiActualizarCorrelativo(nextN);
+    _wiQueueEmail(rec);
+  });
+}
+
+// ── Obtener siguiente correlativo desde Firestore ─────────────────
+function _wiObtenerCorrelativo(cb) {
+  var yr       = new Date().getFullYear();
+  var fallback = function() {
+    var n = (DB.pedidosWalmart || []).length + 1;
+    cb('WM-' + yr + '-' + String(n).padStart(3, '0'), null);
   };
+  if (typeof _fbDb === 'undefined' || !_fbDb || !_fbDb.db) { fallback(); return; }
+  try {
+    _fbDb.getDoc(_fbDb.doc(_fbDb.db, 'ajua_bpm', 'walmart_queue'))
+      .then(function(snap) {
+        var data = snap.exists() ? snap.data() : {};
+        var n    = data.nextCorrelativo || 1;
+        cb('WM-' + yr + '-' + String(n).padStart(3, '0'), n + 1);
+      })
+      .catch(fallback);
+  } catch(e) { fallback(); }
+}
 
-  DB.pedidosWalmart.unshift(rec);
-  save();
-  wiCerrar();
-  try { pwRenderLista(); }      catch(e) {}
-  try { pwRenderCalendario(); } catch(e) {}
+// ── Actualizar contador de correlativo en Firestore ───────────────
+function _wiActualizarCorrelativo(nextN) {
+  if (typeof _fbDb === 'undefined' || !_fbDb || !_fbDb.db) return;
+  try {
+    var qRef = _fbDb.doc(_fbDb.db, 'ajua_bpm', 'walmart_queue');
+    _fbDb.getDoc(qRef).then(function(snap) {
+      var data = snap.exists() ? snap.data() : { queue: [] };
+      data.nextCorrelativo = nextN;
+      _fbDb.setDoc(qRef, data);
+    }).catch(function(){});
+  } catch(e) {}
+}
 
-  var total = rec.rubros.reduce(function(s, r) { return s + r.cajas; }, 0);
-  toast('✅ Pedido ' + fechaEntrega + ' guardado — ' + rec.rubros.length + ' rubros · ' + total + ' cajas');
+// ── Encolar pedido manual para que Apps Script envíe PDF+email ────
+function _wiQueueEmail(rec) {
+  if (typeof _fbDb === 'undefined' || !_fbDb || !_fbDb.db) return;
+  try {
+    var eRef = _fbDb.doc(_fbDb.db, 'ajua_bpm', 'email_queue');
+    _fbDb.getDoc(eRef).then(function(snap) {
+      var data  = snap.exists() ? snap.data() : { queue: [] };
+      var queue = Array.isArray(data.queue) ? data.queue : [];
+      queue.push({
+        id:              rec.id,
+        correlativo:     rec.correlativo,
+        fechaEntrega:    rec.fechaEntrega,
+        horaEntrega:     rec.horaEntrega,
+        rampa:           rec.rampa,
+        nota:            rec.nota,
+        solicitante:     'Manual BPM',
+        solicitanteEmail: '',
+        emailFecha:      rec.ts,
+        rubros:          rec.rubros,
+        _enviado:        false,
+        ts:              rec.ts,
+      });
+      _fbDb.setDoc(eRef, { queue: queue, lastUpdate: now() });
+    }).catch(function(e) { console.warn('_wiQueueEmail:', e.message); });
+  } catch(e) { console.warn('_wiQueueEmail err:', e); }
 }
 
 // ── Cerrar modal ──────────────────────────────────────────────────
