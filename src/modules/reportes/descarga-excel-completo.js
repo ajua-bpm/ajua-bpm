@@ -292,39 +292,77 @@ function rpExportarCompleto() {
   var btn = document.getElementById('btn-exportar-completo');
   if (btn) { btn.disabled = true; btn.textContent = 'Generando...'; }
 
-  (typeof rpEnsureXLSX === 'function' ? rpEnsureXLSX : function(cb){
-    if (window.XLSX) { cb(); return; }
-    var s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-    s.onload = cb;
-    document.head.appendChild(s);
-  })(function() {
-    try {
-      var wb   = XLSX.utils.book_new();
-      var hoy  = new Date().toISOString().slice(0,10);
+  function _generar() {
+    console.log('rpExportarCompleto: iniciando generacion...');
+    var wb  = XLSX.utils.book_new();
+    var hoy = new Date().toISOString().slice(0,10);
 
-      XLSX.utils.book_append_sheet(wb, rpXResumen(),           'Resumen');
-      XLSX.utils.book_append_sheet(wb, rpXGastosDiarios(),     'Gastos Diarios');
-      XLSX.utils.book_append_sheet(wb, rpXGastosSemanales(),   'Gastos Semanales');
-      XLSX.utils.book_append_sheet(wb, rpXPedidosWalmart(),    'Pedidos Walmart');
-      XLSX.utils.book_append_sheet(wb, rpXEmpleados(),         'Empleados');
-      XLSX.utils.book_append_sheet(wb, rpXAccesosAL(),         'Accesos AL');
-      XLSX.utils.book_append_sheet(wb, rpXFurgonesTL(),        'Furgones TL');
-      XLSX.utils.book_append_sheet(wb, rpXDespachosDT(),       'Despachos DT');
-      XLSX.utils.book_append_sheet(wb, rpXBasculasBAS(),       'Basculas BAS');
-      XLSX.utils.book_append_sheet(wb, rpXRoedoresROD(),       'Roedores ROD');
-      XLSX.utils.book_append_sheet(wb, rpXFumigacionFUM(),     'Fumigacion FUM');
-      XLSX.utils.book_append_sheet(wb, rpXGuatecompras(),      'Guatecompras');
+    var hojas = [
+      ['Resumen',          rpXResumen],
+      ['Gastos Diarios',   rpXGastosDiarios],
+      ['Gastos Semanales', rpXGastosSemanales],
+      ['Pedidos Walmart',  rpXPedidosWalmart],
+      ['Empleados',        rpXEmpleados],
+      ['Accesos AL',       rpXAccesosAL],
+      ['Furgones TL',      rpXFurgonesTL],
+      ['Despachos DT',     rpXDespachosDT],
+      ['Basculas BAS',     rpXBasculasBAS],
+      ['Roedores ROD',     rpXRoedoresROD],
+      ['Fumigacion FUM',   rpXFumigacionFUM],
+      ['Guatecompras',     rpXGuatecompras],
+    ];
 
-      XLSX.writeFile(wb, 'AJUA_BPM_' + hoy + '.xlsx');
-      toast('✅ AJUA_BPM_' + hoy + '.xlsx descargado');
-    } catch(e) {
-      toast('❌ Error generando Excel: ' + e.message, true);
-      console.error('rpExportarCompleto error:', e);
-    } finally {
+    var errores = [];
+    hojas.forEach(function(h) {
+      try {
+        console.log('  generando hoja:', h[0]);
+        XLSX.utils.book_append_sheet(wb, h[1](), h[0]);
+      } catch(e) {
+        errores.push(h[0] + ': ' + e.message);
+        console.error('  ❌ hoja ' + h[0] + ':', e);
+      }
+    });
+
+    if (wb.SheetNames.length === 0) {
+      toast('❌ No se pudo generar ninguna hoja. Ver consola F12.', true);
+      if (btn) { btn.disabled = false; btn.textContent = '📊 Exportar Excel'; }
+      return;
+    }
+
+    XLSX.writeFile(wb, 'AJUA_BPM_' + hoy + '.xlsx');
+
+    if (errores.length) {
+      console.warn('⚠ Hojas con error:', errores);
+      toast('⚠ Excel parcial (' + wb.SheetNames.length + '/12 hojas). Ver consola.');
+    } else {
+      toast('✅ AJUA_BPM_' + hoy + '.xlsx — ' + wb.SheetNames.length + ' hojas');
+    }
+    if (btn) { btn.disabled = false; btn.textContent = '📊 Exportar Excel'; }
+  }
+
+  if (window.XLSX) {
+    try { _generar(); } catch(e) {
+      toast('❌ ' + e.message, true);
+      console.error(e);
       if (btn) { btn.disabled = false; btn.textContent = '📊 Exportar Excel'; }
     }
-  });
+    return;
+  }
+
+  var s = document.createElement('script');
+  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  s.onload = function() {
+    try { _generar(); } catch(e) {
+      toast('❌ ' + e.message, true);
+      console.error(e);
+      if (btn) { btn.disabled = false; btn.textContent = '📊 Exportar Excel'; }
+    }
+  };
+  s.onerror = function() {
+    toast('❌ No se pudo cargar libreria Excel', true);
+    if (btn) { btn.disabled = false; btn.textContent = '📊 Exportar Excel'; }
+  };
+  document.head.appendChild(s);
 }
 
 window.rpExportarCompleto = rpExportarCompleto;
