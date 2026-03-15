@@ -780,7 +780,7 @@ if ('caches' in window) {
 <!-- Firebase ESM — v10.12 carga simple (sin persistencia, sin snapshot) -->
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-  import { getFirestore, doc, getDoc, setDoc }
+  import { getFirestore, doc, getDoc, setDoc, collection, query, where, orderBy, getDocs }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
   import { getStorage, ref, uploadBytes, getDownloadURL }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
@@ -790,6 +790,11 @@ if ('caches' in window) {
   window._fbDoc            = doc;
   window._fbGetDoc         = getDoc;
   window._fbSetDoc         = setDoc;
+  window._fbCollection     = collection;
+  window._fbQuery          = query;
+  window._fbWhere          = where;
+  window._fbOrderBy        = orderBy;
+  window._fbGetDocs        = getDocs;
   window._fbGetStorage     = getStorage;
   window._fbStorageRef     = ref;
   window._fbUploadBytes    = uploadBytes;
@@ -6984,11 +6989,16 @@ async function initFirebase(firebaseConfig) {
     const doc           = window._fbDoc;
     const getDoc        = window._fbGetDoc;
     const setDoc        = window._fbSetDoc;
+    const collection    = window._fbCollection;
+    const query         = window._fbQuery;
+    const where         = window._fbWhere;
+    const orderBy       = window._fbOrderBy;
+    const getDocs       = window._fbGetDocs;
 
     const app = initializeApp(firebaseConfig);
     const db  = getFirestore(app);
 
-    _fbDb = { db, doc, getDoc, setDoc };
+    _fbDb = { db, doc, getDoc, setDoc, collection, query, where, orderBy, getDocs };
 
     // Storage — disponible para migración de docs/fotos
     if (window._fbGetStorage) {
@@ -7055,6 +7065,25 @@ async function initFirebase(firebaseConfig) {
       try { localStorage.setItem(DB_KEY, JSON.stringify(DB)); } catch(e) {}
       const counts = Object.entries(DB).filter(([,v])=>Array.isArray(v)).map(([k,v])=>k+':'+v.length).join(' | ');
       console.log('✅ DB cargada:', counts);
+
+      // FASE B — leer gastosDiarios desde colección (últimos 60 días)
+      try {
+        const gdCutoff = new Date();
+        gdCutoff.setDate(gdCutoff.getDate() - 60);
+        const gdCutoffStr = gdCutoff.toISOString().slice(0, 10);
+        const gdQ   = query(
+          collection(db, 'gastosDiarios'),
+          where('fecha', '>=', gdCutoffStr),
+          orderBy('fecha', 'desc')
+        );
+        const gdSnap = await getDocs(gdQ);
+        if (!gdSnap.empty) {
+          DB.gastosDiarios = gdSnap.docs.map(function(d) { return d.data(); });
+          console.log('✅ gastosDiarios colección: ' + DB.gastosDiarios.length + ' registros (últimos 60 días desde ' + gdCutoffStr + ')');
+        }
+      } catch(gdErr) {
+        console.warn('⚠ gastosDiarios colección falló, usando main:', gdErr.message);
+      }
 
     } else {
       // Documento no existe — subir lo que hay localmente
