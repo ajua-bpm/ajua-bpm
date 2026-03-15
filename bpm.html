@@ -2990,6 +2990,7 @@ if ('caches' in window) {
     <div style="font-size:.75rem;color:var(--muted);margin-bottom:10px;">Copia independiente en <code>ajua_bpm/backup_auto</code> — separada de los datos en uso. Nunca se sobreescribe si tiene más datos.</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button class="btn bsm" style="background:#e65c00;color:#fff;" onclick="backupToFirebase().then(()=>toast('☁️ Backup guardado en Firebase'))">☁️ Backup ahora</button>
+      <button class="btn bsm" style="background:var(--green-deep);color:var(--cream);font-weight:700;" onclick="fbDownloadMain()">⬇ Backup JSON</button>
       <button class="btn bo bsm" style="border-color:#e65c00;color:#e65c00;" onclick="restoreFromFirebaseBackup()">↩️ Restaurar desde backup Firebase</button>
     </div>
   </div>
@@ -4853,6 +4854,28 @@ function fbExportBackup() {
   a.click();
   URL.revokeObjectURL(url);
   toast('✅ Backup descargado');
+}
+
+// Download ajua_bpm/main directly from Firestore (not from memory)
+async function fbDownloadMain() {
+  if (!window._fbDb) { toast('❌ Firebase no inicializado'); return; }
+  toast('⏳ Leyendo Firebase...');
+  try {
+    var d = window._fbDb;
+    var snap = await d.getDoc(d.doc(d.db, 'ajua_bpm', 'main'));
+    if (!snap.exists()) { toast('❌ Documento main no existe'); return; }
+    var data = snap.data();
+    var blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href = url;
+    a.download = 'ajua_backup_firebase_' + new Date().toISOString().split('T')[0] + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('✅ Backup JSON descargado desde Firebase');
+  } catch(e) {
+    toast('❌ Error: ' + e.message);
+  }
 }
 
 // Import backup from JSON file
