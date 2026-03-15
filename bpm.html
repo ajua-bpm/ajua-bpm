@@ -3002,6 +3002,7 @@ if ('caches' in window) {
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button class="btn bsm" style="background:var(--green-deep);color:var(--cream);font-weight:700;" onclick="fbExportBackup()">⬇ JSON ahora</button>
       <button class="btn bsm" style="background:#1565C0;color:#fff;font-weight:700;" onclick="backupDownloadExcel(true)">📊 Excel ahora</button>
+      <button id="btn-exportar-completo" class="btn bsm" style="background:#1B5E20;color:#fff;font-weight:700;" onclick="rpExportarCompleto()">📊 Exportar Excel</button>
       <label class="btn bsm bo" style="cursor:pointer;">⬆ Restaurar desde JSON <input type="file" accept=".json" style="display:none;" onchange="fbImportBackup(this)"></label>
     </div>
   </div>
@@ -15771,5 +15772,6 @@ window.addEventListener('DOMContentLoaded', () => {
 <script src="src/modules/reportes/descarga-excel-gc.js"></script>
 <script src="src/modules/walmart-import/walmart-import.js"></script>
 <script src="src/modules/storage-migrate/storage-migrate.js"></script>
+<script src="src/modules/reportes/descarga-excel-completo.js"></script>
 </body>
 </html>
