@@ -16,7 +16,8 @@
 
 async function migrateGastosDiarios() {
   // ── Prerequisitos ──────────────────────────────────────────────
-  if (!window._fbDb) {
+  // _fbDb es let (no var) en bpm.html — acceder directo, no via window
+  if (typeof _fbDb === 'undefined' || !_fbDb) {
     console.error('❌ _fbDb no disponible. Recarga la página e intenta de nuevo.');
     return;
   }
@@ -25,7 +26,7 @@ async function migrateGastosDiarios() {
     return;
   }
 
-  var d       = window._fbDb;
+  var d       = _fbDb;
   var gastos  = DB.gastosDiarios;
   var total   = gastos.length;
   var ok      = 0;
