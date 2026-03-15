@@ -6013,13 +6013,15 @@ async function backupToFirebase() {
         return;
       }
     }
+    const _dbForBackup = Object.assign({}, DB);
+    delete _dbForBackup.gastosDiarios;
     await setDoc(backupRef, {
-      ...DB,
+      ..._dbForBackup,
       _backupMeta: {
         ts: Date.now(),
         gtTime: new Date(Date.now()-6*3600000).toISOString(),
         totalRecords: total,
-        version: 'build-3'
+        version: 'build-97'
       }
     });
     console.log(`✅ Backup Firebase guardado — ${total} registros`);
