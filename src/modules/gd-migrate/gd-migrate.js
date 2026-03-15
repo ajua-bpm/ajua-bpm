@@ -96,82 +96,24 @@ async function migrateGastosDiarios() {
 // ═══════════════════════════════════════════════════════════════════
 
 async function cleanGastosFromMain() {
-  if (typeof _fbDb === 'undefined' || !_fbDb) {
-    console.error('❌ _fbDb no disponible.');
-    return;
-  }
-
-  var d = _fbDb;
-
-  // ── Guard: verificar que la colección tiene datos suficientes ──
-  console.log('🔍 Verificando colección gastosDiarios...');
-  var colSnap;
-  try {
-    colSnap = await d.getDocs(d.collection(d.db, 'gastosDiarios'));
-  } catch(e) {
-    console.error('❌ No se pudo leer la colección:', e.message);
-    return;
-  }
+  var colSnap = await _fbDb.getDocs(_fbDb.collection(_fbDb.db, 'gastosDiarios'));
   var colTotal = colSnap.size;
-  console.log('   Documentos en colección: ' + colTotal);
+  console.log('Colección gastosDiarios:', colTotal, 'docs');
 
-  if (colTotal < 100) {
-    console.error('❌ ABORTADO: colección tiene solo ' + colTotal + ' docs (esperado >100). Verificá que FASE A completó correctamente.');
+  if (colTotal < 200) {
+    console.error('❌ Abortado — colección tiene solo ' + colTotal + ' (esperado >= 200)');
     return;
   }
 
-  // ── Leer main ──────────────────────────────────────────────────
-  console.log('📖 Leyendo ajua_bpm/main...');
-  var mainSnap;
-  try {
-    mainSnap = await d.getDoc(d.doc(d.db, 'ajua_bpm', 'main'));
-  } catch(e) {
-    console.error('❌ No se pudo leer main:', e.message);
-    return;
-  }
+  var antes = (DB.gastosDiarios || []).length;
+  console.log('DB.gastosDiarios antes:', antes, 'registros');
 
-  if (!mainSnap.exists()) {
-    console.error('❌ ajua_bpm/main no existe.');
-    return;
-  }
+  DB.gastosDiarios = [];
+  save();
 
-  var mainData = mainSnap.data();
-  var gdEnMain = (mainData.gastosDiarios || []).length;
-  console.log('   gastosDiarios en main: ' + gdEnMain + ' registros');
-
-  if (gdEnMain === 0) {
-    console.log('ℹ gastosDiarios ya no está en main — nada que limpiar.');
-    return;
-  }
-
-  // ── Confirmación ───────────────────────────────────────────────
-  var ok = confirm(
-    'FASE D — Limpiar gastosDiarios de ajua_bpm/main\n\n' +
-    'Colección tiene: ' + colTotal + ' documentos ✅\n' +
-    'main tiene:      ' + gdEnMain + ' registros a eliminar\n\n' +
-    '¿Continuar? (Esta acción es irreversible en main,\n' +
-    'pero los datos siguen en la colección gastosDiarios/)'
-  );
-  if (!ok) {
-    console.log('⚠ Operación cancelada por el usuario.');
-    return;
-  }
-
-  // ── Escribir main sin gastosDiarios ───────────────────────────
-  console.log('✏ Escribiendo main sin gastosDiarios...');
-  var mainLimpio = Object.assign({}, mainData);
-  delete mainLimpio.gastosDiarios;
-
-  try {
-    await d.setDoc(d.doc(d.db, 'ajua_bpm', 'main'), mainLimpio);
-    console.log('✅ FASE D completa — gastosDiarios eliminado de main.');
-    console.log('   main ahora tiene: ' + Object.keys(mainLimpio).length + ' campos.');
-    console.log('   Los datos siguen íntegros en colección gastosDiarios/ (' + colTotal + ' docs).');
-  } catch(e) {
-    console.error('❌ Error al escribir main:', e.message);
-  }
-
-  return { colTotal: colTotal, gdEliminados: gdEnMain };
+  console.log('✅ DB.gastosDiarios = [] — save() ejecutado');
+  console.log('   antes:', antes, '→ después: 0');
+  return { colTotal: colTotal, eliminados: antes };
 }
 
 window.migrateGastosDiarios = migrateGastosDiarios;
