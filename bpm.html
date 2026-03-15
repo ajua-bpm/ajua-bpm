@@ -6203,15 +6203,18 @@ function gdSave() {
     empleadoId, empleadoNombre: empleadoNom, empRef,
     foto: _gdFotoData || null };
 
+  let gastoGuardado;
   if (editId) {
     const idx = DB.gastosDiarios.findIndex(g => g.id === editId);
     if (idx >= 0) {
       Object.assign(DB.gastosDiarios[idx], rec);
+      gastoGuardado = DB.gastosDiarios[idx];
       toast('✓ Gasto actualizado');
     }
     gdCancelEdit();
   } else {
-    DB.gastosDiarios.unshift({ id: uid(), ts: now(), ...rec });
+    gastoGuardado = { id: uid(), ts: now(), ...rec };
+    DB.gastosDiarios.unshift(gastoGuardado);
     toast('✓ Gasto registrado');
   }
 
@@ -6226,7 +6229,15 @@ function gdSave() {
   const _empRow = document.getElementById('gd-empleado-row'); if (_empRow) _empRow.style.display = 'none';
   gdClearFoto();
   save();
+  if (gastoGuardado) gdDocSave(gastoGuardado);
   gdRender();
+}
+
+// Escribe un gasto directo a colección gastosDiarios/{id} (sin pasar por save())
+function gdDocSave(gasto) {
+  if (!gasto || !gasto.id || !_fbReady || !_fbDb) return;
+  _fbDb.setDoc(_fbDb.doc(_fbDb.db, 'gastosDiarios', gasto.id), gasto)
+    .catch(function(e) { console.error('gdDocSave error (' + gasto.id + '):', e.message); });
 }
 
 function gdEdit(id) {
@@ -7182,7 +7193,10 @@ function save() {
         fbShowStatus('offline');
         return;
       }
-      await setDoc(doc(db, 'ajua_bpm', 'main'), DB);
+      // FASE C: gastosDiarios se guarda en su propia colección, no en main
+      const _dbForMain = Object.assign({}, DB);
+      delete _dbForMain.gastosDiarios;
+      await setDoc(doc(db, 'ajua_bpm', 'main'), _dbForMain);
       fbShowStatus('online');
     } catch(err) {
       console.error('Firebase save error:', err);
@@ -10917,7 +10931,7 @@ function saveAnticipo() {
   ['ant-gtq','ant-tc','ant-ref','ant-obs'].forEach(id=>set(id,''));
   set('ant-rubro','producto');
   set('ant-mxn-result','');
-  save(); renderAnticipos(rec); renderDetResumen(rec); renderCotList();
+  save(); gdDocSave(DB.gastosDiarios[0]); renderAnticipos(rec); renderDetResumen(rec); renderCotList();
   toast('✓ Anticipo registrado — Q'+gtq.toFixed(2)+' → $'+mxn.toFixed(2)+' MXN · contabilizado en gastos');
 }
 
