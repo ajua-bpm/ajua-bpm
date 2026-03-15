@@ -303,18 +303,18 @@ function rpExportarCompleto() {
       var wb   = XLSX.utils.book_new();
       var hoy  = new Date().toISOString().slice(0,10);
 
-      XLSX.utils.book_append_sheet(wb, rpXResumen(),           '📊 Resumen');
-      XLSX.utils.book_append_sheet(wb, rpXGastosDiarios(),     '💸 Gastos Diarios');
-      XLSX.utils.book_append_sheet(wb, rpXGastosSemanales(),   '📅 Gastos Semanales');
-      XLSX.utils.book_append_sheet(wb, rpXPedidosWalmart(),    '🛒 Pedidos Walmart');
-      XLSX.utils.book_append_sheet(wb, rpXEmpleados(),         '👷 Empleados');
-      XLSX.utils.book_append_sheet(wb, rpXAccesosAL(),         '🙌 Accesos AL');
-      XLSX.utils.book_append_sheet(wb, rpXFurgonesTL(),        '🚛 Furgones TL');
-      XLSX.utils.book_append_sheet(wb, rpXDespachosDT(),       '📦 Despachos DT');
-      XLSX.utils.book_append_sheet(wb, rpXBasculasBAS(),       '⚖️ Basculas BAS');
-      XLSX.utils.book_append_sheet(wb, rpXRoedoresROD(),       '🐭 Roedores ROD');
-      XLSX.utils.book_append_sheet(wb, rpXFumigacionFUM(),     '🧪 Fumigacion FUM');
-      XLSX.utils.book_append_sheet(wb, rpXGuatecompras(),      '📋 Guatecompras');
+      XLSX.utils.book_append_sheet(wb, rpXResumen(),           'Resumen');
+      XLSX.utils.book_append_sheet(wb, rpXGastosDiarios(),     'Gastos Diarios');
+      XLSX.utils.book_append_sheet(wb, rpXGastosSemanales(),   'Gastos Semanales');
+      XLSX.utils.book_append_sheet(wb, rpXPedidosWalmart(),    'Pedidos Walmart');
+      XLSX.utils.book_append_sheet(wb, rpXEmpleados(),         'Empleados');
+      XLSX.utils.book_append_sheet(wb, rpXAccesosAL(),         'Accesos AL');
+      XLSX.utils.book_append_sheet(wb, rpXFurgonesTL(),        'Furgones TL');
+      XLSX.utils.book_append_sheet(wb, rpXDespachosDT(),       'Despachos DT');
+      XLSX.utils.book_append_sheet(wb, rpXBasculasBAS(),       'Basculas BAS');
+      XLSX.utils.book_append_sheet(wb, rpXRoedoresROD(),       'Roedores ROD');
+      XLSX.utils.book_append_sheet(wb, rpXFumigacionFUM(),     'Fumigacion FUM');
+      XLSX.utils.book_append_sheet(wb, rpXGuatecompras(),      'Guatecompras');
 
       XLSX.writeFile(wb, 'AJUA_BPM_' + hoy + '.xlsx');
       toast('✅ AJUA_BPM_' + hoy + '.xlsx descargado');
