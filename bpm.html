@@ -5998,11 +5998,13 @@ function snapRestore(index) {
 async function backupToFirebase(force) {
   // Nivel 2: backup automático a documento separado en Firebase
   if (!_fbReady || !_fbDb) return;
-  const total = _dbTotalRecords(DB);
-  if (total < 5) return; // No hacer backup si hay menos de 5 registros
   try {
     const { db, doc, getDoc, setDoc } = _fbDb;
     const backupRef = doc(db, 'ajua_bpm', BACKUP_DOC);
+    const _dbForBackup = Object.assign({}, DB);
+    delete _dbForBackup.gastosDiarios;
+    const total = _dbTotalRecords(_dbForBackup);
+    if (total < 5) return;
     // Leer el backup existente
     if (!force) {
       const existing = await getDoc(backupRef);
@@ -6016,15 +6018,13 @@ async function backupToFirebase(force) {
         }
       }
     }
-    const _dbForBackup = Object.assign({}, DB);
-    delete _dbForBackup.gastosDiarios;
     await setDoc(backupRef, {
       ..._dbForBackup,
       _backupMeta: {
         ts: Date.now(),
         gtTime: new Date(Date.now()-6*3600000).toISOString(),
         totalRecords: total,
-        version: 'build-97'
+        version: 'build-99'
       }
     });
     console.log(`✅ Backup Firebase guardado — ${total} registros`);
