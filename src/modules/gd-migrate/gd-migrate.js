@@ -118,4 +118,102 @@ async function cleanGastosFromMain() {
 
 window.migrateGastosDiarios = migrateGastosDiarios;
 window.cleanGastosFromMain   = cleanGastosFromMain;
+
+// ═══════════════════════════════════════════════════════════════════
+// build-100 — Migrar colecciones fragmentadas
+// USO desde consola F12:
+//   await migrateAL()
+//   await migrateGcConcursos()
+//   await migrateISalidas()
+//   await migrateCotizaciones()
+//   await migrateGastosSemanales()
+//
+// Después de verificar que la colección tiene los datos:
+//   await cleanFragFromMain('al')   etc.
+// ═══════════════════════════════════════════════════════════════════
+
+async function _migrateCollection(colName, items) {
+  if (typeof _fbDb === 'undefined' || !_fbDb) {
+    console.error('❌ _fbDb no disponible. Recargá la página.');
+    return null;
+  }
+  if (!Array.isArray(items) || !items.length) {
+    console.warn('⚠ ' + colName + ': array vacío o no existe en DB.');
+    return null;
+  }
+  var d = _fbDb;
+  var total = items.length;
+  var ok = 0, skipped = 0, errors = 0;
+  console.log('🚀 Migrando ' + colName + ' — ' + total + ' registros...');
+  for (var i = 0; i < items.length; i++) {
+    var rec = items[i];
+    if (!rec.id) { console.warn('  ⚠ Sin id (índice ' + i + '), saltando'); skipped++; continue; }
+    try {
+      await d.setDoc(d.doc(d.db, colName, rec.id), rec);
+      ok++;
+      if (ok % 5 === 0 || ok === total - skipped) console.log('  Migrado ' + ok + '/' + (total - skipped) + '...');
+    } catch(e) {
+      errors++;
+      console.error('  ❌ Error en ' + rec.id + ':', e.message);
+    }
+  }
+  console.log('══════════════════════════════');
+  if (errors === 0) {
+    console.log('✅ ' + colName + ': ' + ok + ' docs subidos.');
+    console.log('   Verificá en Firestore y luego: await cleanFragFromMain("' + colName + '")');
+  } else {
+    console.warn('⚠ ' + colName + ': ' + ok + ' ok, ' + errors + ' errores. Revisá y volvé a correr.');
+  }
+  return { ok: ok, skipped: skipped, errors: errors, total: total };
+}
+
+async function migrateAL() {
+  return _migrateCollection('al', DB.al);
+}
+async function migrateGcConcursos() {
+  return _migrateCollection('gcConcursos', DB.gcConcursos);
+}
+async function migrateISalidas() {
+  return _migrateCollection('isalidas', DB.isalidas);
+}
+async function migrateCotizaciones() {
+  return _migrateCollection('cotizaciones', DB.cotizaciones);
+}
+async function migrateGastosSemanales() {
+  return _migrateCollection('gastosSemanales', DB.gastosSemanales);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// cleanFragFromMain(colName) — Limpia un array de ajua_bpm/main
+// SOLO después de verificar que la colección tiene los datos.
+// ═══════════════════════════════════════════════════════════════════
+async function cleanFragFromMain(colName) {
+  var VALID = ['al', 'gcConcursos', 'isalidas', 'cotizaciones', 'gastosSemanales'];
+  if (VALID.indexOf(colName) === -1) {
+    console.error('❌ colName inválido. Válidos: ' + VALID.join(', '));
+    return;
+  }
+  var colSnap = await _fbDb.getDocs(_fbDb.collection(_fbDb.db, colName));
+  var colTotal = colSnap.size;
+  var dbTotal = (DB[colName] || []).length;
+  console.log('Colección ' + colName + ': ' + colTotal + ' docs | DB en memoria: ' + dbTotal);
+  if (colTotal < dbTotal) {
+    console.error('❌ Abortado — colección (' + colTotal + ') tiene menos docs que DB (' + dbTotal + '). Migrá primero.');
+    return;
+  }
+  var antes = dbTotal;
+  DB[colName] = [];
+  save();
+  console.log('✅ DB.' + colName + ' = [] — save() ejecutado. Antes: ' + antes + ' → después: 0');
+  return { colTotal: colTotal, eliminados: antes };
+}
+
+window.migrateAL              = migrateAL;
+window.migrateGcConcursos     = migrateGcConcursos;
+window.migrateISalidas        = migrateISalidas;
+window.migrateCotizaciones    = migrateCotizaciones;
+window.migrateGastosSemanales = migrateGastosSemanales;
+window.cleanFragFromMain      = cleanFragFromMain;
+
 console.log('✅ gd-migrate.js cargado — ejecuta: await migrateGastosDiarios() / await cleanGastosFromMain()');
+console.log('   build-100: await migrateAL() | migrateGcConcursos() | migrateISalidas() | migrateCotizaciones() | migrateGastosSemanales()');

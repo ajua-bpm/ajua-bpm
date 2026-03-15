@@ -284,7 +284,10 @@ function gcGuardar(){
   };
   if(_gcEditId){const i=DB.gcConcursos.findIndex(x=>x.id===_gcEditId);if(i>=0)DB.gcConcursos[i]={...DB.gcConcursos[i],...rec};}
   else{rec.docs=GC_DOCS_BASE.map(d=>({...d,estado:'pendiente',obs:''}));rec.renglones=[];rec.actividades=[];DB.gcConcursos.unshift(rec);}
-  gcCM();save();gcShowTab('concursos');toast(`✓ ${rec.nog||rec.titulo?.slice(0,20)} guardado`);
+  gcCM();save();
+  var _gcSaved=DB.gcConcursos.find(function(x){return x.id===rec.id;});
+  if(typeof gcConcursoDocSave==='function'&&_gcSaved)gcConcursoDocSave(_gcSaved);
+  gcShowTab('concursos');toast(`✓ ${rec.nog||rec.titulo?.slice(0,20)} guardado`);
 }
 
 function gcEliminar(id){

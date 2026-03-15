@@ -6003,6 +6003,12 @@ async function backupToFirebase(force) {
     const backupRef = doc(db, 'ajua_bpm', BACKUP_DOC);
     const _dbForBackup = Object.assign({}, DB);
     delete _dbForBackup.gastosDiarios;
+    delete _dbForBackup.al;
+    delete _dbForBackup.gcConcursos;
+    delete _dbForBackup.iSalidas;
+    delete _dbForBackup.isalidas;
+    delete _dbForBackup.cotizaciones;
+    delete _dbForBackup.gastosSemanales;
     const total = _dbTotalRecords(_dbForBackup);
     if (total < 5) return;
     // Leer el backup existente
@@ -6244,6 +6250,34 @@ function gdDocSave(gasto) {
   _fbDb.setDoc(_fbDb.doc(_fbDb.db, 'gastosDiarios', gasto.id), gasto)
     .catch(function(e) { console.error('gdDocSave error (' + gasto.id + '):', e.message); });
 }
+
+// Colecciones fragmentadas — build-100
+function alDocSave(rec) {
+  if (!rec || !rec.id || !_fbReady || !_fbDb) return;
+  _fbDb.setDoc(_fbDb.doc(_fbDb.db, 'al', rec.id), rec)
+    .catch(function(e) { console.error('alDocSave error (' + rec.id + '):', e.message); });
+}
+function gcConcursoDocSave(rec) {
+  if (!rec || !rec.id || !_fbReady || !_fbDb) return;
+  _fbDb.setDoc(_fbDb.doc(_fbDb.db, 'gcConcursos', rec.id), rec)
+    .catch(function(e) { console.error('gcConcursoDocSave error (' + rec.id + '):', e.message); });
+}
+function iSalidaDocSave(rec) {
+  if (!rec || !rec.id || !_fbReady || !_fbDb) return;
+  _fbDb.setDoc(_fbDb.doc(_fbDb.db, 'isalidas', rec.id), rec)
+    .catch(function(e) { console.error('iSalidaDocSave error (' + rec.id + '):', e.message); });
+}
+function cotizacionDocSave(rec) {
+  if (!rec || !rec.id || !_fbReady || !_fbDb) return;
+  _fbDb.setDoc(_fbDb.doc(_fbDb.db, 'cotizaciones', rec.id), rec)
+    .catch(function(e) { console.error('cotizacionDocSave error (' + rec.id + '):', e.message); });
+}
+function gastosSemanalesDocSave(rec) {
+  if (!rec || !rec.id || !_fbReady || !_fbDb) return;
+  _fbDb.setDoc(_fbDb.doc(_fbDb.db, 'gastosSemanales', rec.id), rec)
+    .catch(function(e) { console.error('gastosSemanalesDocSave error (' + rec.id + '):', e.message); });
+}
+window.gcConcursoDocSave = gcConcursoDocSave;
 
 function gdEdit(id) {
   const g = (DB.gastosDiarios||[]).find(g => g.id === id);
@@ -7101,6 +7135,21 @@ async function initFirebase(firebaseConfig) {
         console.warn('⚠ gastosDiarios colección falló, usando main:', gdErr.message);
       }
 
+      // build-100 — colecciones fragmentadas (cargar todas)
+      var _colFrags = ['al', 'gcConcursos', 'isalidas', 'cotizaciones', 'gastosSemanales'];
+      for (var _cfi = 0; _cfi < _colFrags.length; _cfi++) {
+        var _cfn = _colFrags[_cfi];
+        try {
+          var _cfSnap = await getDocs(collection(db, _cfn));
+          if (!_cfSnap.empty) {
+            DB[_cfn] = _cfSnap.docs.map(function(d) { return d.data(); });
+            console.log('✅ ' + _cfn + ' colección: ' + DB[_cfn].length + ' registros');
+          }
+        } catch(_cfErr) {
+          console.warn('⚠ ' + _cfn + ' colección falló, usando main:', _cfErr.message);
+        }
+      }
+
     } else {
       // Documento no existe — subir lo que hay localmente
       const hasData = Object.values(DB).some(v => Array.isArray(v) && v.length > 0);
@@ -7198,9 +7247,15 @@ function save() {
         fbShowStatus('offline');
         return;
       }
-      // FASE C: gastosDiarios se guarda en su propia colección, no en main
+      // Colecciones fragmentadas — se guardan en sus propias colecciones, no en main
       const _dbForMain = Object.assign({}, DB);
       delete _dbForMain.gastosDiarios;
+      delete _dbForMain.al;
+      delete _dbForMain.gcConcursos;
+      delete _dbForMain.iSalidas;
+      delete _dbForMain.isalidas;
+      delete _dbForMain.cotizaciones;
+      delete _dbForMain.gastosSemanales;
       await setDoc(doc(db, 'ajua_bpm', 'main'), _dbForMain);
       fbShowStatus('online');
     } catch(err) {
@@ -8733,14 +8788,15 @@ function saveAL() {
   // Todos los seleccionados completaron los lavados (presencia = cumplimiento)
   const totalCompletos = empleados.length;
 
-  DB.al.unshift({
+  const _alRec = {
     id: uid(), ts: now(), fecha, turno, hi, hs,
     empleados, totalEmp: empleados.length, totalCompletos,
     lavActivos,
-  });
+  };
+  DB.al.unshift(_alRec);
 
   alSelAll(false);
-  save(); renderAL(); toast(`✓ Turno ${turno} guardado — ${empleados.length} empleados`);
+  save(); alDocSave(_alRec); renderAL(); toast(`✓ Turno ${turno} guardado — ${empleados.length} empleados`);
 }
 
 function renderAL() {
@@ -10642,7 +10698,7 @@ function saveCot() {
     DB.cotizaciones.unshift(rec);
     cotActivaId = rec.id;
   }
-  save(); renderCotList();
+  save(); cotizacionDocSave(rec); renderCotList();
   toast('✓ "'+nombre+'" guardada');
   cotMainTab('lista', null);
 }
@@ -12934,7 +12990,7 @@ function saveSal() {
   ['sal-oc','sal-docmat','sal-factura','sal-serie','sal-dte','sal-almacen','sal-obs'].forEach(id => set(id,''));
   set('sal-fecha', today());
 
-  save(); renderSal(); renderInvStock();
+  save(); iSalidaDocSave(rec); renderSal(); renderInvStock();
   toast('✓ Venta registrada — ' + totalLbs.toFixed(1) + ' lbs · Q ' + totalConIVA.toFixed(2) + ' (a cobrar Q ' + totalACobrar.toFixed(2) + ')');
 }
 
@@ -14579,7 +14635,7 @@ function maqGuardarSemana() {
     DB.gastosSemanales.unshift(record);
   }
 
-  save();
+  save(); gastosSemanalesDocSave(record);
   maqUpdateStatus();
   toast('✅ Semana guardada');
 }
