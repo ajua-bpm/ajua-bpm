@@ -5995,7 +5995,7 @@ function snapRestore(index) {
   }
 }
 
-async function backupToFirebase() {
+async function backupToFirebase(force) {
   // Nivel 2: backup automático a documento separado en Firebase
   if (!_fbReady || !_fbDb) return;
   const total = _dbTotalRecords(DB);
@@ -6004,13 +6004,16 @@ async function backupToFirebase() {
     const { db, doc, getDoc, setDoc } = _fbDb;
     const backupRef = doc(db, 'ajua_bpm', BACKUP_DOC);
     // Leer el backup existente
-    const existing = await getDoc(backupRef);
-    if (existing.exists()) {
-      const existTotal = _dbTotalRecords(existing.data());
-      // PROTECCIÓN: nunca sobreescribir un backup con más datos por uno con menos
-      if (total < existTotal * 0.5) {
-        console.warn(`⚠️ BACKUP BLOQUEADO: actual(${total}) < 50% de backup(${existTotal}) — posible pérdida`);
-        return;
+    if (!force) {
+      const existing = await getDoc(backupRef);
+      if (existing.exists()) {
+        const existTotal = _dbTotalRecords(existing.data());
+        // PROTECCIÓN: nunca sobreescribir un backup con más datos por uno con menos
+        if (total < existTotal * 0.5) {
+          console.warn(`⚠️ BACKUP BLOQUEADO: actual(${total}) < 50% de backup(${existTotal}) — posible pérdida`);
+          console.warn(`   Para forzar: await backupToFirebase(true)`);
+          return;
+        }
       }
     }
     const _dbForBackup = Object.assign({}, DB);
