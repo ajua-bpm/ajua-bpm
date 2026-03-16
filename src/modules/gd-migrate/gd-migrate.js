@@ -182,13 +182,28 @@ async function migrateCotizaciones() {
 async function migrateGastosSemanales() {
   return _migrateCollection('gastosSemanales', DB.gastosSemanales);
 }
+async function migrateTL() {
+  return _migrateCollection('tl', DB.tl);
+}
+async function migrateDT() {
+  return _migrateCollection('dt', DB.dt);
+}
+async function migrateBAS() {
+  return _migrateCollection('bas', DB.bas);
+}
+async function migrateROD() {
+  return _migrateCollection('rod', DB.rod);
+}
+async function migrateFUM() {
+  return _migrateCollection('fum', DB.fum);
+}
 
 // ═══════════════════════════════════════════════════════════════════
 // cleanFragFromMain(colName) — Limpia un array de ajua_bpm/main
 // SOLO después de verificar que la colección tiene los datos.
 // ═══════════════════════════════════════════════════════════════════
 async function cleanFragFromMain(colName) {
-  var VALID = ['al', 'gcConcursos', 'isalidas', 'cotizaciones', 'gastosSemanales'];
+  var VALID = ['al', 'gcConcursos', 'isalidas', 'cotizaciones', 'gastosSemanales', 'tl', 'dt', 'bas', 'rod', 'fum'];
   if (VALID.indexOf(colName) === -1) {
     console.error('❌ colName inválido. Válidos: ' + VALID.join(', '));
     return;
@@ -213,7 +228,12 @@ window.migrateGcConcursos     = migrateGcConcursos;
 window.migrateISalidas        = migrateISalidas;
 window.migrateCotizaciones    = migrateCotizaciones;
 window.migrateGastosSemanales = migrateGastosSemanales;
+window.migrateTL              = migrateTL;
+window.migrateDT              = migrateDT;
+window.migrateBAS             = migrateBAS;
+window.migrateROD             = migrateROD;
+window.migrateFUM             = migrateFUM;
 window.cleanFragFromMain      = cleanFragFromMain;
 
-console.log('✅ gd-migrate.js cargado — ejecuta: await migrateGastosDiarios() / await cleanGastosFromMain()');
-console.log('   build-100: await migrateAL() | migrateGcConcursos() | migrateISalidas() | migrateCotizaciones() | migrateGastosSemanales()');
+console.log('✅ gd-migrate.js cargado — build-102');
+console.log('   await migrateTL() | migrateDT() | migrateBAS() | migrateROD() | migrateFUM()');
