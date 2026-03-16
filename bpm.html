@@ -921,7 +921,7 @@ if ('caches' in window) {
 <div class="ni" onclick="show('inv-stock',this)"><span class="ico">📊</span>Stock en Tiempo Real</div>
 <div class="ni" onclick="show('inv-entrada',this)"><span class="ico">📥</span>Ingresos a Bodega</div>
 <div class="ns">💰 Ventas</div>
-<div class="ni" onclick="show('pedidos-walmart',this)"><span class="ico">🛒</span>Pedidos Walmart</div>
+<div class="ni" onclick="show('pedidos-walmart',this)"><span class="ico">🛒</span>Pedidos Walmart<span id="nav-wm-badge" style="display:none;background:#E53935;color:#fff;border-radius:10px;font-size:.65rem;font-weight:700;padding:1px 6px;margin-left:6px;vertical-align:middle;"></span></div>
 <div class="ni" onclick="show('inv-salida',this)"><span class="ico">🏪</span>Ventas Walmart</div>
 <div class="ni" onclick="show('ventas-gt',this)"><span class="ico">📤</span>Despachos — Locales GT</div>
 <div class="ni" onclick="show('ventas-int',this)"><span class="ico">✈️</span>Despachos — Exportación</div>
@@ -948,6 +948,7 @@ if ('caches' in window) {
 <div class="sec active" id="sec-dashboard">
 <div class="ph"><h1>Dashboard BPM</h1><p id="fecha-hoy">—</p></div>
 <div id="dash-alerta" style="display:none;"></div>
+<div id="dash-wm-banner" style="display:none;background:#E65100;color:#fff;padding:12px 18px;border-radius:6px;margin-bottom:12px;font-weight:700;font-size:.95rem;cursor:pointer;" onclick="show('pedidos-walmart',document.querySelector('.ni[onclick*=pedidos-walmart]'))">📦 <span id="dash-wm-banner-txt"></span> &mdash; <span style="text-decoration:underline;font-weight:400;">Ver pedidos →</span></div>
 <div class="stats">
   <div class="scard g"><div class="slbl">BPM Completadas</div><div class="sval" id="ds-hoy">0</div><div class="ssub">Formularios del día</div></div>
   <div class="scard o"><div class="slbl">Personal Activo</div><div class="sval" id="ds-personal">0</div><div class="ssub">Accesos registrados</div></div>
