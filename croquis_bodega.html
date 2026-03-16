@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Croquis Bodega — BPM Interactivo</title>
+<style>
+  :root{
+    --bg:#f5f3ee;--surface:#fff;--border:#d4d0c8;--text:#1a1a18;--muted:#6b6b60;
+    --blue:#ADD8F0;--blue-d:#2277AA;--blue-dk:#012040;
+    --yellow:#F5E96A;--yellow-d:#bba000;
+    --salmon:#F4A97B;--salmon-d:#c07040;
+    --green:#5CC85C;--green-d:#1a8a1a;--green-l:#8ADA8A;
+    --gray:#B0ADA5;--gray-l:#ddd;
+    --red:#E24B4A;--red-d:#A32D2D;
+    --accent:#2277AA;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+
+  /* ── TOP BAR ── */
+  #topbar{background:var(--blue-dk);color:#fff;padding:0 16px;height:48px;display:flex;align-items:center;gap:12px;flex-shrink:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+  #topbar h1{font-size:15px;font-weight:600;letter-spacing:.3px}
+  #topbar .sep{width:1px;height:22px;background:rgba(255,255,255,.2)}
+  .tbtn{display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:6px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#fff;font-size:12px;cursor:pointer;transition:background .15s;white-space:nowrap}
+  .tbtn:hover{background:rgba(255,255,255,.22)}
+  .tbtn.primary{background:var(--green);border-color:var(--green-d);color:#003300}
+  .tbtn.primary:hover{background:#4db84d}
+  .tbtn.danger{background:rgba(226,75,74,.8);border-color:#c03030}
+  #spacer{flex:1}
+  #mode-label{font-size:11px;opacity:.6}
+
+  /* ── MAIN LAYOUT ── */
+  #main{display:flex;flex:1;gap:0;overflow:hidden}
+
+  /* ── LEFT TOOLBAR ── */
+  #ltool{width:200px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+  .lt-sec{padding:10px 12px;border-bottom:1px solid var(--border)}
+  .lt-title{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px}
+  .zone-chip{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:6px;border:1px solid var(--border);cursor:pointer;margin-bottom:4px;font-size:11px;transition:border-color .15s}
+  .zone-chip:hover{border-color:var(--accent)}
+  .zone-chip .swatch{width:14px;height:14px;border-radius:3px;flex-shrink:0;border:1px solid rgba(0,0,0,.15)}
+  .add-btn{width:100%;padding:7px;border-radius:6px;border:1px dashed var(--border);background:transparent;cursor:pointer;font-size:11px;color:var(--muted);transition:all .15s}
+  .add-btn:hover{border-color:var(--accent);color:var(--accent);background:#f0f8ff}
+  .trap-item{display:flex;align-items:center;gap:6px;padding:4px 0;font-size:11px;color:var(--muted);border-bottom:1px solid #f0efe8}
+  .trap-item:last-child{border-bottom:none}
+  .tn{width:18px;height:18px;border-radius:50%;background:var(--red);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .tn.movable{cursor:grab;opacity:.85}
+  .tn.movable:hover{opacity:1;transform:scale(1.1)}
+
+  /* ── CANVAS AREA ── */
+  #canvas-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden}
+  #canvas-scroll{flex:1;overflow:auto;padding:16px;background:var(--bg)}
+  #plan{position:relative;background:#fff;box-shadow:0 2px 16px rgba(0,0,0,.1);flex-shrink:0;user-select:none}
+
+  /* ── ZONES ── */
+  .z{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:move;border-width:1.5px;border-style:solid;transition:outline .1s;overflow:hidden}
+  .z.sel{outline:2.5px solid #1a1a18;z-index:500!important}
+  .z .zl{font-size:10px;font-weight:700;pointer-events:none;text-align:center;line-height:1.2;padding:0 3px}
+  .z .zs{font-size:8px;pointer-events:none;text-align:center;opacity:.8;margin-top:1px;white-space:pre-line;line-height:1.3}
+  .rh{position:absolute;width:9px;height:9px;background:#fff;border:1.5px solid #222;z-index:600;display:none;border-radius:1px}
+  .z.sel .rh{display:block}
+  .rh-nw{top:-5px;left:-5px;cursor:nw-resize}
+  .rh-n{top:-5px;left:calc(50% - 4px);cursor:n-resize}
+  .rh-ne{top:-5px;right:-5px;cursor:ne-resize}
+  .rh-w{top:calc(50% - 4px);left:-5px;cursor:w-resize}
+  .rh-e{top:calc(50% - 4px);right:-5px;cursor:e-resize}
+  .rh-sw{bottom:-5px;left:-5px;cursor:sw-resize}
+  .rh-s{bottom:-5px;left:calc(50% - 4px);cursor:s-resize}
+  .rh-se{bottom:-5px;right:-5px;cursor:se-resize}
+
+  /* ── TRAPS ── */
+  .trap{position:absolute;width:20px;height:20px;border-radius:50%;background:var(--red);border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;transform:translate(-50%,-50%);z-index:700;cursor:grab;box-shadow:0 1px 5px rgba(0,0,0,.45);transition:transform .1s}
+  .trap:hover{transform:translate(-50%,-50%) scale(1.2)}
+  .trap:active{cursor:grabbing}
+  .trap-label{position:absolute;font-size:7px;color:#fff;background:rgba(163,45,45,.85);border-radius:3px;padding:1px 3px;white-space:nowrap;transform:translate(-50%,8px);z-index:701;pointer-events:none;display:none}
+  .trap:hover + .trap-label{display:block}
+
+  /* ── RIGHT PANEL ── */
+  #rpanel{width:240px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+  .rp-sec{padding:12px 14px;border-bottom:1px solid var(--border)}
+  .rp-title{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:10px}
+  .rp-none{font-size:12px;color:var(--muted);line-height:1.6}
+  .prop-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .prop-label{font-size:12px;color:var(--muted)}
+  .prop-val{display:flex;align-items:center;gap:4px}
+  .prop-val button{width:24px;height:24px;border-radius:5px;border:1px solid var(--border);background:var(--bg);cursor:pointer;font-size:14px;line-height:1}
+  .prop-val button:hover{background:#e8e8e0}
+  .prop-val span{min-width:38px;text-align:center;font-size:12px}
+  .color-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:6px}
+  .color-swatch{width:24px;height:24px;border-radius:4px;cursor:pointer;border:2px solid transparent;transition:border-color .1s}
+  .color-swatch:hover,.color-swatch.act{border-color:#222}
+  #prop-name{width:100%;border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:12px;background:var(--bg);color:var(--text)}
+  #prop-sub{width:100%;border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:11px;background:var(--bg);color:var(--text);resize:none;height:42px}
+  .del-btn{width:100%;padding:7px;border-radius:6px;border:1px solid #ffcccc;background:#fff5f5;cursor:pointer;font-size:11px;color:var(--red-d);margin-top:6px}
+  .del-btn:hover{background:#ffe0e0}
+  .bpm-list{font-size:11px;color:var(--text);line-height:1.7}
+  .bpm-list li{margin-left:14px;margin-bottom:2px}
+  .bpm-tag{display:inline-block;font-size:10px;padding:2px 7px;border-radius:4px;margin:2px 2px 6px;font-weight:500}
+  .bpm-ok{background:#eaf3de;color:#27500A}
+  .bpm-warn{background:#faeeda;color:#633806}
+  .bpm-info{background:#e6f1fb;color:#0C447C}
+  .bpm-err{background:#fcebeb;color:#791F1F}
+
+  /* ── CUSTOM AREA MODAL ── */
+  #modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:900;display:none;align-items:center;justify-content:center}
+  #modal-bg.open{display:flex}
+  #modal{background:#fff;border-radius:12px;padding:20px 22px;width:300px;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+  #modal h3{font-size:14px;margin-bottom:14px}
+  .mrow{margin-bottom:10px}
+  .mrow label{display:block;font-size:11px;color:var(--muted);margin-bottom:3px}
+  .mrow input,.mrow select{width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px}
+  .mbtns{display:flex;gap:8px;margin-top:14px}
+  .mbtn{flex:1;padding:8px;border-radius:7px;border:none;cursor:pointer;font-size:12px;font-weight:500}
+  .mbtn.ok{background:var(--accent);color:#fff}
+  .mbtn.cancel{background:var(--bg);border:1px solid var(--border);color:var(--muted)}
+
+  /* ── STATUS BAR ── */
+  #statusbar{height:28px;background:var(--blue-dk);color:rgba(255,255,255,.6);font-size:11px;display:flex;align-items:center;padding:0 14px;gap:16px;flex-shrink:0}
+  #statusbar span{white-space:nowrap}
+
+  /* ── PRINT ── */
+  @media print{
+    #topbar,#ltool,#rpanel,#statusbar{display:none!important}
+    #canvas-scroll{padding:0;overflow:visible}
+    #plan{box-shadow:none;page-break-inside:avoid}
+    body{background:#fff}
+    .rh{display:none!important}
+    .z.sel{outline:none}
+    #print-header{display:flex!important}
+  }
+  #print-header{display:none;flex-direction:column;padding:10px 0 6px;page-break-inside:avoid}
+  #print-header h2{font-size:16px;font-weight:700}
+  #print-header p{font-size:11px;color:#666;margin-top:2px}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <h1>🏭 Croquis Bodega — BPM Interactivo</h1>
+  <div class="sep"></div>
+  <button class="tbtn" onclick="openModal()">＋ Agregar área</button>
+  <button class="tbtn" onclick="toggleTraps()">🐭 <span id="trap-btn-lbl">Mover trampas</span></button>
+  <div id="spacer"></div>
+  <button class="tbtn" onclick="saveState()">💾 Guardar</button>
+  <button class="tbtn" onclick="loadState()">📂 Cargar</button>
+  <button class="tbtn primary" onclick="printPDF()">🖨️ Imprimir / PDF</button>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- LEFT TOOLBAR -->
+  <div id="ltool">
+    <div class="lt-sec">
+      <div class="lt-title">Áreas predefinidas</div>
+      <div id="preset-list"></div>
+    </div>
+    <div class="lt-sec">
+      <div class="lt-title">🐭 Trampas (11)</div>
+      <div id="trap-sidebar"></div>
+      <p style="font-size:10px;color:var(--muted);margin-top:8px;line-height:1.5">Activar modo trampas en la barra superior para moverlas.</p>
+    </div>
+    <div class="lt-sec">
+      <div class="lt-title">Instrucciones</div>
+      <p style="font-size:10px;color:var(--muted);line-height:1.6">
+        • <b>Clic</b> = seleccionar zona<br>
+        • <b>Arrastrar</b> = mover zona<br>
+        • <b>Esquinas</b> = redimensionar<br>
+        • <b>Panel der.</b> = editar nombre, color, BPM<br>
+        • <b>Modo trampas</b> = arrastra cada trampa<br>
+        • <b>💾 Guardar</b> = guarda en este navegador<br>
+        • <b>🖨️ PDF</b> = abre diálogo de impresión
+      </p>
+    </div>
+  </div>
+
+  <!-- CANVAS -->
+  <div id="canvas-wrap">
+    <div id="canvas-scroll">
+      <div id="print-header">
+        <h2>Croquis Bodega — BPM y Trampas de Roedores</h2>
+        <p id="print-date"></p>
+      </div>
+      <div id="plan"></div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div id="rpanel">
+    <div class="rp-sec">
+      <div class="rp-title">Propiedades</div>
+      <div id="rp-none" class="rp-none">Selecciona una zona para editar sus propiedades y ver las instrucciones BPM.</div>
+      <div id="rp-props" style="display:none">
+        <div class="prop-row" style="margin-bottom:10px">
+          <span class="prop-label">Nombre</span>
+        </div>
+        <input type="text" id="prop-name" placeholder="Nombre de la zona" oninput="updateZoneProp('lbl',this.value)"/>
+        <div style="margin-top:8px;margin-bottom:4px">
+          <span class="prop-label" style="font-size:12px;color:var(--muted)">Subtítulo</span>
+        </div>
+        <textarea id="prop-sub" placeholder="Descripción breve..." oninput="updateZoneProp('sub',this.value)"></textarea>
+        <div style="margin-top:10px">
+          <span class="prop-label" style="font-size:12px;color:var(--muted)">Color</span>
+          <div class="color-grid" id="color-grid"></div>
+        </div>
+        <div style="height:1px;background:var(--border);margin:12px 0"></div>
+        <div class="prop-row"><span class="prop-label">Ancho</span><div class="prop-val"><button onclick="adj('w',-5)">−</button><span id="sv-w">-</span><button onclick="adj('w',5)">+</button></div></div>
+        <div class="prop-row"><span class="prop-label">Alto</span><div class="prop-val"><button onclick="adj('h',-5)">−</button><span id="sv-h">-</span><button onclick="adj('h',5)">+</button></div></div>
+        <div class="prop-row"><span class="prop-label">Pos. X</span><div class="prop-val"><button onclick="adj('x',-5)">−</button><span id="sv-x">-</span><button onclick="adj('x',5)">+</button></div></div>
+        <div class="prop-row"><span class="prop-label">Pos. Y</span><div class="prop-val"><button onclick="adj('y',-5)">−</button><span id="sv-y">-</span><button onclick="adj('y',5)">+</button></div></div>
+        <button class="del-btn" onclick="deleteZone()">🗑 Eliminar zona</button>
+      </div>
+    </div>
+    <div class="rp-sec" id="rp-bpm-sec" style="display:none">
+      <div class="rp-title">📋 BPM — instrucciones</div>
+      <div id="rp-bpm"></div>
+    </div>
+    <div class="rp-sec">
+      <div class="rp-title">🐭 Trampa seleccionada</div>
+      <div id="rp-trap" class="rp-none">Activa modo trampas y haz clic en una trampa para ver su descripción.</div>
+    </div>
+  </div>
+</div>
+
+<!-- STATUS BAR -->
+<div id="statusbar">
+  <span id="sb-zones">Zonas: 0</span>
+  <span id="sb-traps">Trampas: 11</span>
+  <span id="sb-mode">Modo: edición de zonas</span>
+  <span id="sb-sel">Ninguna seleccionada</span>
+</div>
+
+<!-- MODAL NUEVA ÁREA -->
+<div id="modal-bg">
+  <div id="modal">
+    <h3>➕ Nueva área</h3>
+    <div class="mrow"><label>Nombre</label><input type="text" id="m-name" placeholder="Ej: Lavado de papas"/></div>
+    <div class="mrow"><label>Subtítulo</label><input type="text" id="m-sub" placeholder="Opcional"/></div>
+    <div class="mrow">
+      <label>Color</label>
+      <select id="m-color">
+        <option value="#ADD8F0|#2277AA|#012040">Azul (frío / trabajo)</option>
+        <option value="#F4A97B|#c07040|#4a2000">Salmón (servicios)</option>
+        <option value="#F5E96A|#bba000|#2a2000">Amarillo (cooler / oficina)</option>
+        <option value="#E1F5EE|#1D9E75|#04342C">Verde claro (nuevo área)</option>
+        <option value="#EEEDFE|#7F77DD|#26215C">Lila (especial)</option>
+        <option value="#FAEEDA|#BA7517|#412402">Ámbar (materiales)</option>
+        <option value="#ddd|#aaa|#333">Gris (infraestructura)</option>
+        <option value="#FCEBEB|#E24B4A|#501313">Rojo claro (restringido)</option>
+        <option value="#5CC85C|#1a8a1a|#003300">Verde (portón)</option>
+      </select>
+    </div>
+    <div class="mbtns">
+      <button class="mbtn cancel" onclick="closeModal()">Cancelar</button>
+      <button class="mbtn ok" onclick="addCustomZone()">Agregar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  DATA
+// ─────────────────────────────────────────────
+const COLORS=['#ADD8F0','#F4A97B','#F5E96A','#5CC85C','#8ADA8A','#B0ADA5',
+  '#E1F5EE','#EEEDFE','#FAEEDA','#FCEBEB','#ddd','#F4C3A0','#c8e6ff','#ffe0b2'];
+const COLOR_BORDERS={'#ADD8F0':'#2277AA','#F4A97B':'#c07040','#F5E96A':'#bba000',
+  '#5CC85C':'#1a8a1a','#8ADA8A':'#2a8a2a','#B0ADA5':'#888780','#E1F5EE':'#1D9E75',
+  '#EEEDFE':'#7F77DD','#FAEEDA':'#BA7517','#FCEBEB':'#E24B4A','#ddd':'#aaa',
+  '#F4C3A0':'#c07040','#c8e6ff':'#4a90d9','#ffe0b2':'#e67e22'};
+const COLOR_TEXT={'#ADD8F0':'#012040','#F4A97B':'#4a2000','#F5E96A':'#3a3000',
+  '#5CC85C':'#003300','#8ADA8A':'#1a5a1a','#B0ADA5':'#fff','#E1F5EE':'#04342C',
+  '#EEEDFE':'#26215C','#FAEEDA':'#412402','#FCEBEB':'#501313','#ddd':'#333',
+  '#F4C3A0':'#4a2000','#c8e6ff':'#0a3060','#ffe0b2':'#5a2800'};
+
+const BPM={
+  bodega:    {tags:['FIFO/PEPS'],warn:[],info:['Producto mínimo 15 cm del piso, 50 cm de la pared','Temperatura máx. 25°C con ventilación','Etiquetado: fecha, lote, proveedor en cada estante','Materiales de limpieza separados del alimento','Trampas T9 y T10 en esquinas — revisar c/48 h','Revisión semanal de caducidades y rotación de stock']},
+  lavamanos: {tags:['Obligatorio'],warn:['Antes de entrar a zona de producto'],info:['Jabón antibacterial y papel desechable siempre disponibles','Instructivo de 5 pasos pegado y visible','Lavado: al iniciar turno, tras baño, tras manipular basura','Verificar suministros 2 veces por turno']},
+  banos:     {tags:[],warn:['Fuera del flujo de producto'],info:['Limpieza y desinfección cada 4 h y final de turno','Registro de limpieza firmado por responsable','Ventilación adecuada — sin contacto con área de producto','Jabón, papel y agua disponibles siempre']},
+  oficina:   {tags:['Trazabilidad'],warn:[],info:['Bitácoras de temperatura y despachos al día','Acceso restringido: solo personal autorizado','No ingresar alimentos a la oficina','Plan de BPM disponible para auditorías']},
+  gradas2:   {tags:[],warn:['Tránsito controlado'],info:['Pasamanos en buen estado y señalización visible','Área libre de obstáculos en todo momento','Iluminación funcionando','No transportar cargas pesadas sin apoyo']},
+  pasillo:   {tags:[],warn:['Flujo unidireccional'],info:['Libre de obstáculos en todo momento','Señalización de dirección pintada en piso','No colocar producto temporalmente aquí']},
+  cooler2:   {tags:['−18°C congelación'],warn:['Cadena de frío crítica'],info:['Temperatura 2× turno en bitácora','Nunca recongelar producto descongelado','Todo producto entra empacado y etiquetado','EPP: guantes térmicos y chaqueta de frío obligatorios','Descongelamiento programado del evaporador','Cortina PVC revisada semanalmente','Limpieza profunda mensual con desinfectante de frío']},
+  cooler1:   {tags:['0–4°C refrigeración'],warn:[],info:['Temperatura cada 4 horas (mín/máx)','Sistema FIFO obligatorio','Producto siempre sobre tarima — nunca en piso','Puerta corrediza azul: revisar riel y sello semanal','Limpieza profunda semanal','Alarma de temperatura verificada semanalmente']},
+  acceso:    {tags:[],warn:['Controlar acceso exterior'],info:['Mantener cerrado cuando no hay operación activa','Revisar sello y cierre mensualmente']},
+  precarga:  {tags:['Alta rotación'],warn:['Control de calidad'],info:['Temperatura ambiente máx. 18°C','Producto sobre tarimas — mínimo 15 cm del piso','Separar producto descompuesto inmediatamente','Registro de entrada/salida por lote y fecha','Área barrida y limpia antes de cada turno','Trampas T5, T6, T7, T8 en las 4 esquinas','Vaciar desechos orgánicos 2× por turno']},
+  pallets:   {tags:[],warn:[],info:['Retirar tarimas quebradas o con clavos expuestos','Limpias y secas antes de colocar producto','No apilar en zonas de tránsito','Revisión visual semanal del estado','Trampa T11 junto a pila de pallets']},
+  plantaelec:{tags:['Acceso restringido'],warn:['Solo técnico autorizado'],info:['Señalización de peligro eléctrico visible','Extintor disponible en la entrada','Revisión mensual de conexiones','Nunca almacenar alimentos en esta área']},
+  parqueo:   {tags:['Cadena de frío'],warn:[],info:['Temperatura furgón verificada antes de cargar (≤4°C)','Limpiar y desinfectar furgón antes de cada carga','Registro: fecha, hora, temp., destino, conductor','No cargar sin orden de despacho autorizada','Conductores con carnet de manipulación vigente','Drenaje limpio — sin charcos','Trampas T1–T4 en esquinas del parqueo']},
+  porton:    {tags:['Punto de control'],warn:[],info:['Registro de todo vehículo y visitante','Solo ingresa personal con EPP completo','Portón cerrado sin movimiento activo','Área perimetral limpia — sin basura exterior','Trampas T1 y T2 a ambos lados']},
+  zapatos:   {tags:[],warn:['Higiene de calzado'],info:['Pediluvio con solución desinfectante al ingreso','Cambio de calzado al entrar a zona limpia','Estantes separados para calzado de calle y de trabajo','Limpieza del área diariamente']},
+  basureros: {tags:[],warn:['Alto riesgo contaminación cruzada'],info:['Basureros con tapa y bolsa — identificados por tipo','Vaciar mínimo 2 veces por turno','Lejos de coolers y zona de producto','Desinfección de basureros semanal']},
+  lavado_papas:{tags:[],warn:['Agua y contaminación'],info:['Agua limpia y de fuente potable','Drenaje adecuado — sin encharcamiento','Utensilios exclusivos para esta área','Limpiar y sanitizar después de cada uso','Producto procesado nunca en contacto con suelo']},
+  cajillas:  {tags:[],warn:[],info:['Cajillas limpias y desinfectadas antes de usar','Apilar en orden y separadas por tipo','Revisión de estado — retirar las rotas','No usar cajillas de producto para materiales de limpieza']},
+};
+
+const PRESETS=[
+  {id:'zapatos',    lbl:'Área de zapatos',    sub:'calzado de trabajo', bg:'#EEEDFE',zi:4},
+  {id:'basureros',  lbl:'Basureros',          sub:'desechos',           bg:'#FCEBEB',zi:4},
+  {id:'lavado_papas',lbl:'Lavado de papas',   sub:'',                   bg:'#E1F5EE',zi:4},
+  {id:'cajillas',   lbl:'Guardado de cajillas',sub:'',                  bg:'#FAEEDA',zi:4},
+];
+
+// Z-index map — higher = always on top
+const ZI={porton:1,parqueo:2,precarga:3,cooler2:3,cooler1:3,acceso:3,
+  pasillo:4,bodega:4,banos:4,oficina:4,gradas2:4,lavamanos:5,
+  pallets:6,plantaelec:6};
+
+const INIT_ZONES=[
+  {id:'bodega',    lbl:'BODEGA',          sub:'almacén general',    bg:'#F4A97B',x:0,  y:0,  w:160,h:75},
+  {id:'lavamanos', lbl:'LAVAMANOS',       sub:'',                   bg:'#F4A97B',x:0,  y:75, w:60, h:38},
+  {id:'banos',     lbl:'BAÑOS',           sub:'',                   bg:'#F4C3A0',x:0,  y:113,w:160,h:65},
+  {id:'oficina',   lbl:'OFICINA RSG',     sub:'registros',          bg:'#F5E96A',x:0,  y:178,w:160,h:60},
+  {id:'gradas2',   lbl:'GRADAS',          sub:'2do nivel',          bg:'#ddd',   x:0,  y:238,w:160,h:52},
+  {id:'pasillo',   lbl:'PASILLO',         sub:'',                   bg:'#B0ADA5',x:160,y:0,  w:35, h:290},
+  {id:'cooler2',   lbl:'COOLER 2',        sub:'-18°C congelación',  bg:'#ADD8F0',x:195,y:0,  w:230,h:70},
+  {id:'cooler1',   lbl:'COOLER 1',        sub:'0–4°C refrigeración',bg:'#F5E96A',x:195,y:70, w:175,h:50},
+  {id:'acceso',    lbl:'acceso ext.',     sub:'',                   bg:'#8ADA8A',x:370,y:70, w:55, h:50},
+  {id:'precarga',  lbl:'TRABAJO / PRE-CARGA',sub:'cebolla y papa',  bg:'#ADD8F0',x:195,y:120,w:230,h:170},
+  {id:'pallets',   lbl:'PALLETS',         sub:'tarimas',            bg:'#ddd',   x:425,y:0,  w:75, h:95},
+  {id:'plantaelec',lbl:'GRADAS',          sub:'PLANTA\nELÉC.',      bg:'#ddd',   x:425,y:95, w:75, h:195},
+  {id:'parqueo',   lbl:'PARQUEO INTERIOR',sub:'camiones refrigerados',bg:'#ADD8F0',x:160,y:290,w:340,h:135},
+  {id:'porton',    lbl:'PORTÓN DE INGRESO',sub:'',                  bg:'#5CC85C',x:160,y:425,w:340,h:40},
+];
+
+const INIT_TRAPS=[
+  {n:1, lbl:'Portón izq.',       x:167,y:437},
+  {n:2, lbl:'Portón der.',       x:492,y:437},
+  {n:3, lbl:'Parqueo sup-izq',   x:167,y:297},
+  {n:4, lbl:'Parqueo sup-der',   x:492,y:297},
+  {n:5, lbl:'Pre-carga sup-izq', x:199,y:127},
+  {n:6, lbl:'Pre-carga sup-der', x:419,y:127},
+  {n:7, lbl:'Pre-carga inf-izq', x:199,y:283},
+  {n:8, lbl:'Pre-carga inf-der', x:419,y:283},
+  {n:9, lbl:'Bodega esq. sup',   x:156,y:8},
+  {n:10,lbl:'Bodega esq. inf',   x:156,y:72},
+  {n:11,lbl:'Zona pallets',      x:423,y:8},
+];
+
+// ─────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────
+let zones=[],traps=[],selId=null,trapMode=false,drag=null,rsz=null,trapDrag=null,selTrap=null;
+const PLAN_W=500,PLAN_H=470,MIN=28;
+
+function init(){
+  zones=INIT_ZONES.map(z=>({...z}));
+  traps=INIT_TRAPS.map(t=>({...t}));
+  buildPresets();
+  buildTrapSidebar();
+  buildColorGrid();
+  render();
+  updateStatus();
+}
+
+// ─────────────────────────────────────────────
+//  RENDER
+// ─────────────────────────────────────────────
+function render(){
+  const plan=document.getElementById('plan');
+  plan.style.width=PLAN_W+'px';plan.style.height=PLAN_H+'px';
+  plan.querySelectorAll('.z,.trap,.trap-label').forEach(e=>e.remove());
+
+  // sort by zi then render
+  const sorted=[...zones].sort((a,b)=>(ZI[a.id]||3)-(ZI[b.id]||3));
+  sorted.forEach(z=>{
+    const div=document.createElement('div');
+    div.className='z'+(selId===z.id?' sel':'');
+    div.dataset.id=z.id;
+    const bc=COLOR_BORDERS[z.bg]||'#999';
+    const tc=COLOR_TEXT[z.bg]||'#222';
+    const zi=selId===z.id?500:(ZI[z.id]||3);
+    div.style.cssText=`left:${z.x}px;top:${z.y}px;width:${z.w}px;height:${z.h}px;`+
+      `background:${z.bg};border-color:${bc};color:${tc};z-index:${zi};`;
+
+    if(z.id==='pasillo'){
+      div.innerHTML=`<span class="zl" style="transform:rotate(-90deg);white-space:nowrap;font-size:9px">PASILLO</span>`;
+    } else if(z.id==='parqueo'){
+      div.innerHTML=truckHTML(z.w,z.h);
+    } else {
+      div.innerHTML=`<span class="zl">${z.lbl}</span>`+(z.sub?`<span class="zs">${z.sub}</span>`:'');
+    }
+
+    // resize handles
+    ['nw','n','ne','w','e','sw','s','se'].forEach(d=>{
+      const h=document.createElement('div');
+      h.className=`rh rh-${d}`;
+      h.addEventListener('mousedown',e=>{e.stopPropagation();e.preventDefault();startRsz(e,z.id,d);});
+      div.appendChild(h);
+    });
+
+    div.addEventListener('mousedown',e=>{
+      if(e.target.classList.contains('rh'))return;
+      if(trapMode)return;
+      e.preventDefault();
+      selId=z.id;
+      const r=plan.getBoundingClientRect();
+      drag={id:z.id,ox:e.clientX-r.left-z.x,oy:e.clientY-r.top-z.y};
+      render();updateRpanel();
+    });
+    plan.appendChild(div);
+  });
+
+  // traps
+  traps.forEach(t=>{
+    const el=document.createElement('div');
+    el.className='trap';
+    el.dataset.n=t.n;
+    el.style.cssText=`left:${t.x}px;top:${t.y}px;`+(trapMode?'cursor:grab':'cursor:default');
+    el.textContent=t.n;
+    const lbl=document.createElement('div');
+    lbl.className='trap-label';
+    lbl.textContent=t.n+': '+t.lbl;
+
+    if(trapMode){
+      el.addEventListener('mousedown',e=>{
+        e.stopPropagation();e.preventDefault();
+        selTrap=t.n;
+        const r=plan.getBoundingClientRect();
+        trapDrag={n:t.n,ox:e.clientX-r.left-t.x,oy:e.clientY-r.top-t.y};
+        updateTrapPanel();
+      });
+    } else {
+      el.addEventListener('click',()=>{selTrap=t.n;updateTrapPanel();});
+    }
+    plan.appendChild(el);
+    plan.appendChild(lbl);
+  });
+
+  updateStatus();
+}
+
+function truckHTML(w,h){
+  const tw=Math.min(68,w*0.24), th=Math.min(88,h*0.75);
+  const gap=10, ty=Math.round((h-th)/2)+8;
+  const x1=12,x2=x1+tw+gap,x3=x2+tw+gap;
+  const cabH=Math.round(th*0.2);
+  return `<svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" viewBox="0 0 ${w} ${h}">
+    <text x="${w/2}" y="11" text-anchor="middle" font-size="10" font-weight="700" fill="#012040">PARQUEO INTERIOR</text>
+    <text x="${w/2}" y="20" text-anchor="middle" font-size="7" fill="#014070">camiones viendo al portón ↓</text>
+    <rect x="${x1}" y="${ty}" width="${tw}" height="${th-cabH}" rx="2" fill="none" stroke="#2277AA" stroke-width="1.1"/>
+    <rect x="${x1+2}" y="${ty+th-cabH}" width="${tw-4}" height="${cabH}" rx="1" fill="none" stroke="#2277AA" stroke-width="1"/>
+    <text x="${x1+tw/2}" y="${ty+th/2}" text-anchor="middle" font-size="12" fill="#2277AA" opacity="0.35">↓</text>
+    <rect x="${x2}" y="${ty}" width="${tw}" height="${th-cabH}" rx="2" fill="none" stroke="#2277AA" stroke-width="1.1"/>
+    <rect x="${x2+2}" y="${ty+th-cabH}" width="${tw-4}" height="${cabH}" rx="1" fill="none" stroke="#2277AA" stroke-width="1"/>
+    <text x="${x2+tw/2}" y="${ty+th/2}" text-anchor="middle" font-size="12" fill="#2277AA" opacity="0.35">↓</text>
+    <rect x="${x3}" y="${ty+10}" width="${tw*0.7}" height="${(th-cabH)*0.75}" rx="2" fill="none" stroke="#2277AA" stroke-width="0.9"/>
+    <rect x="${x3+2}" y="${ty+10+(th-cabH)*0.75-cabH*0.7}" width="${tw*0.7-4}" height="${cabH*0.7}" rx="1" fill="none" stroke="#2277AA" stroke-width="0.8"/>
+    <text x="${x3+tw*0.35}" y="${ty+10+(th-cabH)*0.38}" text-anchor="middle" font-size="9" fill="#2277AA" opacity="0.35">↓</text>
+  </svg>`;
+}
+
+// ─────────────────────────────────────────────
+//  DRAG & RESIZE ZONES
+// ─────────────────────────────────────────────
+function sn(v){return Math.round(v/5)*5;}
+function startRsz(e,id,dir){
+  selId=id;const z=g(id);
+  rsz={id,dir,sx:e.clientX,sy:e.clientY,ox:z.x,oy:z.y,ow:z.w,oh:z.h};
+  render();updateRpanel();
+}
+function g(id){return zones.find(z=>z.id===id);}
+
+document.addEventListener('mousemove',e=>{
+  const plan=document.getElementById('plan');
+  const r=plan.getBoundingClientRect();
+  if(drag){
+    const z=g(drag.id);if(!z)return;
+    z.x=sn(Math.max(0,Math.min(PLAN_W-z.w,e.clientX-r.left-drag.ox)));
+    z.y=sn(Math.max(0,Math.min(PLAN_H-z.h,e.clientY-r.top-drag.oy)));
+    render();updateRpanel();
+  }
+  if(rsz){
+    const z=g(rsz.id);if(!z)return;
+    const dx=e.clientX-rsz.sx,dy=e.clientY-rsz.sy,dir=rsz.dir;
+    if(dir.includes('e')) z.w=sn(Math.max(MIN,rsz.ow+dx));
+    if(dir.includes('s')) z.h=sn(Math.max(MIN,rsz.oh+dy));
+    if(dir.includes('w')){const nw=sn(Math.max(MIN,rsz.ow-dx));z.x=sn(rsz.ox+rsz.ow-nw);z.w=nw;}
+    if(dir.includes('n')){const nh=sn(Math.max(MIN,rsz.oh-dy));z.y=sn(rsz.oy+rsz.oh-nh);z.h=nh;}
+    render();updateRpanel();
+  }
+  if(trapDrag){
+    const t=traps.find(t=>t.n===trapDrag.n);if(!t)return;
+    t.x=Math.max(10,Math.min(PLAN_W-10,e.clientX-r.left));
+    t.y=Math.max(10,Math.min(PLAN_H-10,e.clientY-r.top));
+    render();
+  }
+});
+
+document.addEventListener('mouseup',()=>{
+  drag=null;rsz=null;trapDrag=null;
+});
+
+document.getElementById('plan').addEventListener('mousedown',e=>{
+  if(e.target===document.getElementById('plan')&&!trapMode){selId=null;render();updateRpanel();}
+});
+
+// ─────────────────────────────────────────────
+//  RIGHT PANEL
+// ─────────────────────────────────────────────
+function updateRpanel(){
+  const z=g(selId);
+  document.getElementById('rp-none').style.display=z?'none':'block';
+  document.getElementById('rp-props').style.display=z?'block':'none';
+  document.getElementById('rp-bpm-sec').style.display=z?'block':'none';
+  if(!z)return;
+  document.getElementById('prop-name').value=z.lbl;
+  document.getElementById('prop-sub').value=z.sub||'';
+  document.getElementById('sv-w').textContent=z.w+'px';
+  document.getElementById('sv-h').textContent=z.h+'px';
+  document.getElementById('sv-x').textContent=z.x+'px';
+  document.getElementById('sv-y').textContent=z.y+'px';
+  // highlight active color
+  document.querySelectorAll('.color-swatch').forEach(s=>{
+    s.classList.toggle('act',s.dataset.c===z.bg);
+  });
+  // BPM
+  const bpm=BPM[z.id]||BPM[z.id.replace(/-/g,'_')]||null;
+  const bpmDiv=document.getElementById('rp-bpm');
+  if(bpm){
+    let html='';
+    (bpm.tags||[]).forEach(t=>html+=`<span class="bpm-tag bpm-ok">${t}</span>`);
+    (bpm.warn||[]).forEach(t=>html+=`<span class="bpm-tag bpm-warn">⚠ ${t}</span>`);
+    html+='<ul class="bpm-list">'+(bpm.info||[]).map(i=>`<li>${i}</li>`).join('')+'</ul>';
+    bpmDiv.innerHTML=html;
+  } else {
+    bpmDiv.innerHTML=`<p class="rp-none">Sin instrucciones BPM específicas para esta zona. Aplican las BPM generales de la bodega.</p>`;
+  }
+}
+
+function updateZoneProp(prop,val){
+  const z=g(selId);if(!z)return;
+  z[prop]=val;render();
+}
+
+function setColor(c){
+  const z=g(selId);if(!z)return;
+  z.bg=c;render();updateRpanel();
+}
+
+function adj(prop,delta){
+  const z=g(selId);if(!z)return;
+  if(prop==='w')z.w=Math.max(MIN,z.w+delta);
+  else if(prop==='h')z.h=Math.max(MIN,z.h+delta);
+  else if(prop==='x')z.x=Math.max(0,Math.min(PLAN_W-z.w,z.x+delta));
+  else if(prop==='y')z.y=Math.max(0,Math.min(PLAN_H-z.h,z.y+delta));
+  render();updateRpanel();
+}
+
+function deleteZone(){
+  if(!selId)return;
+  if(!confirm('¿Eliminar "'+g(selId).lbl+'"?'))return;
+  zones=zones.filter(z=>z.id!==selId);
+  selId=null;render();updateRpanel();
+}
+
+function buildColorGrid(){
+  const cg=document.getElementById('color-grid');
+  cg.innerHTML='';
+  COLORS.forEach(c=>{
+    const s=document.createElement('div');
+    s.className='color-swatch';
+    s.dataset.c=c;
+    s.style.background=c;
+    s.style.border='2px solid '+(COLOR_BORDERS[c]||'#aaa');
+    s.title=c;
+    s.onclick=()=>setColor(c);
+    cg.appendChild(s);
+  });
+}
+
+// ─────────────────────────────────────────────
+//  TRAP PANEL
+// ─────────────────────────────────────────────
+const TRAP_DESC={
+  1:'Portón izq. — pegada a la pared izquierda, 10 cm del portón.',
+  2:'Portón der. — pegada a la pared derecha, 10 cm del portón.',
+  3:'Parqueo sup-izq — esquina entre parqueo y columna izquierda.',
+  4:'Parqueo sup-der — esquina junto a gradas planta eléctrica.',
+  5:'Pre-carga sup-izq — junto a puerta del Cooler 1. Los roedores siguen el olor de la cebolla.',
+  6:'Pre-carga sup-der — junto al acceso exterior verde.',
+  7:'Pre-carga inf-izq — esquina donde se apila la cebolla. Mayor riesgo de anidamiento.',
+  8:'Pre-carga inf-der — esquina opuesta de la zona de trabajo.',
+  9:'Bodega esq. sup — detrás del último estante, contra la pared.',
+  10:'Bodega esq. inf — esquina inferior, zona de menor circulación.',
+  11:'Pallets — entre tarimas y pared exterior. Los pallets de madera son refugio habitual.',
+};
+function updateTrapPanel(){
+  const div=document.getElementById('rp-trap');
+  if(!selTrap){div.innerHTML='<span class="rp-none">Toca una trampa para ver detalles.</span>';return;}
+  const t=traps.find(t=>t.n===selTrap);
+  div.innerHTML=`<strong style="font-size:13px">🐭 Trampa #${selTrap}</strong><br>
+    <span style="font-size:11px;color:var(--muted)">${t?t.lbl:''}</span>
+    <p style="font-size:11px;margin-top:6px;line-height:1.6">${TRAP_DESC[selTrap]||''}</p>
+    <p style="font-size:10px;margin-top:8px;color:var(--muted)">⏱ Revisar cada 48 h. Reemplazar cebo cada 2 semanas. Registrar en bitácora.</p>`;
+}
+
+function buildTrapSidebar(){
+  document.getElementById('trap-sidebar').innerHTML=
+    traps.map(t=>`<div class="trap-item"><div class="tn">${t.n}</div><span>${t.lbl}</span></div>`).join('');
+}
+
+// ─────────────────────────────────────────────
+//  TRAP MODE TOGGLE
+// ─────────────────────────────────────────────
+function toggleTraps(){
+  trapMode=!trapMode;
+  selId=null;
+  document.getElementById('trap-btn-lbl').textContent=trapMode?'✓ Modo activo':'Mover trampas';
+  document.getElementById('sb-mode').textContent=trapMode?'Modo: mover trampas':'Modo: edición de zonas';
+  render();updateRpanel();
+}
+
+// ─────────────────────────────────────────────
+//  PRESETS
+// ─────────────────────────────────────────────
+function buildPresets(){
+  const list=document.getElementById('preset-list');
+  list.innerHTML='';
+  PRESETS.forEach(p=>{
+    const div=document.createElement('div');
+    div.className='zone-chip';
+    div.innerHTML=`<div class="swatch" style="background:${p.bg};border-color:${COLOR_BORDERS[p.bg]||'#aaa'}"></div>${p.lbl}`;
+    div.onclick=()=>addPreset(p);
+    list.appendChild(div);
+  });
+  const add=document.createElement('button');
+  add.className='add-btn';add.textContent='＋ Área personalizada';
+  add.onclick=openModal;
+  list.appendChild(add);
+}
+
+function addPreset(p){
+  const exists=zones.find(z=>z.id===p.id);
+  const id=exists?p.id+'_'+Date.now():p.id;
+  zones.push({id,lbl:p.lbl,sub:p.sub||'',bg:p.bg,x:20,y:20,w:150,h:70});
+  selId=id;render();updateRpanel();
+}
+
+// ─────────────────────────────────────────────
+//  CUSTOM MODAL
+// ─────────────────────────────────────────────
+function openModal(){document.getElementById('modal-bg').classList.add('open');}
+function closeModal(){document.getElementById('modal-bg').classList.remove('open');}
+function addCustomZone(){
+  const name=document.getElementById('m-name').value.trim()||'Nueva área';
+  const sub=document.getElementById('m-sub').value.trim();
+  const col=document.getElementById('m-color').value.split('|');
+  const id='custom_'+Date.now();
+  zones.push({id,lbl:name,sub,bg:col[0],x:20,y:20,w:160,h:70});
+  selId=id;closeModal();render();updateRpanel();
+  document.getElementById('m-name').value='';
+  document.getElementById('m-sub').value='';
+}
+document.getElementById('modal-bg').addEventListener('click',e=>{if(e.target===document.getElementById('modal-bg'))closeModal();});
+
+// ─────────────────────────────────────────────
+//  SAVE / LOAD (localStorage)
+// ─────────────────────────────────────────────
+function saveState(){
+  const state={zones,traps};
+  localStorage.setItem('croquis_bodega',JSON.stringify(state));
+  showToast('✅ Guardado correctamente');
+}
+function loadState(){
+  const s=localStorage.getItem('croquis_bodega');
+  if(!s){showToast('⚠️ No hay datos guardados');return;}
+  const state=JSON.parse(s);
+  zones=state.zones||zones;
+  traps=state.traps||traps;
+  selId=null;render();updateRpanel();
+  showToast('📂 Cargado correctamente');
+}
+function showToast(msg){
+  let t=document.getElementById('toast');
+  if(!t){t=document.createElement('div');t.id='toast';
+    t.style.cssText='position:fixed;bottom:40px;left:50%;transform:translateX(-50%);background:#012040;color:#fff;padding:8px 18px;border-radius:20px;font-size:12px;z-index:9999;transition:opacity .3s';
+    document.body.appendChild(t);}
+  t.textContent=msg;t.style.opacity=1;
+  clearTimeout(t._tid);t._tid=setTimeout(()=>{t.style.opacity=0;},2500);
+}
+
+// ─────────────────────────────────────────────
+//  PRINT / PDF
+// ─────────────────────────────────────────────
+function printPDF(){
+  document.getElementById('print-date').textContent='Impreso: '+new Date().toLocaleDateString('es-GT',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  selId=null;render();updateRpanel();
+  setTimeout(()=>window.print(),200);
+}
+
+// ─────────────────────────────────────────────
+//  STATUS BAR
+// ─────────────────────────────────────────────
+function updateStatus(){
+  document.getElementById('sb-zones').textContent='Zonas: '+zones.length;
+  document.getElementById('sb-traps').textContent='Trampas: '+traps.length;
+  const z=g(selId);
+  document.getElementById('sb-sel').textContent=z?'Seleccionado: '+z.lbl:'Ninguna seleccionada';
+}
+
+// ─────────────────────────────────────────────
+//  KEYBOARD SHORTCUTS
+// ─────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(!selId)return;
+  const step=e.shiftKey?10:5;
+  if(e.key==='ArrowLeft')  {adj('x',-step);e.preventDefault();}
+  if(e.key==='ArrowRight') {adj('x', step);e.preventDefault();}
+  if(e.key==='ArrowUp')    {adj('y',-step);e.preventDefault();}
+  if(e.key==='ArrowDown')  {adj('y', step);e.preventDefault();}
+  if(e.key==='Delete'||e.key==='Backspace'){
+    if(document.activeElement.tagName!=='INPUT'&&document.activeElement.tagName!=='TEXTAREA')deleteZone();
+  }
+  if(e.key==='Escape'){selId=null;render();updateRpanel();}
+});
+
+// ─────────────────────────────────────────────
+//  BOOT
+// ─────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
