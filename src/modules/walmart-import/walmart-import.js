@@ -386,15 +386,24 @@ function wiImportarQueue() {
     if (dup) return;
     DB.pedidosWalmart.unshift({
       id: p.id || uid(), ts: p.ts || now(),
+      correlativo:  p.correlativo  || '',
       fechaEntrega: p.fechaEntrega || '',
       horaEntrega:  p.horaEntrega  || '16:00',
       rampa:        p.rampa        || '',
       oc: '', atlas: '',
       nota:         p.nota || '',
-      obs:          'Auto-importado desde Gmail',
-      rubros:       (p.rubros || []).map(function(r) {
-        return { n: r.n||r.item||'', desc: r.desc||'', cajas: r.cajas||0,
-                 prodId: r.prodId||'', estado: 'pendiente' };
+      obs:          'Auto-importado desde Gmail · ' + (p.correlativo || p.id || ''),
+      rubros:       (p.rubros || []).map(function(r, idx) {
+        return {
+          n:            idx + 1,
+          item:         r.n         || r.item         || '',
+          descripcion:  r.desc      || r.descripcion  || '',
+          cajasPedidas: r.cajas     || r.cajasPedidas || 0,
+          productoId:   r.prodId    || r.productoId   || '',
+          estado:       'pendiente',
+          cajasAceptadas:  null,
+          cajasRechazadas: null,
+        };
       }),
       estado: 'pendiente', esAgregado: false, baseId: null,
       albaranDoc: null, rechazoDoc: null, cierreTs: null,
