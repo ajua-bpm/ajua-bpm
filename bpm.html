@@ -5947,6 +5947,7 @@ let _fbLoaded = false;  // true solo cuando initFirebase terminó de leer y merg
 let _fbSaving = false;
 let _fbSaveQ  = null;
 let _fbDb     = null;
+let _lastKnownBackupTotal = 0;  // cache en memoria — se actualiza tras cada backup exitoso
 
 // ══════════════════════════════════════════════════════════════════
 // 🛡️ SISTEMA DE PROTECCIÓN ANTI-PÉRDIDA — 3 NIVELES
@@ -6017,19 +6018,25 @@ async function backupToFirebase(force) {
     delete _dbForBackup.isalidas;
     delete _dbForBackup.cotizaciones;
     delete _dbForBackup.gastosSemanales;
+    delete _dbForBackup.tl;
+    delete _dbForBackup.dt;
+    delete _dbForBackup.bas;
+    delete _dbForBackup.rod;
+    delete _dbForBackup.fum;
     const total = _dbTotalRecords(_dbForBackup);
     if (total < 5) return;
-    // Leer el backup existente
+    // Protección: nunca sobreescribir backup con menos datos
     if (!force) {
-      const existing = await getDoc(backupRef);
-      if (existing.exists()) {
-        const existTotal = _dbTotalRecords(existing.data());
-        // PROTECCIÓN: nunca sobreescribir un backup con más datos por uno con menos
-        if (total < existTotal * 0.5) {
-          console.warn(`⚠️ BACKUP BLOQUEADO: actual(${total}) < 50% de backup(${existTotal}) — posible pérdida`);
-          console.warn(`   Para forzar: await backupToFirebase(true)`);
-          return;
-        }
+      // Usar cache en memoria si disponible (más rápido y evita leer Firebase en cada ciclo)
+      let refTotal = _lastKnownBackupTotal;
+      if (!refTotal) {
+        const existing = await getDoc(backupRef);
+        if (existing.exists()) refTotal = _dbTotalRecords(existing.data());
+      }
+      if (refTotal && total < refTotal * 0.5) {
+        console.warn(`⚠️ BACKUP BLOQUEADO: actual(${total}) < 50% de referencia(${refTotal}) — posible pérdida`);
+        console.warn(`   Para forzar y actualizar referencia: await backupToFirebase(true)`);
+        return;
       }
     }
     await setDoc(backupRef, {
@@ -6038,10 +6045,11 @@ async function backupToFirebase(force) {
         ts: Date.now(),
         gtTime: new Date(Date.now()-6*3600000).toISOString(),
         totalRecords: total,
-        version: 'build-99'
+        version: 'build-105'
       }
     });
-    console.log(`✅ Backup Firebase guardado — ${total} registros`);
+    _lastKnownBackupTotal = total;  // actualizar referencia en memoria
+    console.log(`✅ Backup Firebase guardado — ${total} registros${force ? ' (forzado)' : ''}`);
   } catch(e) {
     console.warn('backupToFirebase error:', e);
   }
