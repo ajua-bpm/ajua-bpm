@@ -368,6 +368,16 @@ function wiCheckQueue() {
       _wiQueuePending = queue;
       var btn = document.getElementById('wi-btn-queue');
       if (btn) { btn.style.display = ''; btn.textContent = '📬 ' + queue.length + ' nuevo' + (queue.length > 1 ? 's' : ''); }
+      // Banner dashboard + badge menú
+      var n = queue.length;
+      var banner = document.getElementById('dash-wm-banner');
+      var bannerTxt = document.getElementById('dash-wm-banner-txt');
+      var badge = document.getElementById('nav-wm-badge');
+      if (n > 0) {
+        if (bannerTxt) bannerTxt.textContent = n + ' pedido' + (n > 1 ? 's' : '') + ' nuevo' + (n > 1 ? 's' : '') + ' de Walmart';
+        if (banner) banner.style.display = '';
+        if (badge) { badge.textContent = n; badge.style.display = ''; }
+      }
     }).catch(function(e) { console.log('wiCheckQueue:', e.message); });
   } catch(e) { console.log('wiCheckQueue err:', e.message); }
 }
@@ -427,6 +437,10 @@ function wiImportarQueue() {
 
   var btn = document.getElementById('wi-btn-queue');
   if (btn) btn.style.display = 'none';
+  var banner = document.getElementById('dash-wm-banner');
+  if (banner) banner.style.display = 'none';
+  var badge = document.getElementById('nav-wm-badge');
+  if (badge) badge.style.display = 'none';
   _wiQueuePending = [];
   toast('✅ ' + importados + ' pedido(s) importados desde Gmail');
 }
