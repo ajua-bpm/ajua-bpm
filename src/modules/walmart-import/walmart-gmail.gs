@@ -17,9 +17,10 @@ var MAIL_GERENCIA = 'gerenciaajua@gmail.com';
 
 // Remitentes autorizados de Walmart Guatemala
 var WM_SENDERS = [
-  { email: 'Willy.Galvez@walmart.com',   nombre: 'Willy Galvez'   },
-  { email: 'JORGE.GRANADOS@walmart.com', nombre: 'Jorge Granados'  },
-  { email: 'Astrid.Tujab@walmart.com',   nombre: 'Astrid Tujab'   },
+  { email: 'Willy.Galvez@walmart.com',      nombre: 'Willy Galvez'        },
+  { email: 'JORGE.GRANADOS@walmart.com',    nombre: 'Jorge Granados'       },
+  { email: 'Astrid.Tujab@walmart.com',      nombre: 'Astrid Tujab'        },
+  { email: 'Juan.Gonzalez17@walmart.com',   nombre: 'Juan José González'  },
 ];
 
 var WM_SUBJECT = 'PEDIDO AGROINDUSTRIA AJUA';
@@ -361,6 +362,27 @@ function parsearCorreoWalmart(body) {
       if (!campos.rampa && rampa) campos.rampa = rampa;
       if (!campos.dia   && dia)   campos.dia   = dia;
       rubros.push({ n: cols[4], desc: cols[5], cajas: parseInt(cols[6],10)||0, prodId:'', estado:'pendiente' });
+    });
+  }
+
+  // Tercer intento: espacios multiples (getPlainBody convierte tabs a espacios en algunos clientes)
+  if (!rubros.length) {
+    lines.forEach(function(line) {
+      // Ancla en el item (7-8 digitos), desc, cajas, hora HH:MM:SS, rampa (3-5 digitos)
+      var m = line.match(/\b(\d{7,8})\b\s+(.*?)\s{2,}(\d{1,5})\s+(\d{2}:\d{2}:\d{2})\s+(\d{3,5})\b/);
+      if (!m) return;
+      var item  = m[1];
+      var desc  = m[2].trim();
+      var cajas = parseInt(m[3], 10) || 0;
+      var hora  = m[4].substring(0, 5);
+      var rampa = m[5];
+      // Extraer dia del resto de la linea despues de la rampa (preserva acentos)
+      var rest  = line.substring(m.index + m[0].length).replace(/^\s+/, '');
+      var dia   = (rest.split(/\s{2,}/)[0] || '').replace(/\s*-\s*$/, '').trim();
+      if (!campos.hora  && hora  && hora !== '00:00') campos.hora  = hora;
+      if (!campos.rampa && rampa)                     campos.rampa = rampa;
+      if (!campos.dia   && dia   && dia !== '-')      campos.dia   = dia;
+      rubros.push({ n: item, desc: desc, cajas: cajas, prodId: '', estado: 'pendiente' });
     });
   }
 
