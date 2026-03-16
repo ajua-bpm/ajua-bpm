@@ -7136,7 +7136,7 @@ async function initFirebase(firebaseConfig) {
       }
 
       // build-100 — colecciones fragmentadas (cargar todas)
-      var _colFrags = ['al', 'gcConcursos', 'isalidas', 'cotizaciones', 'gastosSemanales'];
+      var _colFrags = ['al', 'gcConcursos', 'isalidas', 'cotizaciones', 'gastosSemanales', 'tl', 'dt', 'bas', 'rod', 'fum'];
       for (var _cfi = 0; _cfi < _colFrags.length; _cfi++) {
         var _cfn = _colFrags[_cfi];
         try {
@@ -7256,6 +7256,11 @@ function save() {
       delete _dbForMain.isalidas;
       delete _dbForMain.cotizaciones;
       delete _dbForMain.gastosSemanales;
+      delete _dbForMain.tl;
+      delete _dbForMain.dt;
+      delete _dbForMain.bas;
+      delete _dbForMain.rod;
+      delete _dbForMain.fum;
       await setDoc(doc(db, 'ajua_bpm', 'main'), _dbForMain);
       fbShowStatus('online');
     } catch(err) {
