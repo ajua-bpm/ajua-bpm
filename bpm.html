@@ -2991,7 +2991,7 @@ if ('caches' in window) {
     <div style="font-size:.75rem;color:var(--muted);margin-bottom:10px;">Guardados automáticamente en este dispositivo. Funcionan sin internet.</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
       <button class="btn bsm" style="background:var(--green-deep);color:var(--cream);" onclick="
-    toast('📸 Snapshot guardado ahora')">📸 Snapshot ahora</button>
+    backupSnapshotLS(); toast('📸 Snapshot guardado')">📸 Snapshot ahora</button>
       <button class="btn bo bsm" onclick="showSnapshots()">📋 Ver historial snapshots</button>
     </div>
     <div id="snapshots-panel" style="display:none;margin-top:8px;"></div>
@@ -6006,25 +6006,42 @@ function snapRestore(index) {
 
 async function backupToFirebase(force) {
   // Nivel 2: backup automático a documento separado en Firebase
+  // build-109: incluye colecciones fragmentadas + copia a backup2
   if (!_fbReady || !_fbDb) return;
   try {
-    const { db, doc, getDoc, setDoc } = _fbDb;
-    const backupRef = doc(db, 'ajua_bpm', BACKUP_DOC);
+    const { db, doc, getDoc, setDoc, getDocs, collection } = _fbDb;
+    const backupRef  = doc(db, 'ajua_bpm', BACKUP_DOC);
+    const backup2Ref = doc(db, 'ajua_bpm', 'backup2');
+
+    // 1. Leer colecciones fragmentadas de Firestore (pueden estar vacías en DB memoria tras migración)
+    const FRAG_COLS = ['gastosDiarios', 'al', 'tl', 'dt', 'bas', 'rod', 'fum',
+                       'gcConcursos', 'cotizaciones', 'gastosSemanales', 'isalidas'];
+    const fragData = {};
+    for (const colName of FRAG_COLS) {
+      try {
+        const snap = await getDocs(collection(db, colName));
+        fragData[colName] = snap.docs.map(d => d.data());
+      } catch(e) {
+        console.warn('backupToFirebase: error leyendo ' + colName + ':', e.message);
+        fragData[colName] = [];
+      }
+    }
+
+    // 2. Construir payload completo: DB en memoria + colecciones fragmentadas
+    //    Para cada colección fragmentada, usar el array con más registros
+    //    (antes de migración: está en DB; después: está en Firestore)
     const _dbForBackup = Object.assign({}, DB);
-    delete _dbForBackup.gastosDiarios;
-    delete _dbForBackup.al;
-    delete _dbForBackup.gcConcursos;
-    delete _dbForBackup.iSalidas;
-    delete _dbForBackup.isalidas;
-    delete _dbForBackup.cotizaciones;
-    delete _dbForBackup.gastosSemanales;
-    // tl/dt/bas/rod/fum se incluyen en el backup — son arrays operativos críticos
-    // (no están en main porque están en colecciones propias, pero el backup debe tenerlos completos)
+    for (const colName of FRAG_COLS) {
+      const fromFirestore = fragData[colName];
+      const fromMem = DB[colName] || [];
+      _dbForBackup[colName] = fromFirestore.length >= fromMem.length ? fromFirestore : fromMem;
+    }
+
     const total = _dbTotalRecords(_dbForBackup);
     if (total < 5) return;
-    // Protección: nunca sobreescribir backup con menos datos
+
+    // 3. Guard: nunca sobreescribir backup con menos datos
     if (!force) {
-      // Usar cache en memoria si disponible (más rápido y evita leer Firebase en cada ciclo)
       let refTotal = _lastKnownBackupTotal;
       if (!refTotal) {
         const existing = await getDoc(backupRef);
@@ -6036,16 +6053,28 @@ async function backupToFirebase(force) {
         return;
       }
     }
+
+    // 4. Copiar backup_auto anterior a backup2 (backup del backup)
+    try {
+      const prevSnap = await getDoc(backupRef);
+      if (prevSnap.exists()) {
+        await setDoc(backup2Ref, prevSnap.data());
+      }
+    } catch(e) {
+      console.warn('backupToFirebase: no se pudo copiar a backup2:', e.message);
+    }
+
+    // 5. Guardar backup_auto con todos los datos
     await setDoc(backupRef, {
       ..._dbForBackup,
       _backupMeta: {
         ts: Date.now(),
         gtTime: new Date(Date.now()-6*3600000).toISOString(),
         totalRecords: total,
-        version: 'build-108'
+        version: 'build-109'
       }
     });
-    _lastKnownBackupTotal = total;  // actualizar referencia en memoria
+    _lastKnownBackupTotal = total;
     console.log(`✅ Backup Firebase guardado — ${total} registros${force ? ' (forzado)' : ''}`);
   } catch(e) {
     console.warn('backupToFirebase error:', e);
