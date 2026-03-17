@@ -13133,8 +13133,9 @@ function salApplyAlbaran() {
 function salApplyAI() { salApplyAlbaran(); }
 
 function saveSal() {
+  const _v = id => document.getElementById(id)?.value || '';
   invEnsureDB();
-  const fecha = v('sal-fecha') || today();
+  const fecha = _v('sal-fecha') || today();
   if (!fecha) { toast('⚠ Ingrese la fecha', true); return; }
 
   const lineas = [];
@@ -13191,13 +13192,13 @@ function saveSal() {
     totalNeto,    totalIVA,
     totalConIVA,  totalRetencion: totalRet,  totalACobrar,
     totalQ:       totalConIVA,
-    factura:   v('sal-factura'),
-    serie:     v('sal-serie'),
-    dte:       v('sal-dte'),
-    oc:        v('sal-oc'),
-    docMat:    v('sal-docmat'),
-    almacen:   v('sal-almacen'),
-    obs:       v('sal-obs'),
+    factura:   _v('sal-factura'),
+    serie:     _v('sal-serie'),
+    dte:       _v('sal-dte'),
+    oc:        _v('sal-oc'),
+    docMat:    _v('sal-docmat'),
+    almacen:   _v('sal-almacen'),
+    obs:       _v('sal-obs'),
     docEdiwin: !!salEdiwinData,
     albaranFoto: salAlbaranData || null,
   };
