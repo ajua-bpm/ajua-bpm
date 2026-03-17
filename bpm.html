@@ -7461,56 +7461,60 @@ async function initFirebase(firebaseConfig) {
         }
       }
 
-      // build-116 — tl, dt, rod, bas: últimos 90 días, carga explícita
-      var _cutoff90 = new Date();
-      _cutoff90.setDate(_cutoff90.getDate() - 90);
-      var _cutoff90Str = _cutoff90.toISOString().slice(0, 10);
-      var _colFecha = ['tl', 'dt', 'rod', 'bas'];
-      for (var _cff = 0; _cff < _colFecha.length; _cff++) {
-        var _cfCol = _colFecha[_cff];
-        try {
-          var _cfQ = query(
-            collection(db, _cfCol),
-            where('fecha', '>=', _cutoff90Str),
-            orderBy('fecha', 'desc')
-          );
-          var _cfSnap2 = await getDocs(_cfQ);
-          if (!_cfSnap2.empty) {
-            DB[_cfCol] = _cfSnap2.docs.map(function(d) { return d.data(); });
-            console.log('✅ ' + _cfCol + ' colección: ' + DB[_cfCol].length + ' registros (últimos 90 días)');
-          } else {
-            // Fallback: cargar toda la colección sin filtro
-            var _cfSnapFull = await getDocs(collection(db, _cfCol));
-            if (!_cfSnapFull.empty) {
-              DB[_cfCol] = _cfSnapFull.docs.map(function(d) { return d.data(); });
-              DB[_cfCol].sort(function(a,b){ return (b.fecha||b.ts||'').localeCompare(a.fecha||a.ts||''); });
-              console.log('✅ ' + _cfCol + ' colección (full): ' + DB[_cfCol].length + ' registros');
-            } else {
-              console.warn('⚠ ' + _cfCol + ' colección vacía');
-            }
+      // build-118 — tl/dt/rod/bas: main primero, colección solo si main vacío
+      // Si main tiene datos → usar directo + sincronizar colección en background
+      // Si main vacío → buscar en colección separada (90 días → full)
+      var _b118cols = ['tl', 'dt', 'rod', 'bas'];
+      for (var _b118i = 0; _b118i < _b118cols.length; _b118i++) {
+        var _b118col = _b118cols[_b118i];
+        if (Array.isArray(cloud[_b118col]) && cloud[_b118col].length > 0) {
+          // Main tiene datos — confirmar en DB (ya debería estar del merge)
+          if (!DB[_b118col] || DB[_b118col].length === 0) {
+            DB[_b118col] = cloud[_b118col];
           }
-        } catch(_cffErr) {
-          console.warn('⚠ ' + _cfCol + ' query falló (' + _cffErr.message + '), intentando sin filtro...');
+          console.log('✅ ' + _b118col + ' desde main: ' + DB[_b118col].length + ' registros');
+          // Sincronizar colección separada en background (fire & forget)
+          (function(_col, _arr) {
+            Promise.all(_arr.map(function(r, i) {
+              var _did = r.id || r.uid || (_col + '_' + i);
+              return setDoc(doc(collection(db, _col), String(_did)), r).catch(function(){});
+            })).then(function() {
+              console.log('✅ ' + _col + ' colección sincronizada: ' + _arr.length + ' docs');
+            }).catch(function(){});
+          })(_b118col, DB[_b118col].slice());
+        } else {
+          // Main vacío → buscar en colección separada
           try {
-            var _cfSnapFull2 = await getDocs(collection(db, _cfCol));
-            if (!_cfSnapFull2.empty) {
-              DB[_cfCol] = _cfSnapFull2.docs.map(function(d) { return d.data(); });
-              DB[_cfCol].sort(function(a,b){ return (b.fecha||b.ts||'').localeCompare(a.fecha||a.ts||''); });
-              console.log('✅ ' + _cfCol + ' colección (fallback): ' + DB[_cfCol].length + ' registros');
+            var _b118cut = new Date();
+            _b118cut.setDate(_b118cut.getDate() - 90);
+            var _b118cutStr = _b118cut.toISOString().slice(0, 10);
+            var _b118q = query(collection(db, _b118col), where('fecha', '>=', _b118cutStr), orderBy('fecha', 'desc'));
+            var _b118snap = await getDocs(_b118q);
+            if (!_b118snap.empty) {
+              DB[_b118col] = _b118snap.docs.map(function(d) { return d.data(); });
+              console.log('✅ ' + _b118col + ' colección: ' + DB[_b118col].length + ' registros');
+            } else {
+              var _b118full = await getDocs(collection(db, _b118col));
+              if (!_b118full.empty) {
+                DB[_b118col] = _b118full.docs.map(function(d) { return d.data(); });
+                DB[_b118col].sort(function(a,b){ return (b.fecha||b.ts||'').localeCompare(a.fecha||a.ts||''); });
+                console.log('✅ ' + _b118col + ' colección (full): ' + DB[_b118col].length + ' registros');
+              } else {
+                console.warn('⚠ ' + _b118col + ' vacío en main y colección');
+              }
             }
-          } catch(_cffErr2) {
-            console.warn('❌ ' + _cfCol + ' falló completamente:', _cffErr2.message);
+          } catch(_b118err) {
+            try {
+              var _b118full2 = await getDocs(collection(db, _b118col));
+              if (!_b118full2.empty) {
+                DB[_b118col] = _b118full2.docs.map(function(d) { return d.data(); });
+                DB[_b118col].sort(function(a,b){ return (b.fecha||b.ts||'').localeCompare(a.fecha||a.ts||''); });
+                console.log('✅ ' + _b118col + ' colección (fallback): ' + DB[_b118col].length + ' registros');
+              }
+            } catch(_b118err2) {
+              console.warn('❌ ' + _b118col + ' falló:', _b118err2.message);
+            }
           }
-        }
-      }
-
-      // build-117 — fallback: si colecciones separadas vacías, usar main
-      var _mainFallback = ['tl', 'dt', 'rod', 'bas'];
-      for (var _mf = 0; _mf < _mainFallback.length; _mf++) {
-        var _mfCol = _mainFallback[_mf];
-        if ((!DB[_mfCol] || DB[_mfCol].length === 0) && Array.isArray(cloud[_mfCol]) && cloud[_mfCol].length > 0) {
-          DB[_mfCol] = cloud[_mfCol];
-          console.log('✅ ' + _mfCol + ' desde main: ' + DB[_mfCol].length + ' registros');
         }
       }
 
