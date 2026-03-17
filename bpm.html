@@ -1273,12 +1273,12 @@ if ('caches' in window) {
 </div>
 </div>
 <div class="sec" id="sec-fumigacion">
-<div class="ph"><h1>Control de Fumigación / Sanitización</h1><p>Cronograma anual de fumigación — Agua y Cloro — 2026</p></div>
+<div class="ph"><h1>Control de Fumigación / Sanitización</h1><p>Fumigación externa mensual · Desinfección con cloro semanal — 2026</p></div>
 <div class="card">
-<div class="ct">Registrar Fumigación</div>
+<div class="ct">Registrar Control</div>
 <div class="fgrid g4">
-<div class="fg"><label>Instalación</label>
-<select id="fum-inst"><option>Bodega Nivel 1</option><option>Bodega Nivel 2</option></select>
+<div class="fg"><label>Instalación / Área</label>
+<select id="fum-inst"><option>Instalación Completa</option><option>Cooler 1 (0–4°C)</option><option>Cooler 2 (-18°C)</option><option>Pre-carga</option><option>Bodega General</option><option>Parqueo Interior</option></select>
 </div>
 <div class="fg"><label>Mes</label>
 <select id="fum-mes"><option>Enero</option><option>Febrero</option><option>Marzo</option><option>Abril</option><option>Mayo</option><option>Junio</option><option>Julio</option><option>Agosto</option><option>Septiembre</option><option>Octubre</option><option>Noviembre</option><option>Diciembre</option></select>
@@ -1291,13 +1291,33 @@ if ('caches' in window) {
 <div class="fgrid g3">
 <div class="fg"><label>Fecha Realización</label><input type="date" id="fum-fecha"></div>
 <div class="fg"><label>Tipo de Control</label>
-<select id="fum-tipo"><option>Fumigación General</option><option>Sanitización Agua-Cloro</option><option>Control de Insectos</option></select>
+<select id="fum-tipo" onchange="fumTipoChange()">
+<option value="Fumigación General">Fumigación General (empresa externa)</option>
+<option value="Desinfección con Cloro">🧴 Desinfección con Cloro (interna, semanal)</option>
+<option value="Sanitización Agua-Cloro">Sanitización Agua-Cloro</option>
+<option value="Control de Insectos">Control de Insectos</option>
+</select>
 </div>
 <div class="fg"><label>Resultado</label>
 <select id="fum-res"><option value="realizado">✓ Realizado</option><option value="pendiente">⏳ Pendiente</option><option value="reprogramado">↻ Reprogramado</option></select>
 </div>
 </div>
-<div class="fg" style="margin-bottom:12px;"><label>Observaciones</label><textarea id="fum-obs" rows="2" placeholder="Productos utilizados, condiciones, etc."></textarea></div>
+<div id="fum-cloro-panel" style="display:none;padding:10px 14px;border:1.5px solid rgba(100,180,100,.35);border-radius:6px;background:rgba(92,200,92,.04);margin-bottom:12px;">
+<div style="font-size:.68rem;font-weight:600;color:var(--acc2);margin-bottom:8px;">🧴 Desinfección con Cloro — campos adicionales</div>
+<div class="fgrid g2">
+<div class="fg">
+<label>Áreas desinfectadas</label>
+<div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:6px;font-size:.78rem;">
+<label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" id="fum-area-c1" style="accent-color:var(--acc);"> ❄️ Cooler 1</label>
+<label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" id="fum-area-c2" style="accent-color:var(--acc);"> ❄️ Cooler 2</label>
+<label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" id="fum-area-pc" style="accent-color:var(--acc);"> 📦 Pre-carga</label>
+<label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" id="fum-area-bg" style="accent-color:var(--acc);"> 🏭 Bodega General</label>
+</div>
+</div>
+<div class="fg"><label>Concentración de Cloro (%)</label><input type="number" id="fum-cloro-conc" placeholder="Ej: 0.5" step="0.1" min="0" max="10" style="max-width:130px;"></div>
+</div>
+</div>
+<div class="fg" style="margin-bottom:12px;"><label>Observaciones</label><textarea id="fum-obs" rows="2" placeholder="Productos utilizados, empresa, condiciones..."></textarea></div>
 <div class="fa"><button class="btn bp" onclick="saveFum()">Registrar</button></div>
 </div>
 <div class="tw">
@@ -8519,20 +8539,44 @@ function renderBL(){
   </tr>`).join('');
 }
 
+function fumTipoChange() {
+  const tipo = document.getElementById('fum-tipo')?.value;
+  const panel = document.getElementById('fum-cloro-panel');
+  if (panel) panel.style.display = tipo === 'Desinfección con Cloro' ? 'block' : 'none';
+}
 function saveFum(){
-  if(!v('fum-resp-sel')){toast('⚠ Ingrese responsable',true);return;}
-  DB.fum.unshift({id:uid(),ts:now(),inst:v('fum-inst'),mes:v('fum-mes'),sem:v('fum-sem'),resp:v('fum-resp-sel'),fecha:v('fum-fecha'),tipo:v('fum-tipo'),res:v('fum-res'),obs:v('fum-obs')});
+  const _v = id => document.getElementById(id)?.value || '';
+  if(!_v('fum-resp-sel')){toast('⚠ Ingrese responsable',true);return;}
+  const tipo = _v('fum-tipo');
+  const isCloro = tipo === 'Desinfección con Cloro';
+  const AREA_LBL = {c1:'Cooler 1',c2:'Cooler 2',pc:'Pre-carga',bg:'Bodega General'};
+  const areas = isCloro
+    ? Object.keys(AREA_LBL).filter(a => document.getElementById('fum-area-'+a)?.checked).map(a => AREA_LBL[a])
+    : [];
+  const cloroConc = isCloro ? _v('fum-cloro-conc') : '';
+  const inst = isCloro ? (areas.join(', ') || '—') : _v('fum-inst');
+  DB.fum.unshift({id:uid(),ts:now(),inst,mes:_v('fum-mes'),sem:_v('fum-sem'),
+    resp:_v('fum-resp-sel'),fecha:_v('fum-fecha'),tipo,
+    areas, cloroConc, res:_v('fum-res'),obs:_v('fum-obs')});
+  if (isCloro) {
+    Object.keys(AREA_LBL).forEach(a => { const el = document.getElementById('fum-area-'+a); if(el) el.checked = false; });
+    const ce = document.getElementById('fum-cloro-conc'); if(ce) ce.value = '';
+  }
   save();renderFum();toast('✓ Control de fumigación registrado');
 }
 function renderFum(){
   const tb=document.getElementById('fum-tbody');if(!tb)return;
   if(!DB.fum.length){tb.innerHTML=`<tr><td colspan="9"><div class="empty">Sin registros</div></td></tr>`;return;}
-  tb.innerHTML=DB.fum.slice().sort((a,b)=>(b.fecha||b.ts||"").localeCompare(a.fecha||a.ts||"")).map(r=>`<tr>
-    <td>${r.inst}</td><td>${r.mes}</td><td>Sem. ${r.sem}</td><td>${r.resp}</td><td>${r.fecha||'—'}</td>
-    <td>${r.tipo}</td><td>${chipSN(r.res)}</td>
-    <td style="font-size:.68rem">${r.obs||'—'}</td>
+  tb.innerHTML=DB.fum.slice().sort((a,b)=>(b.fecha||b.ts||"").localeCompare(a.fecha||a.ts||"")).map(r=>{
+    const tipoChip = r.tipo==='Desinfección con Cloro'
+      ? `<span class="chip ck" style="font-size:.6rem;">🧴 Cloro${r.cloroConc?' '+r.cloroConc+'%':''}</span>`
+      : r.tipo;
+    return `<tr>
+    <td style="font-size:.72rem;">${r.inst}</td><td>${r.mes}</td><td>Sem. ${r.sem}</td><td>${r.resp}</td><td>${r.fecha||'—'}</td>
+    <td>${tipoChip}</td><td>${chipSN(r.res)}</td>
+    <td style="font-size:.68rem;">${r.obs||'—'}</td>
     <td><button class="btn bo bsm" onclick="del('fum','${r.id}')">✕</button></td>
-  </tr>`).join('');
+  </tr>`;}).join('');
 }
 
 const ROD_TRAMPAS = [
