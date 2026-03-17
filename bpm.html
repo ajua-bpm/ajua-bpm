@@ -1271,6 +1271,24 @@ if ('caches' in window) {
 <table><thead><tr><th>Fecha</th><th>Responsable</th><th>Hora</th><th>Cumpl.</th><th>No Cumpl.</th><th>N/A</th><th>Obs.</th><th></th></tr></thead>
 <tbody id="bl-tbody"></tbody></table>
 </div>
+<div class="card" style="margin-top:16px;">
+<div class="ct">🚗 Limpieza de Parqueo Interior</div>
+<p style="font-size:.7rem;color:var(--muted2);margin-bottom:12px;">Lunes, Miércoles y Viernes — 3 veces por semana</p>
+<div class="fgrid g3">
+<div class="fg"><label>Fecha</label><input type="date" id="parq-fecha"></div>
+<div class="fg"><label>Responsable</label><select id="parq-resp"><option value="">— Seleccionar responsable —</option></select></div>
+<div class="fg"><label>Hora</label><input type="time" id="parq-hora"></div>
+</div>
+<p style="font-size:.68rem;color:var(--muted2);margin-bottom:8px;">Marcar SI / NO para cada punto:</p>
+<div id="parq-checklist" style="margin-bottom:14px;"></div>
+<div class="fg" style="margin-bottom:12px;"><label>Observaciones</label><textarea id="parq-obs" rows="2" placeholder="Novedades, derrames, obstáculos detectados..."></textarea></div>
+<div class="fa"><button class="btn bp" onclick="saveParq()">Guardar Registro</button></div>
+</div>
+<div class="tw">
+<div class="twh"><span class="twt">Historial Parqueo</span><button class="btn bo bsm" onclick="exportCSV('parq')">↓ CSV</button></div>
+<table><thead><tr><th>Fecha</th><th>Responsable</th><th>Hora</th><th>Barrido</th><th>Basura</th><th>Drenajes</th><th>Acceso libre</th><th>Obs.</th><th></th></tr></thead>
+<tbody id="parq-tbody"></tbody></table>
+</div>
 </div>
 <div class="sec" id="sec-fumigacion">
 <div class="ph"><h1>Control de Fumigación / Sanitización</h1><p>Fumigación externa mensual · Desinfección con cloro semanal — 2026</p></div>
@@ -4063,7 +4081,7 @@ if ('caches' in window) {
 // Garantiza que DB exista antes de que cualquier código inline lo use.
 // Firebase sobreescribe esto con los datos reales al cargar.
 const DB_DEFAULT = {
-  tl:[],dt:[],bl:[],fum:[],rod:[],cap:[],ee:[],al:[],vis:[],vp:[],bas:[],lp:[],
+  tl:[],dt:[],bl:[],parq:[],fum:[],rod:[],cap:[],ee:[],al:[],vis:[],vp:[],bas:[],lp:[],
   conductores:[], clientes:[], empleados:[], calibraciones:[],
   iproductos:[], ipresentaciones:[], iclientes:[], ientradas:[], isalidas:[],
   cotizaciones:[], vgtVentas:[], vintVentas:[], maquila:[], usuarios:[],
@@ -7571,7 +7589,7 @@ function show(id,el){closeNavOnMobile();
       case 'despacho':
         buildDTChecklist(); renderDT(); populateAllRespSelects(); break;
       case 'bodega-limpieza':
-        buildBLChecklist(); renderBL(); populateAllRespSelects(); break;
+        buildBLChecklist(); renderBL(); buildParqChecklist(); renderParq(); populateAllRespSelects(); break;
       case 'roedores':
         buildRodTrampas(); renderRod(); populateAllRespSelects(); break;
       case 'vidrio':
@@ -7687,7 +7705,7 @@ function del(key,id){
   DB[key]=DB[key].filter(r=>r.id!==id);
   save();
   // Render solo la sección afectada, no todo
-  const keyToSec = {tl:'transporte-limpieza',dt:'despacho',bl:'bodega-limpieza',
+  const keyToSec = {tl:'transporte-limpieza',dt:'despacho',bl:'bodega-limpieza',parq:'bodega-limpieza',
     rod:'roedores',fum:'fumigacion',al:'acceso-lavado',bas:'basculas',
     vis:'visitas',vp:'vidrio',cap:'capacitacion',lp:'lavado-prod',
     gastosDiarios:'gastos-diarios',empleados:'empleados-db',
@@ -8544,6 +8562,65 @@ function fumTipoChange() {
   const panel = document.getElementById('fum-cloro-panel');
   if (panel) panel.style.display = tipo === 'Desinfección con Cloro' ? 'block' : 'none';
 }
+const PARQ_ITEMS = [
+  { id:'barrido', label:'Barrido completo del parqueo' },
+  { id:'basura',  label:'Recolección de basura y desechos' },
+  { id:'drenajes',label:'Drenajes limpios y sin obstrucción' },
+  { id:'acceso',  label:'Acceso libre — sin obstáculos' },
+];
+function buildParqChecklist() {
+  const tb = document.getElementById('parq-checklist');
+  if (!tb || tb.dataset.built) return;
+  tb.dataset.built = '1';
+  tb.className = 'cl-list';
+  PARQ_ITEMS.forEach(p => {
+    tb.insertAdjacentHTML('beforeend', `
+    <div class="cl-item" id="parq-ci-${p.id}">
+      <div class="cl-item-txt">
+        <div class="cl-item-name">${p.label}</div>
+      </div>
+      <div class="cl-btns">
+        <button class="cl-btn" onclick="clBtn(this,'parq_${p.id}','si','parq-ci-${p.id}')">SI</button>
+        <button class="cl-btn" onclick="clBtn(this,'parq_${p.id}','no','parq-ci-${p.id}')">NO</button>
+        <button class="cl-btn" onclick="clBtn(this,'parq_${p.id}','na','parq-ci-${p.id}')">N/A</button>
+      </div>
+    </div>`);
+  });
+}
+function saveParq() {
+  const _v = id => document.getElementById(id)?.value || '';
+  if (!_v('parq-fecha') || !_v('parq-resp')) { toast('⚠ Complete fecha y responsable', true); return; }
+  const checks = {};
+  PARQ_ITEMS.forEach(p => {
+    const r = document.querySelector(`input[name="parq_${p.id}"]:checked`);
+    checks[p.id] = r ? r.value : '';
+  });
+  DB.parq.unshift({ id: uid(), ts: now(), fecha: _v('parq-fecha'), resp: _v('parq-resp'),
+    hora: _v('parq-hora'), ...checks, obs: _v('parq-obs') });
+  PARQ_ITEMS.forEach(p => {
+    const r = document.querySelector(`input[name="parq_${p.id}"]:checked`);
+    if (r) r.checked = false;
+    const el = document.getElementById('parq-ci-' + p.id);
+    if (el) { el.style.background = ''; el.style.borderColor = ''; }
+  });
+  document.getElementById('parq-obs').value = '';
+  save(); renderParq(); toast('✓ Limpieza de parqueo registrada');
+}
+function renderParq() {
+  const tb = document.getElementById('parq-tbody'); if (!tb) return;
+  if (!DB.parq.length) { tb.innerHTML = `<tr><td colspan="9"><div class="empty">Sin registros</div></td></tr>`; return; }
+  const chip = v => v === 'si' ? '<span class="chip ck" style="font-size:.6rem;">✓</span>'
+    : v === 'no' ? '<span class="chip cr" style="font-size:.6rem;">✕</span>'
+    : '<span style="font-size:.65rem;color:var(--muted2);">N/A</span>';
+  tb.innerHTML = DB.parq.slice().sort((a,b) => (b.fecha||b.ts||'').localeCompare(a.fecha||a.ts||'')).map(r => `<tr>
+    <td>${r.fecha}</td><td>${r.resp}</td><td>${r.hora||'—'}</td>
+    <td>${chip(r.barrido)}</td><td>${chip(r.basura)}</td>
+    <td>${chip(r.drenajes)}</td><td>${chip(r.acceso)}</td>
+    <td style="font-size:.68rem;">${r.obs||'—'}</td>
+    <td><button class="btn bo bsm" onclick="del('parq','${r.id}')">✕</button></td>
+  </tr>`).join('');
+}
+
 function saveFum(){
   const _v = id => document.getElementById(id)?.value || '';
   if(!_v('fum-resp-sel')){toast('⚠ Ingrese responsable',true);return;}
@@ -14197,8 +14274,9 @@ function exportCSV(modulo) {
   const map = {
     lp: { arr: 'lp',  cols: ['fecha','hora','responsable','obs'] },
     tl: { arr: 'tl',  cols: ['fecha','conductor','placa','obs'] },
-    bl: { arr: 'bl',  cols: ['fecha','responsable','obs'] },
-    rod:{ arr: 'rod', cols: ['fecha','responsable','obs'] },
+    bl:  { arr: 'bl',   cols: ['fecha','responsable','obs'] },
+    parq:{ arr: 'parq', cols: ['fecha','resp','barrido','basura','drenajes','acceso','obs'] },
+    rod: { arr: 'rod',  cols: ['fecha','responsable','obs'] },
     vis:{ arr: 'vis', cols: ['fecha','nombre','empresa','obs'] },
     bas:{ arr: 'bas', cols: ['fecha','responsable','obs'] },
   };
