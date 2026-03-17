@@ -7504,6 +7504,16 @@ async function initFirebase(firebaseConfig) {
         }
       }
 
+      // build-117 — fallback: si colecciones separadas vacías, usar main
+      var _mainFallback = ['tl', 'dt', 'rod', 'bas'];
+      for (var _mf = 0; _mf < _mainFallback.length; _mf++) {
+        var _mfCol = _mainFallback[_mf];
+        if ((!DB[_mfCol] || DB[_mfCol].length === 0) && Array.isArray(cloud[_mfCol]) && cloud[_mfCol].length > 0) {
+          DB[_mfCol] = cloud[_mfCol];
+          console.log('✅ ' + _mfCol + ' desde main: ' + DB[_mfCol].length + ' registros');
+        }
+      }
+
     } else {
       // Documento no existe — subir lo que hay localmente
       const hasData = Object.values(DB).some(v => Array.isArray(v) && v.length > 0);
