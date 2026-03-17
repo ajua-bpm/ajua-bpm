@@ -1240,7 +1240,7 @@ if ('caches' in window) {
 </div>
 </div>
 <div class="sec" id="sec-bodega-limpieza">
-<div class="ph"><h1>Control de Limpieza — Bodega</h1><p>Verificación diaria de limpieza y desinfección por áreas</p></div>
+<div class="ph"><h1>Control de Limpieza — Bodega</h1><p>Verificación diaria — ❄️ Cooler 1 · ❄️ Cooler 2 · 📦 Pre-carga · Lunes a Sábado</p></div>
 <div class="card">
 <div class="ct">Nuevo Registro de Limpieza</div>
 <div class="fgrid g3">
@@ -1254,7 +1254,12 @@ if ('caches' in window) {
 <div class="fg"><label>Hora Limpieza</label><input type="time" id="bl-hora"></div>
 </div>
 <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;"><div id="bl-checklist" style="margin-bottom:14px;"></div></div>
-<div class="fg" style="margin-bottom:12px;"><label>Comentarios y Recomendaciones</label><textarea id="bl-obs" rows="2" placeholder="Observaciones generales..."></textarea></div>
+<div class="fgrid g3" style="margin-bottom:12px;">
+<div class="fg"><label>Obs. Cooler 1</label><textarea id="bl-obs-c1" rows="2" placeholder="Novedades Cooler 1..."></textarea></div>
+<div class="fg"><label>Obs. Cooler 2</label><textarea id="bl-obs-c2" rows="2" placeholder="Novedades Cooler 2..."></textarea></div>
+<div class="fg"><label>Obs. Pre-carga</label><textarea id="bl-obs-pc" rows="2" placeholder="Novedades Pre-carga..."></textarea></div>
+</div>
+<div class="fg" style="margin-bottom:12px;"><label>Comentarios Generales</label><textarea id="bl-obs" rows="2" placeholder="Observaciones generales..."></textarea></div>
 <div class="fa">
 <button class="btn bp" onclick="saveBL()">Guardar Registro</button>
 <button class="btn bo" onclick="printSec('sec-bodega-limpieza')">🖨 Imprimir</button>
@@ -8443,22 +8448,18 @@ function populateAllRespSelects(){
 }
 
 const BL_ITEMS=[
-  {cat:'Piso 1',item:'Limpieza de Mesas'},
-  {cat:'Piso 1',item:'Limpieza Balanzas'},
-  {cat:'Piso 1',item:'Barrido'},
-  {cat:'Piso 1',item:'Trapeado'},
-  {cat:'Piso 2',item:'Baño'},
-  {cat:'Piso 2',item:'Limpieza General'},
-  {cat:'Piso 2',item:'Revisión Trampas'},
-  {cat:'Piso 2',item:'Secador de manos'},
-  {cat:'Kit de Desinfección',item:'Jabón para manos'},
-  {cat:'Kit de Desinfección',item:'Desinfectante en gel'},
-  {cat:'Kit de Desinfección',item:'Escobas, Trapeador'},
-  {cat:'Kit de Desinfección',item:'Bolsas de basura'},
-  {cat:'Kit de Desinfección',item:'Papel de Baño'},
-  {cat:'Bioseguridad',item:'Tapabocas'},
-  {cat:'Bioseguridad',item:'Red de cabello'},
-  {cat:'Bioseguridad',item:'Guantes'},
+  {cat:'❄️ Cooler 1 (0–4°C)',item:'Pisos limpios y secos'},
+  {cat:'❄️ Cooler 1 (0–4°C)',item:'Paredes sin suciedad ni hongos'},
+  {cat:'❄️ Cooler 1 (0–4°C)',item:'Drenajes sin obstrucción'},
+  {cat:'❄️ Cooler 1 (0–4°C)',item:'Puertas y cortinas en buen estado'},
+  {cat:'❄️ Cooler 2 (-18°C)',item:'Pisos limpios y sin hielo acumulado'},
+  {cat:'❄️ Cooler 2 (-18°C)',item:'Paredes sin escarcha excesiva'},
+  {cat:'❄️ Cooler 2 (-18°C)',item:'Drenajes sin obstrucción'},
+  {cat:'❄️ Cooler 2 (-18°C)',item:'Puertas y cortinas en buen estado'},
+  {cat:'📦 Pre-carga',item:'Pisos barridos y trapeados'},
+  {cat:'📦 Pre-carga',item:'Paredes limpias sin residuos'},
+  {cat:'📦 Pre-carga',item:'Mesas de trabajo limpias y sanitizadas'},
+  {cat:'📦 Pre-carga',item:'Equipo y utensilios limpios'},
 ];
 function buildBLChecklist(){
   const tb=document.getElementById('bl-checklist');
@@ -8487,13 +8488,23 @@ function buildBLChecklist(){
   });
 }
 function saveBL(){
-  if(!v('bl-fecha')||!v('bl-resp')){toast('⚠ Complete fecha y seleccione responsable',true);return;}
+  const _v=id=>document.getElementById(id)?.value||'';
+  if(!_v('bl-fecha')||!_v('bl-resp')){toast('⚠ Complete fecha y seleccione responsable',true);return;}
   const checks=BL_ITEMS.map((_,i)=>{const r=document.querySelector(`input[name="bl_${i}"]:checked`);return r?r.value:'';});
   const si=checks.filter(c=>c==='si').length;
   const no=checks.filter(c=>c==='no').length;
   const na=checks.filter(c=>c==='na').length;
-  DB.bl.unshift({id:uid(),ts:now(),fecha:v('bl-fecha'),resp:v('bl-resp'),hora:v('bl-hora'),checks,si,no,na,obs:v('bl-obs')});
-  save();renderBL();toast('✓ Registro de limpieza bodega guardado');
+  DB.bl.unshift({id:uid(),ts:now(),fecha:_v('bl-fecha'),resp:_v('bl-resp'),hora:_v('bl-hora'),
+    checks,si,no,na,
+    obsC1:_v('bl-obs-c1'),obsC2:_v('bl-obs-c2'),obsPc:_v('bl-obs-pc'),obs:_v('bl-obs')});
+  ['bl-obs-c1','bl-obs-c2','bl-obs-pc','bl-obs'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  BL_ITEMS.forEach((_,i)=>{
+    const r=document.querySelector(`input[name="bl_${i}"]:checked`);
+    if(r)r.checked=false;
+    const el=document.getElementById('bl-ci-'+i);
+    if(el){el.style.background='';el.style.borderColor='';}
+  });
+  save();renderBL();toast('✓ Registro de limpieza guardado');
 }
 function renderBL(){
   const tb=document.getElementById('bl-tbody');if(!tb)return;
