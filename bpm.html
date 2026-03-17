@@ -7446,8 +7446,8 @@ async function initFirebase(firebaseConfig) {
         console.warn('⚠ gastosDiarios colección falló, usando main:', gdErr.message);
       }
 
-      // build-100 — colecciones fragmentadas (cargar todas)
-      var _colFrags = ['al', 'gcConcursos', 'isalidas', 'cotizaciones', 'gastosSemanales', 'tl', 'dt', 'bas', 'rod', 'fum'];
+      // build-100 — colecciones sin fecha (cargar todo)
+      var _colFrags = ['al', 'gcConcursos', 'isalidas', 'cotizaciones', 'gastosSemanales', 'fum'];
       for (var _cfi = 0; _cfi < _colFrags.length; _cfi++) {
         var _cfn = _colFrags[_cfi];
         try {
@@ -7458,6 +7458,49 @@ async function initFirebase(firebaseConfig) {
           }
         } catch(_cfErr) {
           console.warn('⚠ ' + _cfn + ' colección falló, usando main:', _cfErr.message);
+        }
+      }
+
+      // build-116 — tl, dt, rod, bas: últimos 90 días, carga explícita
+      var _cutoff90 = new Date();
+      _cutoff90.setDate(_cutoff90.getDate() - 90);
+      var _cutoff90Str = _cutoff90.toISOString().slice(0, 10);
+      var _colFecha = ['tl', 'dt', 'rod', 'bas'];
+      for (var _cff = 0; _cff < _colFecha.length; _cff++) {
+        var _cfCol = _colFecha[_cff];
+        try {
+          var _cfQ = query(
+            collection(db, _cfCol),
+            where('fecha', '>=', _cutoff90Str),
+            orderBy('fecha', 'desc')
+          );
+          var _cfSnap2 = await getDocs(_cfQ);
+          if (!_cfSnap2.empty) {
+            DB[_cfCol] = _cfSnap2.docs.map(function(d) { return d.data(); });
+            console.log('✅ ' + _cfCol + ' colección: ' + DB[_cfCol].length + ' registros (últimos 90 días)');
+          } else {
+            // Fallback: cargar toda la colección sin filtro
+            var _cfSnapFull = await getDocs(collection(db, _cfCol));
+            if (!_cfSnapFull.empty) {
+              DB[_cfCol] = _cfSnapFull.docs.map(function(d) { return d.data(); });
+              DB[_cfCol].sort(function(a,b){ return (b.fecha||b.ts||'').localeCompare(a.fecha||a.ts||''); });
+              console.log('✅ ' + _cfCol + ' colección (full): ' + DB[_cfCol].length + ' registros');
+            } else {
+              console.warn('⚠ ' + _cfCol + ' colección vacía');
+            }
+          }
+        } catch(_cffErr) {
+          console.warn('⚠ ' + _cfCol + ' query falló (' + _cffErr.message + '), intentando sin filtro...');
+          try {
+            var _cfSnapFull2 = await getDocs(collection(db, _cfCol));
+            if (!_cfSnapFull2.empty) {
+              DB[_cfCol] = _cfSnapFull2.docs.map(function(d) { return d.data(); });
+              DB[_cfCol].sort(function(a,b){ return (b.fecha||b.ts||'').localeCompare(a.fecha||a.ts||''); });
+              console.log('✅ ' + _cfCol + ' colección (fallback): ' + DB[_cfCol].length + ' registros');
+            }
+          } catch(_cffErr2) {
+            console.warn('❌ ' + _cfCol + ' falló completamente:', _cffErr2.message);
+          }
         }
       }
 
