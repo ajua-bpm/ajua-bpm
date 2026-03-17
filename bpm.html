@@ -6042,7 +6042,7 @@ async function backupToFirebase(force) {
         ts: Date.now(),
         gtTime: new Date(Date.now()-6*3600000).toISOString(),
         totalRecords: total,
-        version: 'build-107'
+        version: 'build-108'
       }
     });
     _lastKnownBackupTotal = total;  // actualizar referencia en memoria
@@ -6843,8 +6843,8 @@ function repExport() {
   });
   (DB.isalidas||[]).filter(v=>v.fecha>=desde&&v.fecha<=hasta).forEach(v => {
     (v.lineas||[]).forEach(l => {
-      const n = (l.totalConIva||0)/1.12;
-      rows.push([v.fecha,'Walmart','Walmart GT',l.productoNombre||'',l.lbs||0,n.toFixed(2),(n*0.12).toFixed(2),(l.totalConIva||0).toFixed(2)]);
+      const n = (l.totalNeto||(l.totalConIVA||0)/1.12);
+      rows.push([v.fecha,'Walmart',v.clienteNombre||'Walmart GT',l.productoNombre||'',+(l.totalLbs||0).toFixed(2),n.toFixed(2),(l.totalIVA||n*0.12).toFixed(2),(l.totalConIVA||0).toFixed(2)]);
     });
   });
   // Add gastos diarios summary
@@ -6861,6 +6861,186 @@ function repExport() {
 }
 
 function repExportConsolidado() { repExport(); }
+
+// ════════════════════════════════════════════════════════════════════
+// 📊 DESCARGA EXCEL BPM COMPLETO — multi-hojas SheetJS — build-108
+// ════════════════════════════════════════════════════════════════════
+async function rpDescargar(periodo) {
+  const btn = document.getElementById('rp-btn-' + periodo);
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Generando...'; }
+  try {
+    if (!window.XLSX) {
+      await new Promise((res, rej) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';
+        s.onload = res; s.onerror = () => rej(new Error('No se pudo cargar SheetJS'));
+        document.head.appendChild(s);
+      });
+    }
+    const hoy = today();
+    let desde, hasta;
+    if (periodo === 'semana') {
+      const d = new Date(hoy + 'T12:00:00');
+      const dow = d.getDay();
+      const diff = dow === 0 ? -6 : 1 - dow;
+      const lun = new Date(d); lun.setDate(d.getDate() + diff);
+      const dom = new Date(lun); dom.setDate(lun.getDate() + 6);
+      desde = lun.toISOString().split('T')[0];
+      hasta = dom.toISOString().split('T')[0];
+    } else if (periodo === 'mes') {
+      desde = hoy.slice(0,7) + '-01';
+      hasta = new Date(+hoy.slice(0,4), +hoy.slice(5,7), 0).toISOString().split('T')[0];
+    } else if (periodo === 'anio') {
+      desde = hoy.slice(0,4) + '-01-01';
+      hasta = hoy.slice(0,4) + '-12-31';
+    } else {
+      desde = '2020-01-01'; hasta = '2099-12-31';
+    }
+    const inR = r => { const fd = r.fecha||r.semanaInicio||r.fechaPub||r.ts?.slice(0,10)||''; return fd>=desde&&fd<=hasta; };
+    const wb = window.XLSX.utils.book_new();
+    const addSheet = (name, rows) => window.XLSX.utils.book_append_sheet(wb, window.XLSX.utils.aoa_to_sheet(rows), name);
+
+    // ── Resumen ──────────────────────────────────────────────────
+    const gdTot  = (DB.gastosDiarios||[]).filter(inR).reduce((s,r)=>s+(r.monto||0),0);
+    const gsTot  = (DB.gastosSemanales||[]).filter(inR).reduce((s,r)=>s+(r.grandTotal||0),0);
+    const wmTot  = (DB.isalidas||[]).filter(inR).reduce((s,r)=>s+(r.totalConIVA||r.totalQ||0),0);
+    const wmCob  = (DB.isalidas||[]).filter(inR).reduce((s,r)=>s+(r.totalACobrar||0),0);
+    const gtTot  = (DB.vgtVentas||[]).filter(inR).reduce((s,r)=>s+(r.totalQ||0),0);
+    const exTot  = (DB.vintVentas||[]).filter(inR).reduce((s,r)=>s+(r.totalGtq||0),0);
+    const ingTot = wmTot + gtTot + exTot;
+    addSheet('Resumen', [
+      ['AGROINDUSTRIA AJÚA — REPORTE BPM'],
+      ['Período:', desde + ' al ' + hasta],
+      ['Generado:', new Date().toLocaleString('es-GT')],
+      [],
+      ['INGRESOS','Registros','Monto Q'],
+      ['Ventas Walmart (con IVA)',(DB.isalidas||[]).filter(inR).length,+wmTot.toFixed(2)],
+      ['  A cobrar (neto retención)','',+wmCob.toFixed(2)],
+      ['Ventas GT (Local)',(DB.vgtVentas||[]).filter(inR).length,+gtTot.toFixed(2)],
+      ['Ventas Exportación',(DB.vintVentas||[]).filter(inR).length,+exTot.toFixed(2)],
+      ['TOTAL INGRESOS','',+ingTot.toFixed(2)],
+      [],
+      ['COSTOS','Registros','Monto Q'],
+      ['Gastos Diarios',(DB.gastosDiarios||[]).filter(inR).length,+gdTot.toFixed(2)],
+      ['Maquila Semanal',(DB.gastosSemanales||[]).filter(inR).length,+gsTot.toFixed(2)],
+      ['TOTAL COSTOS','',+(gdTot+gsTot).toFixed(2)],
+      [],
+      ['UTILIDAD BRUTA','',+(ingTot-gdTot-gsTot).toFixed(2)],
+      [],
+      ['OPERACIONES BPM','Registros',''],
+      ['Pedidos Walmart',(DB.pedidosWalmart||[]).filter(inR).length,''],
+      ['Control TL',(DB.tl||[]).filter(inR).length,''],
+      ['Control DT',(DB.dt||[]).filter(inR).length,''],
+      ['Control AL (Acceso)',(DB.al||[]).filter(inR).length,''],
+      ['Control BAS (Básculas)',(DB.bas||[]).filter(inR).length,''],
+      ['Control ROD (Roedores)',(DB.rod||[]).filter(inR).length,''],
+      ['Control FUM (Fumigación)',(DB.fum||[]).filter(inR).length,''],
+    ]);
+
+    // ── Gastos Diarios ───────────────────────────────────────────
+    addSheet('Gastos Diarios', [
+      ['Fecha','Categoría','Descripción / Obs','Monto Q'],
+      ...(DB.gastosDiarios||[]).filter(inR).map(r=>[r.fecha,r.categoria||'',r.obs||'',r.monto||0])
+    ]);
+
+    // ── Maquila Semanal ──────────────────────────────────────────
+    addSheet('Maquila Semanal', [
+      ['Semana Inicio','Semana Fin','Lbs Procesadas','Total Maquila Q'],
+      ...(DB.gastosSemanales||[]).filter(inR).map(r=>[r.semanaInicio,r.semanaFin,r.lbsProc||0,r.grandTotal||0])
+    ]);
+
+    // ── Ventas GT ────────────────────────────────────────────────
+    const rowsVgt = [['Fecha','Comprador','NIT','Tipo','Producto','Cantidad','Unidad','Lbs','Precio U','Sub-total Q','Pago','Factura','Recibo','Obs']];
+    (DB.vgtVentas||[]).filter(inR).forEach(r => {
+      if (r.lineas?.length) r.lineas.forEach(l=>rowsVgt.push([r.fecha,r.comprador||'',r.nitComprador||'',r.tipo||'',l.productoNombre||'',l.cant||0,l.unidad||'',+(l.lbs||0).toFixed(2),l.precio||0,l.sub||0,r.pago||'',r.numFactura||'',r.recibo||'',r.obs||'']));
+      else rowsVgt.push([r.fecha,r.comprador||'',r.nitComprador||'',r.tipo||'','',0,'',0,0,r.totalQ||0,r.pago||'',r.numFactura||'',r.recibo||'',r.obs||'']);
+    });
+    addSheet('Ventas GT', rowsVgt);
+
+    // ── Ventas Exportación ───────────────────────────────────────
+    const rowsVint = [['Fecha','País','Comprador','Operación','Producto','Bultos','Lbs','Precio/u','Sub-total','Moneda','Total (moneda)','T/C','Total GTQ','Flete','PAP','Obs']];
+    (DB.vintVentas||[]).filter(inR).forEach(r => {
+      if (r.lineas?.length) r.lineas.forEach(l=>rowsVint.push([r.fecha,r.pais||'',r.comprador||'',r.op||'',l.productoNombre||'',l.cant||0,+(l.totalLbs||0).toFixed(2),l.precio||0,l.sub||0,r.moneda||'',r.totalVal||0,r.tc||1,r.totalGtq||0,r.flete||0,r.pap||0,r.obs||'']));
+      else rowsVint.push([r.fecha,r.pais||'',r.comprador||'',r.op||'','',0,0,0,0,r.moneda||'',r.totalVal||0,r.tc||1,r.totalGtq||0,r.flete||0,r.pap||0,r.obs||'']);
+    });
+    addSheet('Ventas Exportacion', rowsVint);
+
+    // ── Inv Salidas Walmart ──────────────────────────────────────
+    const rowsWm = [['Fecha','Cliente','NIT','Tipo','Producto','Bultos','Lbs','Precio U','Neto Q','IVA Q','Total Q','Retención Q','A Cobrar Q','Factura','OC','Obs']];
+    (DB.isalidas||[]).filter(inR).forEach(r => {
+      if (r.lineas?.length) r.lineas.forEach(l=>rowsWm.push([r.fecha,r.clienteNombre||'',r.clienteNit||'',r.tipo||'',l.productoNombre||'',l.bultos||0,+(l.totalLbs||0).toFixed(2),+(l.precio||0).toFixed(4),+(l.totalNeto||0).toFixed(2),+(l.totalIVA||0).toFixed(2),+(l.totalConIVA||0).toFixed(2),+(l.totalRetencion||0).toFixed(2),+(l.totalACobrar||0).toFixed(2),r.factura||'',r.oc||'',r.obs||'']));
+      else rowsWm.push([r.fecha,r.clienteNombre||'',r.clienteNit||'',r.tipo||'','',0,0,0,0,0,+(r.totalConIVA||r.totalQ||0).toFixed(2),+(r.totalRetencion||0).toFixed(2),+(r.totalACobrar||0).toFixed(2),r.factura||'',r.oc||'',r.obs||'']);
+    });
+    addSheet('Inv Salidas Walmart', rowsWm);
+
+    // ── Inv Entradas ─────────────────────────────────────────────
+    addSheet('Inv Entradas', [
+      ['Fecha','Producto','Bultos','KG Bruto','Lbs Bruto','Merma Lbs','% Merma','Lbs Neto','KG Neto','Precio/kg Q','Total Q','DUCA','Fact MX','Fact Prod','Obs'],
+      ...(DB.ientradas||[]).filter(inR).map(r=>[r.fecha,r.productoNombre||'',r.bultos||0,+(r.kgBruto||0).toFixed(2),+(r.lbsBruto||0).toFixed(2),+(r.mermaLbs||0).toFixed(2),+(r.pctMerma||0).toFixed(1),+(r.lbsNeto||0).toFixed(2),+(r.kgNeto||0).toFixed(2),+(r.precioKg||0).toFixed(4),+(r.totalQ||0).toFixed(2),r.duca||'',r.factMx||'',r.factProd||'',r.obs||''])
+    ]);
+
+    // ── Control TL ───────────────────────────────────────────────
+    addSheet('Control TL', [
+      ['Fecha','Hora','Placa','Tipo','Responsable','Obs'],
+      ...(DB.tl||[]).filter(inR).map(r=>[r.fecha,r.hora||'',r.placa||'',r.tipo||'',r.resp||'',r.obs||''])
+    ]);
+
+    // ── Control DT ───────────────────────────────────────────────
+    addSheet('Control DT', [
+      ['Fecha','Hora','Placa','Conductor','Cliente','Carga','Temp','Cumplimiento %','Autorizado','Obs'],
+      ...(DB.dt||[]).filter(inR).map(r=>[r.fecha,r.hora||'',r.placa||'',r.conductorNombre||'',r.clienteNombre||'',r.carga||'',r.temp||'',r.pct??Math.round(((r.ok||0)/(r.total||1))*100),r.autorizado||'',r.obsGen||''])
+    ]);
+
+    // ── Control AL ───────────────────────────────────────────────
+    addSheet('Control AL', [
+      ['Fecha','Turno','# Empleados','Obs'],
+      ...(DB.al||[]).filter(inR).map(r=>[r.fecha,r.turno||'',r.empleados?.length||0,r.obs||''])
+    ]);
+
+    // ── Control BAS ──────────────────────────────────────────────
+    addSheet('Control BAS', [
+      ['Fecha','Hora','Responsable','OK','Fallo','Resultado','Obs'],
+      ...(DB.bas||[]).filter(inR).map(r=>[r.fecha,r.hora||'',r.resp||'',r.ok||0,r.fail||0,r.resultado||'',r.obs||''])
+    ]);
+
+    // ── Control ROD ──────────────────────────────────────────────
+    addSheet('Control ROD', [
+      ['Fecha','Hora','Responsable','Total Revisado','Novedades','Resultado','Obs'],
+      ...(DB.rod||[]).filter(inR).map(r=>[r.fecha,r.hora||'',r.resp||'',r.totalRev||0,r.totalNov||0,r.resultado||'',r.obs||''])
+    ]);
+
+    // ── Control FUM ──────────────────────────────────────────────
+    addSheet('Control FUM', [
+      ['Fecha','Mes','Semana','Tipo','Responsable','Resultado','Obs'],
+      ...(DB.fum||[]).filter(inR).map(r=>[r.fecha,r.mes||'',r.sem||'',r.tipo||'',r.resp||'',r.res||'',r.obs||''])
+    ]);
+
+    // ── GC Concursos ─────────────────────────────────────────────
+    addSheet('GC Concursos', [
+      ['NOG','Título','Entidad','Monto','Modalidad','Fecha Pub','Fecha Cierre','Etapa','Responsable','Notas'],
+      ...(DB.gcConcursos||[]).filter(r=>periodo==='todo'||(r.fechaPub||'')>=desde).map(r=>[r.nog||'',r.titulo||'',r.entidad||'',r.monto||'',r.modalidad||'',r.fechaPub||'',r.fechaCierre||'',r.etapa||'',r.resp||'',r.notas||''])
+    ]);
+
+    // ── GC Descubiertos ──────────────────────────────────────────
+    addSheet('GC Descubiertos', [
+      ['NOG','Título','Entidad','Monto','Modalidad','Fecha Pub','Fecha Cierre','Estado'],
+      ...(DB.gcDescubiertos||[]).map(r=>[r.nog||'',r.titulo||'Sin título',r.entidad||'',r.monto||'',r.modalidad||'',r.fechaPub||'',r.fechaCierre||'',r.importado?'Importado':r.descartado?'Descartado':'Pendiente'])
+    ]);
+
+    const label = {semana:'Semana',mes:'Mes',anio:'Anio',todo:'Historico'}[periodo]||periodo;
+    const fname = 'AJUA_BPM_' + label + '_' + hoy + '.xlsx';
+    window.XLSX.writeFile(wb, fname);
+    toast('📊 Excel listo: ' + fname);
+  } catch(e) {
+    console.error(e);
+    toast('❌ Error generando Excel: ' + e.message, true);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '📥 Descargar'; }
+  }
+}
+
+function backupDownloadExcel(force) { rpDescargar('todo'); }
+function rpExportarCompleto()       { rpDescargar('todo'); }
 
 // ════════════════════════════════════════════════════════════════════
 // 👷 NÓMINA DESDE ACCESO — calcular días trabajados automáticamente
