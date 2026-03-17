@@ -1302,7 +1302,7 @@ if ('caches' in window) {
 </div>
 </div>
 <div class="sec" id="sec-roedores">
-<div class="ph"><h1>Control de Plagas y Roedores</h1><p>Revisión de las 7 trampas — 2 en Nivel 1 · 5 en Nivel 2</p></div>
+<div class="ph"><h1>Control de Plagas y Roedores</h1><p>Revisión de las 11 trampas — Portón · Parqueo · Pre-carga · Bodega · Pallets</p></div>
 <div class="card">
 <div class="ct">Nueva Revisión</div>
 <div class="fgrid g3">
@@ -1314,14 +1314,16 @@ if ('caches' in window) {
 </div>
 <div class="fg"><label>Hora de Revisión</label><input type="time" id="rod-hora"></div>
 </div>
-<div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--acc2);padding:8px 0 6px;margin-top:4px;border-top:1px solid var(--br);font-weight:600;">
-      Bodega Nivel 1 — 2 trampas
-    </div>
-<div id="rod-trampas-n1" style="display:flex;flex-direction:column;gap:3px;margin-bottom:12px;"></div>
-<div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--info);padding:8px 0 6px;border-top:1px solid var(--br);font-weight:600;">
-      Bodega Nivel 2 — 5 trampas
-    </div>
-<div id="rod-trampas-n2" style="display:flex;flex-direction:column;gap:3px;margin-bottom:14px;"></div>
+<div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--acc);padding:8px 0 6px;margin-top:4px;border-top:1px solid var(--br);font-weight:600;">🚪 Portón de Ingreso — T1, T2</div>
+<div id="rod-trampas-porton" style="display:flex;flex-direction:column;gap:3px;margin-bottom:12px;"></div>
+<div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--acc2);padding:8px 0 6px;border-top:1px solid var(--br);font-weight:600;">🚗 Parqueo Interior — T3, T4</div>
+<div id="rod-trampas-parqueo" style="display:flex;flex-direction:column;gap:3px;margin-bottom:12px;"></div>
+<div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--info);padding:8px 0 6px;border-top:1px solid var(--br);font-weight:600;">📦 Pre-carga — T5, T6, T7, T8</div>
+<div id="rod-trampas-precarga" style="display:flex;flex-direction:column;gap:3px;margin-bottom:12px;"></div>
+<div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--acc2);padding:8px 0 6px;border-top:1px solid var(--br);font-weight:600;">🏭 Bodega General — T9, T10</div>
+<div id="rod-trampas-bodega" style="display:flex;flex-direction:column;gap:3px;margin-bottom:12px;"></div>
+<div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:8px 0 6px;border-top:1px solid var(--br);font-weight:600;">🪵 Zona Pallets — T11</div>
+<div id="rod-trampas-pallets" style="display:flex;flex-direction:column;gap:3px;margin-bottom:14px;"></div>
 <div id="rod-resumen" style="display:none;padding:10px 14px;border-radius:4px;margin-bottom:12px;font-size:.78rem;border:1px solid var(--br);background:var(--s2);">
 <div style="display:flex;gap:16px;flex-wrap:wrap;">
 <span>✓ Revisadas: <strong id="rod-cnt-rev" style="color:var(--acc);">0</strong></span>
@@ -8523,23 +8525,29 @@ function renderFum(){
 }
 
 const ROD_TRAMPAS = [
-  { id:1, nivel:1, label:'Trampa 1', ubicacion:'Entrada Bodega N1' },
-  { id:2, nivel:1, label:'Trampa 2', ubicacion:'Fondo Bodega N1' },
-  { id:3, nivel:2, label:'Trampa 3', ubicacion:'Esquina A — Bodega N2' },
-  { id:4, nivel:2, label:'Trampa 4', ubicacion:'Esquina B — Bodega N2' },
-  { id:5, nivel:2, label:'Trampa 5', ubicacion:'Pasillo Central — Bodega N2' },
-  { id:6, nivel:2, label:'Trampa 6', ubicacion:'Área de Carga — Bodega N2' },
-  { id:7, nivel:2, label:'Trampa 7', ubicacion:'Salida — Bodega N2' },
+  { id:1,  zona:'porton',   label:'Trampa 1',  ubicacion:'Portón izquierda' },
+  { id:2,  zona:'porton',   label:'Trampa 2',  ubicacion:'Portón derecha' },
+  { id:3,  zona:'parqueo',  label:'Trampa 3',  ubicacion:'Parqueo superior izquierda' },
+  { id:4,  zona:'parqueo',  label:'Trampa 4',  ubicacion:'Parqueo superior derecha' },
+  { id:5,  zona:'precarga', label:'Trampa 5',  ubicacion:'Pre-carga superior izquierda' },
+  { id:6,  zona:'precarga', label:'Trampa 6',  ubicacion:'Pre-carga superior derecha' },
+  { id:7,  zona:'precarga', label:'Trampa 7',  ubicacion:'Pre-carga inferior izquierda' },
+  { id:8,  zona:'precarga', label:'Trampa 8',  ubicacion:'Pre-carga inferior derecha' },
+  { id:9,  zona:'bodega',   label:'Trampa 9',  ubicacion:'Bodega esquina superior' },
+  { id:10, zona:'bodega',   label:'Trampa 10', ubicacion:'Bodega esquina inferior' },
+  { id:11, zona:'pallets',  label:'Trampa 11', ubicacion:'Zona pallets' },
 ];
 
 function buildRodTrampas() {
-  const n1 = document.getElementById('rod-trampas-n1');
-  const n2 = document.getElementById('rod-trampas-n2');
-  if (!n1 || n1.children.length > 0) return;
-
+  if (document.getElementById('rod-trampas-porton')?.children.length > 0) return;
+  const ZONA_COLOR = {
+    porton:  'var(--acc)', parqueo: 'var(--acc2)',
+    precarga:'var(--info)', bodega: 'var(--acc2)', pallets:'var(--muted)',
+  };
   ROD_TRAMPAS.forEach(t => {
-    const container = t.nivel === 1 ? n1 : n2;
-    const color = t.nivel === 1 ? 'var(--acc2)' : 'var(--info)';
+    const container = document.getElementById('rod-trampas-' + t.zona);
+    if (!container) return;
+    const color = ZONA_COLOR[t.zona] || 'var(--info)';
     const wrap = document.createElement('div');
     wrap.style.cssText = 'margin-bottom:6px;';
 
@@ -8642,7 +8650,7 @@ function saveRod() {
 
   const trampas = ROD_TRAMPAS.map(t => ({
     id:    t.id,
-    nivel: t.nivel,
+    zona:  t.zona,
     label: t.label,
     ubicacion: t.ubicacion,
     revisada: document.getElementById(`rod-rev-${t.id}`)?.checked || false,
