@@ -6018,11 +6018,8 @@ async function backupToFirebase(force) {
     delete _dbForBackup.isalidas;
     delete _dbForBackup.cotizaciones;
     delete _dbForBackup.gastosSemanales;
-    delete _dbForBackup.tl;
-    delete _dbForBackup.dt;
-    delete _dbForBackup.bas;
-    delete _dbForBackup.rod;
-    delete _dbForBackup.fum;
+    // tl/dt/bas/rod/fum se incluyen en el backup — son arrays operativos críticos
+    // (no están en main porque están en colecciones propias, pero el backup debe tenerlos completos)
     const total = _dbTotalRecords(_dbForBackup);
     if (total < 5) return;
     // Protección: nunca sobreescribir backup con menos datos
@@ -6045,7 +6042,7 @@ async function backupToFirebase(force) {
         ts: Date.now(),
         gtTime: new Date(Date.now()-6*3600000).toISOString(),
         totalRecords: total,
-        version: 'build-105'
+        version: 'build-107'
       }
     });
     _lastKnownBackupTotal = total;  // actualizar referencia en memoria
