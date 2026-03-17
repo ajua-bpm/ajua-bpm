@@ -1643,7 +1643,7 @@ if ('caches' in window) {
 </div>
 </div>
 <div class="sec" id="sec-vidrio">
-<div class="ph"><h1>Control de Vidrio y Plástico Quebradizo</h1><p>Revisión mensual — ✔ No quebrado (cumple) | ✕ Quebrado (no cumple)</p></div>
+<div class="ph"><h1>🔍 Vidrio y Plástico</h1><p>Revisión mensual de inventario · Reporte de hallazgos de contaminación</p></div>
 <div class="card">
 <div class="ct">Nueva Revisión Mensual</div>
 <div class="fgrid g3">
@@ -1660,6 +1660,50 @@ if ('caches' in window) {
 <div class="twh"><span class="twt">Historial de Revisiones</span><button class="btn bo bsm" onclick="exportCSV('vp')">↓ CSV</button></div>
 <table><thead><tr><th>Fecha</th><th>Mes</th><th>Responsable</th><th>Cumplen</th><th>No Cumplen</th><th>% OK</th><th></th></tr></thead>
 <tbody id="vp-tbody"></tbody></table>
+</div>
+<div class="card" style="margin-top:16px;border-left:3px solid var(--danger);">
+<div class="ct">🚨 Reporte de Hallazgo — Contaminación</div>
+<p style="font-size:.7rem;color:var(--muted2);margin-bottom:12px;">Reportar vidrio o plástico encontrado en cualquier área. Registrar inmediatamente.</p>
+<div class="fgrid g3">
+<div class="fg"><label>Fecha</label><input type="date" id="vyp-fecha"></div>
+<div class="fg"><label>Área donde se encontró</label>
+<select id="vyp-area">
+<option value="">— Seleccionar área —</option>
+<option>Bodega</option><option>Pre-carga</option>
+<option>Cooler 1</option><option>Cooler 2</option>
+<option>Parqueo</option><option>Oficina</option>
+<option>Baños</option><option>Otro</option>
+</select>
+</div>
+<div class="fg"><label>Responsable que reporta</label>
+<select id="vyp-resp"><option value="">— Seleccionar responsable —</option></select>
+</div>
+</div>
+<div class="fgrid g2">
+<div class="fg"><label>Tipo de hallazgo</label>
+<select id="vyp-tipo"><option>Vidrio</option><option>Plástico</option><option>Ambos</option></select>
+</div>
+<div class="fg"><label>Acción tomada</label>
+<select id="vyp-accion"><option>Retirado</option><option>Reportado</option><option>Pendiente</option></select>
+</div>
+</div>
+<div class="fg" style="margin-bottom:12px;"><label>Descripción del hallazgo</label>
+<textarea id="vyp-desc" rows="2" placeholder="Qué se encontró, cantidad, estado, posible origen..."></textarea></div>
+<div style="margin-bottom:14px;">
+<label style="font-size:.72rem;color:var(--muted2);">📷 Foto (opcional)</label>
+<div style="margin-top:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+<input type="file" id="vyp-foto-input" accept="image/*" style="font-size:.7rem;" onchange="vypFotoLoad(this)">
+<button id="vyp-foto-clear" class="btn bo bsm" style="display:none;border-color:var(--danger);color:var(--danger);" onclick="vypFotoClear()">✕ Quitar foto</button>
+</div>
+<div id="vyp-foto-preview" style="margin-top:6px;"></div>
+</div>
+<div class="fa"><button class="btn bp" onclick="saveVYP()">Registrar Hallazgo</button></div>
+</div>
+<div class="tw">
+<div class="twh"><span class="twt">Historial de Hallazgos</span><button class="btn bo bsm" onclick="exportCSV('vyp')">↓ CSV</button></div>
+<div style="overflow-x:auto;"><table>
+<thead><tr><th>Fecha</th><th>Área</th><th>Tipo</th><th>Descripción</th><th>Acción</th><th>Responsable</th><th>Foto</th><th></th></tr></thead>
+<tbody id="vyp-tbody"></tbody></table></div>
 </div>
 </div>
 <div class="sec" id="sec-basculas">
@@ -4081,7 +4125,7 @@ if ('caches' in window) {
 // Garantiza que DB exista antes de que cualquier código inline lo use.
 // Firebase sobreescribe esto con los datos reales al cargar.
 const DB_DEFAULT = {
-  tl:[],dt:[],bl:[],parq:[],fum:[],rod:[],cap:[],ee:[],al:[],vis:[],vp:[],bas:[],lp:[],
+  tl:[],dt:[],bl:[],parq:[],fum:[],rod:[],cap:[],ee:[],al:[],vis:[],vp:[],vyp:[],bas:[],lp:[],
   conductores:[], clientes:[], empleados:[], calibraciones:[],
   iproductos:[], ipresentaciones:[], iclientes:[], ientradas:[], isalidas:[],
   cotizaciones:[], vgtVentas:[], vintVentas:[], maquila:[], usuarios:[],
@@ -7593,7 +7637,7 @@ function show(id,el){closeNavOnMobile();
       case 'roedores':
         buildRodTrampas(); renderRod(); populateAllRespSelects(); break;
       case 'vidrio':
-        buildVPChecklist(); renderVP(); populateAllRespSelects(); break;
+        buildVPChecklist(); renderVP(); renderVYP(); populateAllRespSelects(); break;
       case 'basculas':
         buildBasList(); renderBas(); renderCalib(); populateAllRespSelects(); break;
       case 'lavado-prod':
@@ -7707,7 +7751,7 @@ function del(key,id){
   // Render solo la sección afectada, no todo
   const keyToSec = {tl:'transporte-limpieza',dt:'despacho',bl:'bodega-limpieza',parq:'bodega-limpieza',
     rod:'roedores',fum:'fumigacion',al:'acceso-lavado',bas:'basculas',
-    vis:'visitas',vp:'vidrio',cap:'capacitacion',lp:'lavado-prod',
+    vis:'visitas',vp:'vidrio',vyp:'vidrio',cap:'capacitacion',lp:'lavado-prod',
     gastosDiarios:'gastos-diarios',empleados:'empleados-db',
     iproductos:'inv-config',ipresentaciones:'inv-config',
     pedidosWalmart:'pedidos-walmart',ientradas:'inv-entrada',isalidas:'inv-salida'};
@@ -8463,7 +8507,7 @@ function populateAllRespSelects(){
       '<option value="' + e.nombre + '">' + e.nombre + (e.cargo?' · '+e.cargo:'') + '</option>'
     ).join('');
 
-  ['bl-resp','fum-resp-sel','rod-resp-sel','vp-resp-sel','bas-resp-sel','lp-resp-sel'].forEach(id=>{
+  ['bl-resp','parq-resp','fum-resp-sel','rod-resp-sel','vp-resp-sel','vyp-resp','bas-resp-sel','lp-resp-sel'].forEach(id=>{
     const el=document.getElementById(id);
     if(el){const cur=el.value;el.innerHTML=optsAll;el.value=cur;}
   });
@@ -8555,6 +8599,63 @@ function renderBL(){
     <td style="font-size:.68rem">${r.obs||'—'}</td>
     <td><button class="btn bo bsm" onclick="del('bl','${r.id}')">✕</button></td>
   </tr>`).join('');
+}
+
+// ── VYP — Hallazgos de Vidrio y Plástico ─────────────────────────
+let _vypFotoData = null;
+function vypFotoLoad(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    _vypFotoData = e.target.result;
+    const prev = document.getElementById('vyp-foto-preview');
+    if (prev) prev.innerHTML = `<img src="${_vypFotoData}" style="max-height:80px;border-radius:4px;border:1px solid var(--br);">`;
+    const clr = document.getElementById('vyp-foto-clear');
+    if (clr) clr.style.display = 'inline-flex';
+  };
+  reader.readAsDataURL(file);
+}
+function vypFotoClear() {
+  _vypFotoData = null;
+  const prev = document.getElementById('vyp-foto-preview'); if (prev) prev.innerHTML = '';
+  const clr  = document.getElementById('vyp-foto-clear');  if (clr)  clr.style.display = 'none';
+  const inp  = document.getElementById('vyp-foto-input');  if (inp)  inp.value = '';
+}
+function saveVYP() {
+  const _v = id => document.getElementById(id)?.value || '';
+  const fecha = _v('vyp-fecha'), area = _v('vyp-area'), resp = _v('vyp-resp');
+  if (!fecha || !area || !resp) { toast('⚠ Complete fecha, área y responsable', true); return; }
+  DB.vyp.unshift({ id: uid(), ts: now(), fecha, area,
+    tipo: _v('vyp-tipo'), desc: _v('vyp-desc'),
+    accion: _v('vyp-accion'), resp,
+    foto: _vypFotoData || null });
+  const descEl = document.getElementById('vyp-desc'); if (descEl) descEl.value = '';
+  vypFotoClear();
+  save(); renderVYP(); toast('✓ Hallazgo registrado');
+}
+function renderVYP() {
+  const tb = document.getElementById('vyp-tbody'); if (!tb) return;
+  if (!DB.vyp.length) { tb.innerHTML = `<tr><td colspan="8"><div class="empty">Sin reportes de hallazgos</div></td></tr>`; return; }
+  tb.innerHTML = DB.vyp.slice().sort((a,b) => (b.fecha||b.ts||'').localeCompare(a.fecha||a.ts||'')).map(r => {
+    const badge = r.accion === 'Pendiente'
+      ? `<span class="chip cr" style="font-size:.6rem;">⚠ Pendiente</span>`
+      : r.accion === 'Retirado'
+      ? `<span class="chip ck" style="font-size:.6rem;">✓ Retirado</span>`
+      : `<span class="chip cb" style="font-size:.6rem;">${r.accion||'—'}</span>`;
+    const foto = r.foto
+      ? `<img src="${r.foto}" style="height:28px;border-radius:3px;cursor:pointer;" onclick="invViewImg&&invViewImg('${r.id}','vyp')" title="Ver foto">`
+      : '—';
+    return `<tr>
+      <td>${r.fecha}</td>
+      <td style="font-size:.72rem;">${r.area||'—'}</td>
+      <td><span class="chip cb" style="font-size:.6rem;">${r.tipo||'—'}</span></td>
+      <td style="font-size:.7rem;max-width:140px;">${r.desc||'—'}</td>
+      <td>${badge}</td>
+      <td style="font-size:.72rem;">${r.resp}</td>
+      <td>${foto}</td>
+      <td><button class="btn bo bsm" onclick="del('vyp','${r.id}')">✕</button></td>
+    </tr>`;
+  }).join('');
 }
 
 function fumTipoChange() {
@@ -14279,6 +14380,7 @@ function exportCSV(modulo) {
     rod: { arr: 'rod',  cols: ['fecha','responsable','obs'] },
     vis:{ arr: 'vis', cols: ['fecha','nombre','empresa','obs'] },
     bas:{ arr: 'bas', cols: ['fecha','responsable','obs'] },
+    vyp:{ arr: 'vyp', cols: ['fecha','area','tipo','desc','accion','resp'] },
   };
   const m = map[modulo] || { arr: modulo, cols: ['fecha','obs'] };
   const data = DB[m.arr] || [];
