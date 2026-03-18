@@ -240,7 +240,27 @@ function rpXRoedoresROD(desde) {
   );
 }
 
-// ── 9. Guatecompras ───────────────────────────────────────────────
+// ── 9. FUM Fumigación ─────────────────────────────────────────────
+function rpXFumigacionFUM(desde) {
+  var rows = rpXFiltrar(DB.fum, 'fecha', desde).slice().sort(function(a,b) {
+    return (a.fecha||'') < (b.fecha||'') ? -1 : 1;
+  });
+  return rpXSheetPro(
+    'FUM - Fumigacion y Desinfeccion',
+    'Control de fumigacion, desinfeccion y control de plagas',
+    ['Semana','Fecha','Mes','Sem.No','Tipo','Responsable','Instalacion / Areas','Conc.Cloro','Resultado','Observaciones'],
+    rows.map(function(r) { return [
+      rpXSemana(r.fecha), r.fecha||'', r.mes||'', r.sem||'',
+      r.tipo||'', r.resp||'',
+      Array.isArray(r.areas) && r.areas.length ? r.areas.join(', ') : (r.inst||''),
+      r.cloroConc||'',
+      r.res||'', r.obs||''
+    ]; }),
+    [12,12,10,8,28,22,32,10,12,32]
+  );
+}
+
+// ── 10. Guatecompras ──────────────────────────────────────────────
 function rpXGuatecompras(desde) {
   var data = [];
   rpXFiltrar(DB.gcConcursos, 'fechaCierre', desde).forEach(function(c) {
@@ -350,6 +370,7 @@ function rpExportarCompleto() {
         ['DT Despachos',  function() { return rpXDespachosDT(desde); }],
         ['BAS Basculas',  function() { return rpXBasculasBAS(desde); }],
         ['ROD Roedores',  function() { return rpXRoedoresROD(desde); }],
+        ['FUM Fumigacion',function() { return rpXFumigacionFUM(desde); }],
         ['Guatecompras',  function() { return rpXGuatecompras(desde); }],
         ['Empleados',     function() { return rpXEmpleados(); }],
       ];
@@ -375,7 +396,7 @@ function rpExportarCompleto() {
       XLSX.writeFile(wb, nombre);
       if (errores.length) {
         console.warn('\u26A0 Hojas con error:', errores);
-        toast('\u26A0 Excel parcial (' + wb.SheetNames.length + '/10 hojas). Ver consola.');
+        toast('\u26A0 Excel parcial (' + wb.SheetNames.length + '/11 hojas). Ver consola.');
       } else {
         toast('\u2705 ' + nombre + ' \u2014 ' + wb.SheetNames.length + ' hojas generadas');
       }
@@ -409,4 +430,4 @@ function rpExportarCompleto() {
 }
 
 window.rpExportarCompleto = rpExportarCompleto;
-console.log('\u2705 descarga-excel-completo.js cargado \u2014 build-104');
+console.log('\u2705 descarga-excel-completo.js cargado \u2014 build-105');

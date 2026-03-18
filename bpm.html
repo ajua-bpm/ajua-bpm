@@ -6627,19 +6627,38 @@ function generarReporte() {
     });
   });
 
-  // Walmart sales
+  // Walmart sales (isalidas — generadas al cerrar pedido)
+  const _isalidasIds = new Set((DB.isalidas||[]).map(s=>s.pedidoWalmartId).filter(Boolean));
   (DB.isalidas || []).filter(v => v.fecha >= desde && v.fecha <= hasta).forEach(v => {
     (v.lineas || []).forEach(l => {
       const id = l.productoId || l.productoNombre || 'Otros';
       if (filtProd && id !== filtProd && l.productoNombre !== filtProd) return;
-      const ingreso = l.neto || (l.totalConIva ? l.totalConIva / 1.12 : 0) || 0;
+      const ingreso = l.totalNeto || (l.totalConIVA ? l.totalConIVA / 1.12 : 0) || 0;
       totalIngresos     += ingreso;
-      totalLbsVendidas  += l.lbs || 0;
+      totalLbsVendidas  += l.lbs || l.totalLbs || 0;
       if (!ventasPorProd[id]) ventasPorProd[id] = { nombre: l.productoNombre || id, lbs: 0, ingresos: 0 };
-      ventasPorProd[id].lbs      += l.lbs || 0;
+      ventasPorProd[id].lbs      += l.lbs || l.totalLbs || 0;
       ventasPorProd[id].ingresos += ingreso;
     });
   });
+
+  // Walmart sales fallback — pedidosWalmart cerrados sin isalida registrada
+  (DB.pedidosWalmart || [])
+    .filter(p => (p.estado === 'cerrado' || p.estado === 'con_rechazo') &&
+                 p.fechaEntrega >= desde && p.fechaEntrega <= hasta &&
+                 !_isalidasIds.has(p.id))
+    .forEach(p => {
+      (p.rubros || []).forEach(r => {
+        if (!(r.cajasAceptadas > 0) || !r.precioUnit) return;
+        const id = r.productoId || r.item || 'Walmart';
+        const ingreso = (r.cajasAceptadas * r.precioUnit) / 1.12;
+        totalIngresos    += ingreso;
+        totalLbsVendidas += r.cajasAceptadas * (r.lbsBulto || 0);
+        if (!ventasPorProd[id]) ventasPorProd[id] = { nombre: r.descripcion || r.item || id, lbs: 0, ingresos: 0 };
+        ventasPorProd[id].lbs      += r.cajasAceptadas * (r.lbsBulto || 0);
+        ventasPorProd[id].ingresos += ingreso;
+      });
+    });
 
   // Export sales
   (DB.vintVentas || []).filter(v => v.fecha >= desde && v.fecha <= hasta).forEach(v => {
@@ -7159,6 +7178,122 @@ async function rpDescargar(periodo) {
 
 function backupDownloadExcel(force) { rpDescargar('todo'); }
 function rpExportarCompleto()       { rpDescargar('todo'); }
+
+// ════════════════════════════════════════════════════════════════════
+// 📋 REPORTE BPM SEMANAL — % cumplimiento por módulo + comparativo
+// ════════════════════════════════════════════════════════════════════
+
+function bpmSemanaISO(fecha) {
+  // Retorna lunes de la semana de esa fecha
+  var d = new Date(fecha + 'T00:00:00');
+  var day = d.getDay();
+  var diff = (day === 0) ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  return d.toISOString().slice(0, 10);
+}
+
+function bpmSemanalCalc(desde, hasta) {
+  var modulos = [
+    { key: 'tl',  label: 'TL Camiones',     arr: DB.tl,  campo: 'fecha', resKey: 'resultado' },
+    { key: 'dt',  label: 'DT Despachos',     arr: DB.dt,  campo: 'fecha', resKey: 'resultado' },
+    { key: 'al',  label: 'AL Accesos',       arr: DB.al,  campo: 'fecha', resKey: null },
+    { key: 'bas', label: 'BAS Básculas',     arr: DB.bas, campo: 'fecha', resKey: 'resultado' },
+    { key: 'rod', label: 'ROD Roedores',     arr: DB.rod, campo: 'fecha', resKey: 'resultado' },
+    { key: 'fum', label: 'FUM Fumigación',   arr: DB.fum, campo: 'fecha', resKey: 'res' },
+  ];
+
+  return modulos.map(function(m) {
+    var registros = (m.arr || []).filter(function(r) {
+      var f = r[m.campo] || r.fecha || '';
+      return f >= desde && f <= hasta;
+    });
+    var total = registros.length;
+    var cumple = 0;
+    if (m.resKey) {
+      cumple = registros.filter(function(r) {
+        var res = (r[m.resKey] || '').toLowerCase();
+        return res === 'cumple' || res === 'ok' || res === 'si' || res === 'aceptado' || res === 'sin_novedad' || res === 'cerrado';
+      }).length;
+    } else {
+      // AL: cumple si tiene empleados registrados
+      cumple = registros.filter(function(r) { return (r.empleados || []).length > 0; }).length;
+    }
+    var pct = total > 0 ? Math.round(cumple / total * 100) : null;
+    return { key: m.key, label: m.label, total: total, cumple: cumple, pct: pct };
+  });
+}
+
+function repBpmSemanal() {
+  // Semana actual: lunes a domingo
+  var hoy     = new Date().toISOString().slice(0, 10);
+  var lunes   = bpmSemanaISO(hoy);
+  var d       = new Date(lunes + 'T00:00:00');
+  d.setDate(d.getDate() + 6);
+  var domingo = d.toISOString().slice(0, 10);
+
+  // Semana anterior
+  var dPrev   = new Date(lunes + 'T00:00:00');
+  dPrev.setDate(dPrev.getDate() - 7);
+  var lunesPrev   = dPrev.toISOString().slice(0, 10);
+  var dPrevFin    = new Date(lunesPrev + 'T00:00:00');
+  dPrevFin.setDate(dPrevFin.getDate() + 6);
+  var domingoPrev = dPrevFin.toISOString().slice(0, 10);
+
+  var actual   = bpmSemanalCalc(lunes, domingo);
+  var anterior = bpmSemanalCalc(lunesPrev, domingoPrev);
+
+  var totalAct   = actual.reduce(function(s,m){ return s + m.total; }, 0);
+  var cumpleAct  = actual.reduce(function(s,m){ return s + m.cumple; }, 0);
+  var pctGlobal  = totalAct > 0 ? Math.round(cumpleAct / totalAct * 100) : 0;
+
+  var filas = actual.map(function(m, i) {
+    var prev     = anterior[i];
+    var pctStr   = m.pct != null ? m.pct + '%' : '—';
+    var pctPrev  = prev.pct != null ? prev.pct + '%' : '—';
+    var delta    = (m.pct != null && prev.pct != null) ? m.pct - prev.pct : null;
+    var deltaStr = delta == null ? '' : (delta > 0 ? '▲ +' + delta + '%' : delta < 0 ? '▼ ' + delta + '%' : '→ =');
+    var deltaColor = delta == null ? 'var(--muted2)' : delta > 0 ? 'var(--acc)' : delta < 0 ? 'var(--danger)' : 'var(--muted2)';
+    var pctColor = m.pct == null ? 'var(--muted2)' : m.pct >= 80 ? 'var(--acc)' : m.pct >= 50 ? 'var(--warn,#e67e22)' : 'var(--danger)';
+    return '<tr style="border-bottom:1px solid var(--b1);">' +
+      '<td style="padding:8px 12px;font-weight:600;">' + m.label + '</td>' +
+      '<td style="padding:8px 12px;text-align:center;">' + m.total + '</td>' +
+      '<td style="padding:8px 12px;text-align:center;font-weight:700;color:' + pctColor + ';">' + pctStr + '</td>' +
+      '<td style="padding:8px 12px;text-align:center;color:var(--muted2);">' + prev.total + ' / ' + pctPrev + '</td>' +
+      '<td style="padding:8px 12px;text-align:center;font-weight:600;color:' + deltaColor + ';">' + deltaStr + '</td>' +
+      '</tr>';
+  }).join('');
+
+  var html =
+    '<div style="font-family:var(--fh);font-size:.82rem;color:var(--muted2);margin-bottom:2px;">📋 REPORTE BPM SEMANAL</div>' +
+    '<div style="font-size:.95rem;font-weight:700;margin-bottom:2px;">' + lunes + ' al ' + domingo + '</div>' +
+    '<div style="font-size:1.8rem;font-weight:800;color:' + (pctGlobal>=80?'var(--acc)':pctGlobal>=50?'#e67e22':'var(--danger)') + ';margin-bottom:14px;">' +
+      pctGlobal + '% <span style="font-size:.85rem;font-weight:400;color:var(--muted2);">cumplimiento global (' + cumpleAct + '/' + totalAct + ' registros)</span>' +
+    '</div>' +
+    '<table style="width:100%;border-collapse:collapse;font-size:.82rem;">' +
+      '<thead><tr style="background:var(--green-pale,#e8f5e9);font-size:.75rem;">' +
+        '<th style="padding:6px 12px;text-align:left;">Módulo</th>' +
+        '<th style="padding:6px 12px;">Registros</th>' +
+        '<th style="padding:6px 12px;">% Cumple</th>' +
+        '<th style="padding:6px 12px;">Sem. Anterior</th>' +
+        '<th style="padding:6px 12px;">Variación</th>' +
+      '</tr></thead>' +
+      '<tbody>' + filas + '</tbody>' +
+    '</table>';
+
+  // Mostrar en modal
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML =
+    '<div style="background:var(--bg,#fff);border-radius:12px;padding:28px 30px;min-width:420px;max-width:600px;box-shadow:0 12px 40px rgba(0,0,0,.25);max-height:90vh;overflow-y:auto;">' +
+      html +
+      '<div style="margin-top:16px;text-align:right;">' +
+        '<button onclick="this.closest(\'div[style*=fixed]\').remove()" ' +
+          'style="padding:8px 20px;background:var(--acc);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.85rem;">Cerrar</button>' +
+      '</div>' +
+    '</div>';
+  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+  document.body.appendChild(overlay);
+}
 
 // ════════════════════════════════════════════════════════════════════
 // 👷 NÓMINA DESDE ACCESO — calcular días trabajados automáticamente
