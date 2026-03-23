@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cotización — AJÚA Agroindustria</title>
+<style>
+:root {
+  --forest: #1A3D28;
+  --canopy: #2D6645;
+  --leaf:   #4A9E6A;
+  --cream:  #F5F0E4;
+  --sand:   #E8DCC8;
+  --ochre:  #C9923A;
+  --ink:    #0F1E14;
+  --white:  #FDFCF8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: var(--sand);
+  color: var(--ink);
+  min-height: 100vh;
+  padding: 24px 16px 60px;
+}
+
+/* ── Toolbar (screen only) ── */
+#toolbar {
+  max-width: 860px;
+  margin: 0 auto 20px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+#toolbar h1 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--forest);
+  margin-right: auto;
+  letter-spacing: -.01em;
+}
+#toolbar h1 span { color: var(--ochre); }
+
+.btn {
+  padding: 8px 18px;
+  border: none;
+  border-radius: 4px;
+  font-size: .85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.btn:hover { opacity: .85; }
+.btn-primary { background: var(--forest); color: var(--cream); }
+.btn-ghost   { background: transparent; border: 1.5px solid var(--canopy); color: var(--canopy); }
+.btn-danger  { background: transparent; border: 1.5px solid #c0392b; color: #c0392b; }
+
+/* ── Document ── */
+#doc {
+  max-width: 860px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 2px 20px rgba(0,0,0,.1);
+  overflow: hidden;
+}
+
+/* Header */
+.doc-header {
+  background: var(--forest);
+  color: var(--cream);
+  padding: 28px 36px 22px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  align-items: center;
+}
+.doc-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.doc-logo img {
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  background: rgba(255,255,255,.1);
+}
+.doc-logo-text .brand {
+  font-size: 1.7rem;
+  font-weight: 900;
+  letter-spacing: -.03em;
+  line-height: 1;
+}
+.doc-logo-text .sub {
+  font-size: .72rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  opacity: .75;
+  margin-top: 2px;
+}
+.doc-title-block { text-align: right; }
+.doc-title-block .title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--cream);
+}
+.doc-title-block .no-label {
+  font-size: .7rem;
+  opacity: .7;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+.doc-title-block input.no-input {
+  background: rgba(255,255,255,.15);
+  border: none;
+  border-bottom: 1px solid rgba(255,255,255,.4);
+  color: white;
+  font-size: 1rem;
+  font-weight: 700;
+  width: 120px;
+  text-align: right;
+  padding: 2px 4px;
+  outline: none;
+}
+.doc-title-block input.no-input::placeholder { color: rgba(255,255,255,.4); }
+
+/* Meta row */
+.doc-meta {
+  background: var(--canopy);
+  color: var(--cream);
+  padding: 10px 36px;
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+  font-size: .82rem;
+}
+.meta-item { display: flex; align-items: center; gap: 6px; }
+.meta-label { opacity: .7; text-transform: uppercase; font-size: .68rem; letter-spacing: .08em; }
+.meta-item input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255,255,255,.35);
+  color: white;
+  font-size: .82rem;
+  padding: 1px 4px;
+  outline: none;
+  width: 110px;
+}
+.meta-item input::placeholder { color: rgba(255,255,255,.4); }
+
+/* Client block */
+.doc-client {
+  padding: 20px 36px;
+  border-bottom: 1px solid var(--sand);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 32px;
+}
+.field-group label {
+  display: block;
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--canopy);
+  font-weight: 700;
+  margin-bottom: 3px;
+}
+.field-group input, .field-group textarea {
+  width: 100%;
+  border: none;
+  border-bottom: 1.5px solid var(--sand);
+  background: transparent;
+  font-size: .9rem;
+  color: var(--ink);
+  padding: 4px 2px;
+  outline: none;
+  font-family: inherit;
+  resize: none;
+  transition: border-color .15s;
+}
+.field-group input:focus,
+.field-group textarea:focus { border-color: var(--canopy); }
+
+/* Items table */
+.doc-items { padding: 20px 36px; }
+.doc-items table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .88rem;
+}
+.doc-items thead th {
+  background: var(--cream);
+  color: var(--forest);
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 700;
+}
+.doc-items thead th:last-child,
+.doc-items thead th.col-price,
+.doc-items thead th.col-total { text-align: right; }
+.doc-items thead th.col-qty   { text-align: center; }
+
+.doc-items tbody tr { border-bottom: 1px solid #f0ece4; }
+.doc-items tbody tr:hover { background: #fdfbf8; }
+.doc-items tbody td { padding: 7px 10px; vertical-align: middle; }
+.doc-items tbody td input, .doc-items tbody td select {
+  border: none;
+  background: transparent;
+  font-size: .88rem;
+  color: var(--ink);
+  outline: none;
+  width: 100%;
+  font-family: inherit;
+}
+.doc-items tbody td.col-price input,
+.doc-items tbody td.col-total { text-align: right; }
+.doc-items tbody td.col-qty input  { text-align: center; }
+.doc-items tbody td.col-total { font-weight: 600; color: var(--forest); }
+.doc-items tbody td.col-del { width: 28px; text-align: center; }
+.doc-items tbody td.col-del button {
+  border: none; background: none; cursor: pointer;
+  color: #aaa; font-size: 1rem; padding: 2px 4px;
+  transition: color .15s;
+}
+.doc-items tbody td.col-del button:hover { color: #c0392b; }
+
+/* Add row btn */
+.add-row-wrap { padding: 8px 36px 0; }
+.add-row-btn {
+  border: 1.5px dashed var(--leaf);
+  background: none;
+  color: var(--canopy);
+  font-size: .82rem;
+  padding: 5px 14px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all .15s;
+}
+.add-row-btn:hover { background: var(--cream); border-color: var(--canopy); }
+
+/* Totals */
+.doc-totals {
+  padding: 12px 36px 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+.totals-table {
+  width: 280px;
+  font-size: .88rem;
+}
+.totals-table tr td { padding: 4px 6px; }
+.totals-table tr td:first-child { color: #666; text-align: right; padding-right: 16px; }
+.totals-table tr td:last-child { text-align: right; font-weight: 600; min-width: 90px; }
+.totals-table .total-row td {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--forest);
+  border-top: 2px solid var(--forest);
+  padding-top: 8px;
+}
+.descuento-input {
+  border: none; border-bottom: 1px solid var(--sand);
+  background: transparent; width: 80px;
+  text-align: right; font-size: .88rem;
+  font-weight: 600; color: var(--ink);
+  outline: none; font-family: inherit;
+}
+.descuento-input:focus { border-color: var(--canopy); }
+
+/* Footer notes */
+.doc-footer {
+  padding: 16px 36px 28px;
+  border-top: 1px solid var(--sand);
+}
+.doc-footer .field-group { margin-bottom: 12px; }
+.doc-footer textarea {
+  height: 52px;
+  line-height: 1.5;
+  font-size: .85rem;
+}
+
+.doc-signatures {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  margin-top: 28px;
+}
+.sig-block { text-align: center; }
+.sig-line {
+  border-top: 1.5px solid var(--ink);
+  margin-bottom: 6px;
+}
+.sig-label {
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--canopy);
+  font-weight: 700;
+}
+
+/* ── PRINT ── */
+@media print {
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { background: white; padding: 0; }
+  #toolbar, .btn, .add-row-wrap, .col-del, .no-print { display: none !important; }
+  #doc { box-shadow: none; border-radius: 0; }
+  .doc-items tbody td.col-del { display: none; }
+  .doc-items thead th.col-del { display: none; }
+
+  .field-group input,
+  .field-group textarea,
+  .doc-items tbody td input,
+  .doc-items tbody td select,
+  .descuento-input,
+  .doc-title-block input.no-input,
+  .meta-item input {
+    border: none !important;
+    pointer-events: none;
+  }
+
+  @page { margin: 15mm 18mm; size: letter portrait; }
+}
+</style>
+</head>
+<body>
+
+<!-- Toolbar -->
+<div id="toolbar">
+  <h1>🌿 AJÚA — <span>Cotización</span></h1>
+  <button class="btn btn-ghost" onclick="resetDoc()">Nueva</button>
+  <button class="btn btn-ghost" onclick="saveLocal()">Guardar borrador</button>
+  <button class="btn btn-primary" onclick="window.print()">⬇ Imprimir / PDF</button>
+</div>
+
+<!-- Document -->
+<div id="doc">
+
+  <!-- Header -->
+  <div class="doc-header">
+    <div class="doc-logo">
+      <img src="icon-192.png" alt="AJÚA">
+      <div class="doc-logo-text">
+        <div class="brand">AJÚA</div>
+        <div class="sub">Agroindustria de Guatemala</div>
+      </div>
+    </div>
+    <div class="doc-title-block">
+      <div class="title">Cotización</div>
+      <div class="no-label">No.</div>
+      <input class="no-input" id="doc-no" type="text" placeholder="0001" maxlength="10">
+    </div>
+  </div>
+
+  <!-- Meta -->
+  <div class="doc-meta">
+    <div class="meta-item">
+      <span class="meta-label">Fecha</span>
+      <input id="doc-fecha" type="date">
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Válida hasta</span>
+      <input id="doc-valida" type="date">
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Moneda</span>
+      <input id="doc-moneda" type="text" value="GTQ (Q)" style="width:80px;">
+    </div>
+  </div>
+
+  <!-- Client -->
+  <div class="doc-client">
+    <div class="field-group">
+      <label>Cliente / Empresa</label>
+      <input id="cl-nombre" type="text" placeholder="Nombre del cliente o empresa">
+    </div>
+    <div class="field-group">
+      <label>Contacto</label>
+      <input id="cl-contacto" type="text" placeholder="Nombre del contacto">
+    </div>
+    <div class="field-group">
+      <label>Dirección</label>
+      <input id="cl-dir" type="text" placeholder="Dirección">
+    </div>
+    <div class="field-group">
+      <label>Teléfono / Email</label>
+      <input id="cl-tel" type="text" placeholder="Tel / correo">
+    </div>
+  </div>
+
+  <!-- Items -->
+  <div class="doc-items">
+    <table id="items-table">
+      <thead>
+        <tr>
+          <th style="width:40%">Descripción</th>
+          <th style="width:12%" class="col-qty">Cant.</th>
+          <th style="width:12%">Unidad</th>
+          <th style="width:16%" class="col-price">Precio unit.</th>
+          <th style="width:14%" class="col-total">Total</th>
+          <th class="col-del no-print"></th>
+        </tr>
+      </thead>
+      <tbody id="items-body"></tbody>
+    </table>
+  </div>
+
+  <div class="add-row-wrap no-print">
+    <button class="add-row-btn" onclick="addRow()">+ Agregar línea</button>
+  </div>
+
+  <!-- Totals -->
+  <div class="doc-totals">
+    <table class="totals-table">
+      <tr>
+        <td>Subtotal</td>
+        <td id="disp-subtotal">Q 0.00</td>
+      </tr>
+      <tr>
+        <td>Descuento (−)</td>
+        <td><input class="descuento-input" id="inp-descuento" type="number" min="0" value="0" placeholder="0.00" oninput="recalc()"></td>
+      </tr>
+      <tr class="total-row">
+        <td>TOTAL</td>
+        <td id="disp-total">Q 0.00</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Footer -->
+  <div class="doc-footer">
+    <div class="field-group">
+      <label>Condiciones de pago</label>
+      <textarea id="doc-condiciones" placeholder="Ej: Pago a 30 días, anticipo del 50%, etc."></textarea>
+    </div>
+    <div class="field-group">
+      <label>Notas adicionales</label>
+      <textarea id="doc-notas" placeholder="Observaciones, condiciones de entrega, etc."></textarea>
+    </div>
+
+    <div class="doc-signatures">
+      <div class="sig-block">
+        <div class="sig-line"></div>
+        <div class="sig-label">Elaborado por — AJÚA Agroindustria</div>
+      </div>
+      <div class="sig-block">
+        <div class="sig-line"></div>
+        <div class="sig-label">Recibido / Aceptado por</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /doc -->
+
+<script>
+// ── State ──────────────────────────────────────────────
+var rows = [];
+
+// ── Init ───────────────────────────────────────────────
+(function init() {
+  // Fechas default
+  var today = new Date();
+  var valid = new Date(today);
+  valid.setDate(valid.getDate() + 15);
+  document.getElementById('doc-fecha').value  = fmt(today);
+  document.getElementById('doc-valida').value = fmt(valid);
+
+  // Número correlativo desde localStorage
+  var lastNo = parseInt(localStorage.getItem('ajua_cot_no') || '0') + 1;
+  document.getElementById('doc-no').value = String(lastNo).padStart(4, '0');
+
+  // Cargar borrador si existe
+  var draft = localStorage.getItem('ajua_cot_draft');
+  if (draft) try { loadState(JSON.parse(draft)); } catch(e) {}
+
+  // Filas iniciales si no hay borrador
+  if (rows.length === 0) { addRow(); addRow(); addRow(); }
+})();
+
+function fmt(d) {
+  return d.toISOString().slice(0,10);
+}
+
+// ── Rows ───────────────────────────────────────────────
+function addRow() {
+  var id = Date.now() + Math.random();
+  rows.push({ id: id, desc: '', qty: '', unit: 'lb', price: '', total: 0 });
+  renderRows();
+}
+
+function delRow(id) {
+  rows = rows.filter(function(r) { return r.id !== id; });
+  renderRows();
+  recalc();
+}
+
+function renderRows() {
+  var tbody = document.getElementById('items-body');
+  tbody.innerHTML = '';
+  rows.forEach(function(r) {
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td><input type="text" value="' + esc(r.desc) + '" placeholder="Descripción del producto o servicio" oninput="setField(' + r.id + ',\'desc\',this.value)"></td>' +
+      '<td class="col-qty"><input type="number" min="0" value="' + (r.qty||'') + '" placeholder="0" style="width:60px" oninput="setField(' + r.id + ',\'qty\',this.value)"></td>' +
+      '<td><input type="text" value="' + esc(r.unit) + '" placeholder="lb/kg/caja" style="width:56px" oninput="setField(' + r.id + ',\'unit\',this.value)"></td>' +
+      '<td class="col-price"><input type="number" min="0" step="0.01" value="' + (r.price||'') + '" placeholder="0.00" oninput="setField(' + r.id + ',\'price\',this.value)"></td>' +
+      '<td class="col-total" id="row-total-' + r.id + '">' + fmtQ(r.total) + '</td>' +
+      '<td class="col-del no-print"><button onclick="delRow(' + r.id + ')" title="Eliminar">✕</button></td>';
+    tbody.appendChild(tr);
+  });
+}
+
+function setField(id, field, val) {
+  var r = rows.find(function(x) { return x.id === id; });
+  if (!r) return;
+  r[field] = val;
+  if (field === 'qty' || field === 'price') {
+    r.total = (parseFloat(r.qty) || 0) * (parseFloat(r.price) || 0);
+    var cell = document.getElementById('row-total-' + id);
+    if (cell) cell.textContent = fmtQ(r.total);
+  }
+  recalc();
+}
+
+function recalc() {
+  var sub = rows.reduce(function(s, r) { return s + (r.total || 0); }, 0);
+  var desc = parseFloat(document.getElementById('inp-descuento').value) || 0;
+  var total = Math.max(0, sub - desc);
+  document.getElementById('disp-subtotal').textContent = fmtQ(sub);
+  document.getElementById('disp-total').textContent    = fmtQ(total);
+}
+
+// ── Format ─────────────────────────────────────────────
+function fmtQ(n) {
+  return 'Q ' + (n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+function esc(s) {
+  return (s || '').replace(/"/g, '&quot;');
+}
+
+// ── Save / Load ────────────────────────────────────────
+function getState() {
+  return {
+    no:          document.getElementById('doc-no').value,
+    fecha:       document.getElementById('doc-fecha').value,
+    valida:      document.getElementById('doc-valida').value,
+    moneda:      document.getElementById('doc-moneda').value,
+    clNombre:    document.getElementById('cl-nombre').value,
+    clContacto:  document.getElementById('cl-contacto').value,
+    clDir:       document.getElementById('cl-dir').value,
+    clTel:       document.getElementById('cl-tel').value,
+    condiciones: document.getElementById('doc-condiciones').value,
+    notas:       document.getElementById('doc-notas').value,
+    descuento:   document.getElementById('inp-descuento').value,
+    rows:        rows
+  };
+}
+
+function loadState(s) {
+  if (s.no)          document.getElementById('doc-no').value           = s.no;
+  if (s.fecha)       document.getElementById('doc-fecha').value        = s.fecha;
+  if (s.valida)      document.getElementById('doc-valida').value       = s.valida;
+  if (s.moneda)      document.getElementById('doc-moneda').value       = s.moneda;
+  if (s.clNombre)    document.getElementById('cl-nombre').value        = s.clNombre;
+  if (s.clContacto)  document.getElementById('cl-contacto').value      = s.clContacto;
+  if (s.clDir)       document.getElementById('cl-dir').value           = s.clDir;
+  if (s.clTel)       document.getElementById('cl-tel').value           = s.clTel;
+  if (s.condiciones) document.getElementById('doc-condiciones').value  = s.condiciones;
+  if (s.notas)       document.getElementById('doc-notas').value        = s.notas;
+  if (s.descuento)   document.getElementById('inp-descuento').value    = s.descuento;
+  if (s.rows)        rows = s.rows;
+  renderRows();
+  recalc();
+}
+
+function saveLocal() {
+  localStorage.setItem('ajua_cot_draft', JSON.stringify(getState()));
+  // Actualizar número para la próxima
+  var no = parseInt(document.getElementById('doc-no').value) || 0;
+  localStorage.setItem('ajua_cot_no', String(no));
+  alert('Borrador guardado ✓');
+}
+
+function resetDoc() {
+  if (!confirm('¿Limpiar y crear nueva cotización?')) return;
+  localStorage.removeItem('ajua_cot_draft');
+  var no = parseInt(document.getElementById('doc-no').value || '0') + 1;
+  localStorage.setItem('ajua_cot_no', String(no));
+  rows = [];
+  document.getElementById('doc-no').value          = String(no).padStart(4,'0');
+  document.getElementById('cl-nombre').value        = '';
+  document.getElementById('cl-contacto').value      = '';
+  document.getElementById('cl-dir').value           = '';
+  document.getElementById('cl-tel').value           = '';
+  document.getElementById('doc-condiciones').value  = '';
+  document.getElementById('doc-notas').value        = '';
+  document.getElementById('inp-descuento').value    = '0';
+  var today = new Date();
+  var valid = new Date(today); valid.setDate(valid.getDate()+15);
+  document.getElementById('doc-fecha').value  = fmt(today);
+  document.getElementById('doc-valida').value = fmt(valid);
+  addRow(); addRow(); addRow();
+  recalc();
+}
+</script>
+</body>
+</html>
