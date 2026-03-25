@@ -905,6 +905,7 @@ if ('caches' in window) {
 <div class="ni" onclick="show('despacho',this)"><span class="ico">📋</span>Despacho Transporte</div>
 <div class="ns">2 · Bodega</div>
 <div class="ni" onclick="show('bodega-limpieza',this)"><span class="ico">🏭</span>Limpieza Bodega</div>
+<div class="ni" onclick="show('limp-bodega',this)"><span class="ico">🧹</span>Limpieza Diaria</div>
 <div class="ni" onclick="show('fumigacion',this)"><span class="ico">🧪</span>Control Fumigación</div>
 <div class="ni" onclick="show('roedores',this)"><span class="ico">🐭</span>Control Roedores</div>
 <div class="ni" onclick="show('croquis-bodega',this)"><span class="ico">🗺️</span>Croquis Bodega</div>
@@ -936,7 +937,7 @@ if ('caches' in window) {
 <div class="ni" onclick="show('inv-cotizador',this);cotMainTab('terceros',this)"><span class="ico">🤝</span>Cotizador Terceros</div>
 <div class="ni" onclick="show('inv-cotizador',this);cotMainTab('lista',this)"><span class="ico">📋</span>Lista Cotizaciones</div>
 <div class="ns">📈 Análisis</div>
-<div class="ni" onclick="show('inv-trazabilidad',this)"><span class="ico">🔗</span>Trazabilidad</div>
+<div class="ni" onclick="show('inv-trazabilidad',this)" style="display:none"><span class="ico">🔗</span>Trazabilidad</div>
 <div class="ni" onclick="show('reporte',this)"><span class="ico">📊</span>Reporte General</div>
 <div class="ni" onclick="show('inv-config',this)"><span class="ico">⚙</span>Productos y Presentaciones</div>
 <div class="ni" onclick="show('proveedores',this)"><span class="ico">🏭</span>Proveedores y Productores</div>
@@ -1290,6 +1291,44 @@ if ('caches' in window) {
 <tbody id="parq-tbody"></tbody></table>
 </div>
 </div>
+<div class="sec" id="sec-limp-bodega">
+<div class="ph"><h1>Limpieza Diaria Bodega</h1><p>Checklist diario — ❄️ Cooler 1 · ❄️ Cooler 2 · 📦 Pre-carga · Lunes a Sábado</p></div>
+<div class="card">
+<div class="ct">Nuevo Registro</div>
+<div class="fgrid g3">
+<div class="fg"><label>Fecha</label><input type="date" id="limp-fecha"></div>
+<div class="fg"><label>Responsable</label><select id="limp-resp"><option value="">— Seleccionar responsable —</option></select></div>
+<div class="fg"><label>Hora</label><input type="time" id="limp-hora"></div>
+</div>
+<div id="limp-checklist" style="margin-bottom:14px;"></div>
+<div class="fgrid g3" style="margin-bottom:12px;">
+<div class="fg"><label>Obs. Cooler 1</label><textarea id="limp-obs-c1" rows="2" placeholder="Novedades Cooler 1..."></textarea></div>
+<div class="fg"><label>Obs. Cooler 2</label><textarea id="limp-obs-c2" rows="2" placeholder="Novedades Cooler 2..."></textarea></div>
+<div class="fg"><label>Obs. Pre-carga</label><textarea id="limp-obs-pc" rows="2" placeholder="Novedades Pre-carga..."></textarea></div>
+</div>
+<div class="fgrid g2" style="margin-bottom:12px;">
+<div class="fg"><label>Comentarios Generales</label><textarea id="limp-obs" rows="2" placeholder="Observaciones generales..."></textarea></div>
+<div class="fg"><label>Foto (opcional)</label>
+<input type="file" id="limp-foto-input" accept="image/*" capture="environment" onchange="limpFotoLoad(this)" style="font-size:.78rem;margin-top:4px;">
+<div id="limp-foto-preview" style="margin-top:6px;max-width:140px;max-height:90px;overflow:hidden;border-radius:4px;border:1px solid var(--br);display:none;"><img id="limp-foto-img" style="width:100%;height:100%;object-fit:cover;"></div>
+</div>
+</div>
+<div id="limp-result" style="display:none;padding:12px 16px;border-radius:4px;margin-bottom:12px;text-align:center;border:2px solid;">
+<div style="font-size:.65rem;color:var(--muted2);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px;">Resultado</div>
+<div id="limp-result-label" style="font-family:var(--fh);font-size:1.1rem;font-weight:700;"></div>
+</div>
+<div class="fa">
+<button class="btn bp" onclick="saveLIMP()">Guardar Registro</button>
+<button class="btn bo" onclick="printSec('sec-limp-bodega')">🖨 Imprimir</button>
+</div>
+</div>
+<div class="tw">
+<div class="twh"><span class="twt">Historial Limpieza Diaria</span><button class="btn bo bsm" onclick="exportCSV('limp')">↓ CSV</button></div>
+<table><thead><tr><th>Fecha</th><th>Responsable</th><th>Hora</th><th>Cumple</th><th>No Cumple</th><th>Resultado</th><th>Foto</th><th>Obs.</th><th></th></tr></thead>
+<tbody id="limp-tbody"></tbody></table>
+</div>
+</div>
+
 <div class="sec" id="sec-fumigacion">
 <div class="ph"><h1>Control de Fumigación / Sanitización</h1><p>Fumigación externa mensual · Desinfección con cloro semanal — 2026</p></div>
 <div class="card">
@@ -4125,7 +4164,7 @@ if ('caches' in window) {
 // Garantiza que DB exista antes de que cualquier código inline lo use.
 // Firebase sobreescribe esto con los datos reales al cargar.
 const DB_DEFAULT = {
-  tl:[],dt:[],bl:[],parq:[],fum:[],rod:[],cap:[],ee:[],al:[],vis:[],vp:[],vyp:[],bas:[],lp:[],
+  tl:[],dt:[],bl:[],parq:[],fum:[],rod:[],cap:[],ee:[],al:[],vis:[],vp:[],vyp:[],bas:[],lp:[],limp:[],
   conductores:[], clientes:[], empleados:[], calibraciones:[],
   iproductos:[], ipresentaciones:[], iclientes:[], ientradas:[], isalidas:[],
   cotizaciones:[], vgtVentas:[], vintVentas:[], maquila:[], usuarios:[],
@@ -6627,19 +6666,38 @@ function generarReporte() {
     });
   });
 
-  // Walmart sales
+  // Walmart sales (isalidas — generadas al cerrar pedido)
+  const _isalidasIds = new Set((DB.isalidas||[]).map(s=>s.pedidoWalmartId).filter(Boolean));
   (DB.isalidas || []).filter(v => v.fecha >= desde && v.fecha <= hasta).forEach(v => {
     (v.lineas || []).forEach(l => {
       const id = l.productoId || l.productoNombre || 'Otros';
       if (filtProd && id !== filtProd && l.productoNombre !== filtProd) return;
-      const ingreso = l.neto || (l.totalConIva ? l.totalConIva / 1.12 : 0) || 0;
+      const ingreso = l.totalNeto || (l.totalConIVA ? l.totalConIVA / 1.12 : 0) || 0;
       totalIngresos     += ingreso;
-      totalLbsVendidas  += l.lbs || 0;
+      totalLbsVendidas  += l.lbs || l.totalLbs || 0;
       if (!ventasPorProd[id]) ventasPorProd[id] = { nombre: l.productoNombre || id, lbs: 0, ingresos: 0 };
-      ventasPorProd[id].lbs      += l.lbs || 0;
+      ventasPorProd[id].lbs      += l.lbs || l.totalLbs || 0;
       ventasPorProd[id].ingresos += ingreso;
     });
   });
+
+  // Walmart sales fallback — pedidosWalmart cerrados sin isalida registrada
+  (DB.pedidosWalmart || [])
+    .filter(p => (p.estado === 'cerrado' || p.estado === 'con_rechazo') &&
+                 p.fechaEntrega >= desde && p.fechaEntrega <= hasta &&
+                 !_isalidasIds.has(p.id))
+    .forEach(p => {
+      (p.rubros || []).forEach(r => {
+        if (!(r.cajasAceptadas > 0) || !r.precioUnit) return;
+        const id = r.productoId || r.item || 'Walmart';
+        const ingreso = (r.cajasAceptadas * r.precioUnit) / 1.12;
+        totalIngresos    += ingreso;
+        totalLbsVendidas += r.cajasAceptadas * (r.lbsBulto || 0);
+        if (!ventasPorProd[id]) ventasPorProd[id] = { nombre: r.descripcion || r.item || id, lbs: 0, ingresos: 0 };
+        ventasPorProd[id].lbs      += r.cajasAceptadas * (r.lbsBulto || 0);
+        ventasPorProd[id].ingresos += ingreso;
+      });
+    });
 
   // Export sales
   (DB.vintVentas || []).filter(v => v.fecha >= desde && v.fecha <= hasta).forEach(v => {
@@ -7159,6 +7217,122 @@ async function rpDescargar(periodo) {
 
 function backupDownloadExcel(force) { rpDescargar('todo'); }
 function rpExportarCompleto()       { rpDescargar('todo'); }
+
+// ════════════════════════════════════════════════════════════════════
+// 📋 REPORTE BPM SEMANAL — % cumplimiento por módulo + comparativo
+// ════════════════════════════════════════════════════════════════════
+
+function bpmSemanaISO(fecha) {
+  // Retorna lunes de la semana de esa fecha
+  var d = new Date(fecha + 'T00:00:00');
+  var day = d.getDay();
+  var diff = (day === 0) ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  return d.toISOString().slice(0, 10);
+}
+
+function bpmSemanalCalc(desde, hasta) {
+  var modulos = [
+    { key: 'tl',  label: 'TL Camiones',     arr: DB.tl,  campo: 'fecha', resKey: 'resultado' },
+    { key: 'dt',  label: 'DT Despachos',     arr: DB.dt,  campo: 'fecha', resKey: 'resultado' },
+    { key: 'al',  label: 'AL Accesos',       arr: DB.al,  campo: 'fecha', resKey: null },
+    { key: 'bas', label: 'BAS Básculas',     arr: DB.bas, campo: 'fecha', resKey: 'resultado' },
+    { key: 'rod', label: 'ROD Roedores',     arr: DB.rod, campo: 'fecha', resKey: 'resultado' },
+    { key: 'fum', label: 'FUM Fumigación',   arr: DB.fum, campo: 'fecha', resKey: 'res' },
+  ];
+
+  return modulos.map(function(m) {
+    var registros = (m.arr || []).filter(function(r) {
+      var f = r[m.campo] || r.fecha || '';
+      return f >= desde && f <= hasta;
+    });
+    var total = registros.length;
+    var cumple = 0;
+    if (m.resKey) {
+      cumple = registros.filter(function(r) {
+        var res = (r[m.resKey] || '').toLowerCase();
+        return res === 'cumple' || res === 'ok' || res === 'si' || res === 'aceptado' || res === 'sin_novedad' || res === 'cerrado';
+      }).length;
+    } else {
+      // AL: cumple si tiene empleados registrados
+      cumple = registros.filter(function(r) { return (r.empleados || []).length > 0; }).length;
+    }
+    var pct = total > 0 ? Math.round(cumple / total * 100) : null;
+    return { key: m.key, label: m.label, total: total, cumple: cumple, pct: pct };
+  });
+}
+
+function repBpmSemanal() {
+  // Semana actual: lunes a domingo
+  var hoy     = new Date().toISOString().slice(0, 10);
+  var lunes   = bpmSemanaISO(hoy);
+  var d       = new Date(lunes + 'T00:00:00');
+  d.setDate(d.getDate() + 6);
+  var domingo = d.toISOString().slice(0, 10);
+
+  // Semana anterior
+  var dPrev   = new Date(lunes + 'T00:00:00');
+  dPrev.setDate(dPrev.getDate() - 7);
+  var lunesPrev   = dPrev.toISOString().slice(0, 10);
+  var dPrevFin    = new Date(lunesPrev + 'T00:00:00');
+  dPrevFin.setDate(dPrevFin.getDate() + 6);
+  var domingoPrev = dPrevFin.toISOString().slice(0, 10);
+
+  var actual   = bpmSemanalCalc(lunes, domingo);
+  var anterior = bpmSemanalCalc(lunesPrev, domingoPrev);
+
+  var totalAct   = actual.reduce(function(s,m){ return s + m.total; }, 0);
+  var cumpleAct  = actual.reduce(function(s,m){ return s + m.cumple; }, 0);
+  var pctGlobal  = totalAct > 0 ? Math.round(cumpleAct / totalAct * 100) : 0;
+
+  var filas = actual.map(function(m, i) {
+    var prev     = anterior[i];
+    var pctStr   = m.pct != null ? m.pct + '%' : '—';
+    var pctPrev  = prev.pct != null ? prev.pct + '%' : '—';
+    var delta    = (m.pct != null && prev.pct != null) ? m.pct - prev.pct : null;
+    var deltaStr = delta == null ? '' : (delta > 0 ? '▲ +' + delta + '%' : delta < 0 ? '▼ ' + delta + '%' : '→ =');
+    var deltaColor = delta == null ? 'var(--muted2)' : delta > 0 ? 'var(--acc)' : delta < 0 ? 'var(--danger)' : 'var(--muted2)';
+    var pctColor = m.pct == null ? 'var(--muted2)' : m.pct >= 80 ? 'var(--acc)' : m.pct >= 50 ? 'var(--warn,#e67e22)' : 'var(--danger)';
+    return '<tr style="border-bottom:1px solid var(--b1);">' +
+      '<td style="padding:8px 12px;font-weight:600;">' + m.label + '</td>' +
+      '<td style="padding:8px 12px;text-align:center;">' + m.total + '</td>' +
+      '<td style="padding:8px 12px;text-align:center;font-weight:700;color:' + pctColor + ';">' + pctStr + '</td>' +
+      '<td style="padding:8px 12px;text-align:center;color:var(--muted2);">' + prev.total + ' / ' + pctPrev + '</td>' +
+      '<td style="padding:8px 12px;text-align:center;font-weight:600;color:' + deltaColor + ';">' + deltaStr + '</td>' +
+      '</tr>';
+  }).join('');
+
+  var html =
+    '<div style="font-family:var(--fh);font-size:.82rem;color:var(--muted2);margin-bottom:2px;">📋 REPORTE BPM SEMANAL</div>' +
+    '<div style="font-size:.95rem;font-weight:700;margin-bottom:2px;">' + lunes + ' al ' + domingo + '</div>' +
+    '<div style="font-size:1.8rem;font-weight:800;color:' + (pctGlobal>=80?'var(--acc)':pctGlobal>=50?'#e67e22':'var(--danger)') + ';margin-bottom:14px;">' +
+      pctGlobal + '% <span style="font-size:.85rem;font-weight:400;color:var(--muted2);">cumplimiento global (' + cumpleAct + '/' + totalAct + ' registros)</span>' +
+    '</div>' +
+    '<table style="width:100%;border-collapse:collapse;font-size:.82rem;">' +
+      '<thead><tr style="background:var(--green-pale,#e8f5e9);font-size:.75rem;">' +
+        '<th style="padding:6px 12px;text-align:left;">Módulo</th>' +
+        '<th style="padding:6px 12px;">Registros</th>' +
+        '<th style="padding:6px 12px;">% Cumple</th>' +
+        '<th style="padding:6px 12px;">Sem. Anterior</th>' +
+        '<th style="padding:6px 12px;">Variación</th>' +
+      '</tr></thead>' +
+      '<tbody>' + filas + '</tbody>' +
+    '</table>';
+
+  // Mostrar en modal
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML =
+    '<div style="background:var(--bg,#fff);border-radius:12px;padding:28px 30px;min-width:420px;max-width:600px;box-shadow:0 12px 40px rgba(0,0,0,.25);max-height:90vh;overflow-y:auto;">' +
+      html +
+      '<div style="margin-top:16px;text-align:right;">' +
+        '<button onclick="this.closest(\'div[style*=fixed]\').remove()" ' +
+          'style="padding:8px 20px;background:var(--acc);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.85rem;">Cerrar</button>' +
+      '</div>' +
+    '</div>';
+  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+  document.body.appendChild(overlay);
+}
 
 // ════════════════════════════════════════════════════════════════════
 // 👷 NÓMINA DESDE ACCESO — calcular días trabajados automáticamente
@@ -7691,6 +7865,8 @@ function show(id,el){closeNavOnMobile();
         buildDTChecklist(); renderDT(); populateAllRespSelects(); break;
       case 'bodega-limpieza':
         buildBLChecklist(); renderBL(); buildParqChecklist(); renderParq(); populateAllRespSelects(); break;
+      case 'limp-bodega':
+        buildLimpChecklist(); renderLIMP(); populateAllRespSelects(); break;
       case 'roedores':
         buildRodTrampas(); renderRod(); populateAllRespSelects(); break;
       case 'vidrio':
@@ -7806,7 +7982,7 @@ function del(key,id){
   DB[key]=DB[key].filter(r=>r.id!==id);
   save();
   // Render solo la sección afectada, no todo
-  const keyToSec = {tl:'transporte-limpieza',dt:'despacho',bl:'bodega-limpieza',parq:'bodega-limpieza',
+  const keyToSec = {tl:'transporte-limpieza',dt:'despacho',bl:'bodega-limpieza',parq:'bodega-limpieza',limp:'limp-bodega',
     rod:'roedores',fum:'fumigacion',al:'acceso-lavado',bas:'basculas',
     vis:'visitas',vp:'vidrio',vyp:'vidrio',cap:'capacitacion',lp:'lavado-prod',
     gastosDiarios:'gastos-diarios',empleados:'empleados-db',
@@ -8123,8 +8299,11 @@ function delConductor(id){
 function dtPopulateConductorSelect(){
   const sel=document.getElementById('dt-conductor-sel');if(!sel)return;
   const cur=sel.value;
+  const condOpts=(DB.conductores||[]).map(c=>`<option value="cond:${c.id}">${c.nombre}${c.lic?' · '+c.lic:''}</option>`).join('');
+  const empOpts=(DB.empleados||[]).filter(e=>e.activo!==false&&e.estado!=='inactivo').map(e=>`<option value="emp:${e.id}">${e.nombre}${e.cargo?' · '+e.cargo:''}</option>`).join('');
   sel.innerHTML='<option value="">— Seleccionar conductor —</option>'+
-    DB.conductores.map(c=>`<option value="${c.id}">${c.nombre} · ${c.lic}</option>`).join('');
+    (condOpts?'<optgroup label="Conductores registrados">'+condOpts+'</optgroup>':'')+
+    (empOpts?'<optgroup label="Empleados">'+empOpts+'</optgroup>':'');
   sel.value=cur;
 }
 function dtSelectConductor(val){
@@ -8193,17 +8372,26 @@ function delCliente(id){
 function dtPopulateClienteSelect(){
   const sel=document.getElementById('dt-cliente-sel');if(!sel)return;
   const cur=sel.value;
+  const cliOpts=(DB.clientes||[]).map(c=>`<option value="cli:${c.id}">${c.nombre}${c.muni?' · '+c.muni:''}</option>`).join('');
+  const icliOpts=(DB.iclientes||[]).map(c=>`<option value="icli:${c.id}">${c.nombre}${c.nit?' · '+c.nit:''}</option>`).join('');
   sel.innerHTML='<option value="">— Seleccionar cliente —</option>'+
-    DB.clientes.map(c=>`<option value="${c.id}">${c.nombre}${c.muni?' · '+c.muni:''}</option>`).join('');
+    (cliOpts?'<optgroup label="Clientes Despacho">'+cliOpts+'</optgroup>':'')+
+    (icliOpts?'<optgroup label="Clientes Inventario">'+icliOpts+'</optgroup>':'');
   sel.value=cur;
+}
+function _dtResolveCliente(id){
+  if(!id) return null;
+  if(id.startsWith('icli:')) return (DB.iclientes||[]).find(c=>c.id===id.replace('icli:',''))||null;
+  if(id.startsWith('cli:'))  return (DB.clientes||[]).find(c=>c.id===id.replace('cli:',''))||null;
+  return (DB.clientes||[]).find(c=>c.id===id)||null; // backward compat
 }
 function dtSelectCliente(id){
   const card=document.getElementById('dt-cliente-card');
   if(!id){card.style.display='none';return;}
-  const c=DB.clientes.find(x=>x.id===id);if(!c){card.style.display='none';return;}
+  const c=_dtResolveCliente(id);if(!c){card.style.display='none';return;}
   card.style.display='block';
   document.getElementById('dt-cli-nombre').textContent=c.nombre;
-  document.getElementById('dt-cli-dir').textContent=[c.dir,c.muni].filter(Boolean).join(' · ');
+  document.getElementById('dt-cli-dir').textContent=[c.dir,c.muni||c.pais].filter(Boolean).join(' · ');
 }
 
 const DT_ITEMS=[
@@ -8320,7 +8508,7 @@ function saveDT(){
   const cond = condSelVal.startsWith('cond:')
     ? DB.conductores.find(c=>c.id===condSelVal.replace('cond:',''))
     : (DB.empleados||[]).find(e=>e.id===condSelVal.replace('emp:',''));
-  const cli=DB.clientes.find(c=>c.id===cliId);
+  const cli=_dtResolveCliente(cliId);
   const checks=DT_ITEMS.map((_,i)=>{const r=document.querySelector(`input[name="dt_${i}"]:checked`);return r?r.value:'';});
   const obsItems=DT_ITEMS.map((_,i)=>document.getElementById(`dt_obs_${i}`)?.value||'');
   const ok=checks.filter(c=>c==='si').length;
@@ -8329,7 +8517,7 @@ function saveDT(){
   DB.dt.unshift({
     id:uid(),ts:now(),fecha:v('dt-fecha'),hora:v('dt-hora'),placa:v('dt-placa'),
     conductorId:condId,conductorNombre:cond?.nombre||'',conductorLic:cond?.lic||'',
-    clienteId:cliId||'',clienteNombre:cli?.nombre||'Sin destino',clienteDir:cli?[cli.dir,cli.muni].filter(Boolean).join(', '):'',
+    clienteId:cliId||'',clienteNombre:cli?.nombre||'Sin destino',clienteDir:cli?[cli.dir,cli.muni||cli.pais].filter(Boolean).join(', '):'',
     carga:v('dt-carga'),temp:v('dt-temp'),
     checks,obsItems,ok,total:DT_ITEMS.length,pct,
     obsGen:v('dt-obs'),accion:v('dt-accion'),autorizado:v('dt-autorizado'),
@@ -8564,7 +8752,7 @@ function populateAllRespSelects(){
       '<option value="' + e.nombre + '">' + e.nombre + (e.cargo?' · '+e.cargo:'') + '</option>'
     ).join('');
 
-  ['bl-resp','parq-resp','fum-resp-sel','rod-resp-sel','vp-resp-sel','vyp-resp','bas-resp-sel','lp-resp-sel'].forEach(id=>{
+  ['bl-resp','parq-resp','fum-resp-sel','rod-resp-sel','vp-resp-sel','vyp-resp','bas-resp-sel','lp-resp-sel','limp-resp'].forEach(id=>{
     const el=document.getElementById(id);
     if(el){const cur=el.value;el.innerHTML=optsAll;el.value=cur;}
   });
@@ -8655,6 +8843,111 @@ function renderBL(){
     <td style="color:var(--muted2)">${r.na}</td>
     <td style="font-size:.68rem">${r.obs||'—'}</td>
     <td><button class="btn bo bsm" onclick="del('bl','${r.id}')">✕</button></td>
+  </tr>`).join('');
+}
+
+// ── LIMP — Limpieza Diaria Bodega ────────────────────────────────
+const LIMP_ITEMS=[
+  {area:'❄️ COOLER 1 (0–4°C)',check:'Pisos limpios y secos'},
+  {area:'❄️ COOLER 1 (0–4°C)',check:'Puertas limpias'},
+  {area:'❄️ COOLER 1 (0–4°C)',check:'Cortinas en buen estado'},
+  {area:'❄️ COOLER 2 (-18°C)',check:'Pisos limpios y secos'},
+  {area:'❄️ COOLER 2 (-18°C)',check:'Puertas limpias'},
+  {area:'❄️ COOLER 2 (-18°C)',check:'Cortinas en buen estado'},
+  {area:'📦 PRE-CARGA',check:'Pisos limpios y secos'},
+  {area:'📦 PRE-CARGA',check:'Paredes limpias'},
+  {area:'📦 PRE-CARGA',check:'Mesas limpias'},
+];
+let _limpFoto=null;
+function limpFotoLoad(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    _limpFoto=e.target.result;
+    const img=document.getElementById('limp-foto-img');
+    const prev=document.getElementById('limp-foto-preview');
+    if(img){img.src=_limpFoto;}
+    if(prev){prev.style.display='';}
+  };
+  reader.readAsDataURL(file);
+}
+function buildLimpChecklist(){
+  const tb=document.getElementById('limp-checklist');
+  if(!tb||tb.dataset.built)return;
+  tb.dataset.built='1';
+  tb.className='cl-list';
+  tb.removeAttribute('style');
+  let lastArea='';
+  LIMP_ITEMS.forEach((x,i)=>{
+    if(x.area!==lastArea){
+      lastArea=x.area;
+      tb.insertAdjacentHTML('beforeend',`<div class="cl-cat-header">${x.area}</div>`);
+    }
+    tb.insertAdjacentHTML('beforeend',`
+    <div class="cl-item" id="limp-ci-${i}">
+      <div class="cl-item-txt">
+        <div class="cl-item-cat">${x.area}</div>
+        <div class="cl-item-name">${x.check}</div>
+      </div>
+      <div class="cl-btns">
+        <button class="cl-btn" onclick="clBtn(this,'limp_${i}','si','limp-ci-${i}');limpUpdateResult()">SI</button>
+        <button class="cl-btn" onclick="clBtn(this,'limp_${i}','no','limp-ci-${i}');limpUpdateResult()">NO</button>
+      </div>
+    </div>`);
+  });
+}
+function limpUpdateResult(){
+  const checks=LIMP_ITEMS.map((_,i)=>{const r=document.querySelector(`input[name="limp_${i}"]:checked`);return r?r.value:'';});
+  const si=checks.filter(c=>c==='si').length;
+  const no=checks.filter(c=>c==='no').length;
+  const respondidos=si+no;
+  const resEl=document.getElementById('limp-result');
+  const labEl=document.getElementById('limp-result-label');
+  if(respondidos===0){if(resEl)resEl.style.display='none';return;}
+  if(resEl)resEl.style.display='';
+  const cumple=no===0;
+  if(resEl){resEl.style.borderColor=cumple?'var(--acc)':'var(--danger)';resEl.style.background=cumple?'rgba(0,122,82,.06)':'rgba(214,48,48,.06)';}
+  if(labEl){labEl.style.color=cumple?'var(--acc)':'var(--danger)';labEl.textContent=cumple?'✓ CUMPLE':'✗ NO CUMPLE';}
+}
+function saveLIMP(){
+  const _v=id=>document.getElementById(id)?.value||'';
+  if(!_v('limp-fecha')||!_v('limp-resp')){toast('⚠ Complete fecha y responsable',true);return;}
+  const checks=LIMP_ITEMS.map((_,i)=>{const r=document.querySelector(`input[name="limp_${i}"]:checked`);return r?r.value:'';});
+  const si=checks.filter(c=>c==='si').length;
+  const no=checks.filter(c=>c==='no').length;
+  const resultado=no===0&&si>0?'cumple':'no_cumple';
+  if(!DB.limp)DB.limp=[];
+  DB.limp.unshift({
+    id:uid(),ts:now(),
+    fecha:_v('limp-fecha'),resp:_v('limp-resp'),hora:_v('limp-hora'),
+    checks,si,no,resultado,
+    obsC1:_v('limp-obs-c1'),obsC2:_v('limp-obs-c2'),obsPc:_v('limp-obs-pc'),
+    obs:_v('limp-obs'),
+    foto:_limpFoto||null
+  });
+  // Reset form
+  ['limp-obs-c1','limp-obs-c2','limp-obs-pc','limp-obs'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  const fi=document.getElementById('limp-foto-input');if(fi)fi.value='';
+  const prev=document.getElementById('limp-foto-preview');if(prev)prev.style.display='none';
+  _limpFoto=null;
+  LIMP_ITEMS.forEach((_,i)=>{
+    const r=document.querySelector(`input[name="limp_${i}"]:checked`);if(r)r.checked=false;
+    const el=document.getElementById('limp-ci-'+i);if(el){el.style.background='';el.style.borderColor='';}
+  });
+  const resEl=document.getElementById('limp-result');if(resEl)resEl.style.display='none';
+  save();renderLIMP();toast('✓ Registro de limpieza diaria guardado');
+}
+function renderLIMP(){
+  const tb=document.getElementById('limp-tbody');if(!tb)return;
+  if(!(DB.limp||[]).length){tb.innerHTML=`<tr><td colspan="9"><div class="empty">Sin registros</div></td></tr>`;return;}
+  tb.innerHTML=(DB.limp||[]).slice().sort((a,b)=>(b.fecha||b.ts||'').localeCompare(a.fecha||a.ts||'')).map(r=>`<tr>
+    <td>${r.fecha}</td><td>${r.resp}</td><td>${r.hora||'—'}</td>
+    <td style="color:var(--acc)">${r.si}</td>
+    <td style="color:var(--danger)">${r.no}</td>
+    <td><span class="chip ${r.resultado==='cumple'?'ck':'cr'}">${r.resultado==='cumple'?'✓ Cumple':'✗ No Cumple'}</span></td>
+    <td>${r.foto?`<img src="${r.foto}" style="width:36px;height:36px;object-fit:cover;border-radius:3px;">`:'-'}</td>
+    <td style="font-size:.68rem">${r.obs||r.obsC1||'—'}</td>
+    <td><button class="btn bo bsm" onclick="del('limp','${r.id}')">✕</button></td>
   </tr>`).join('');
 }
 

@@ -3,843 +3,425 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AJÚA Agroindustria — Vegetales Frescos de Guatemala</title>
-<meta name="description" content="Distribución mayorista de vegetales frescos. Exportación, maquila y empaque. Guatemala.">
+<title>AJÚA · Agroindustria — Vegetales Frescos de Guatemala</title>
+<meta name="description" content="Proveedor certificado de vegetales frescos. Cadena de frío, BPM y entrega puntual. Guatemala.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --forest:  #1A3D28;
-  --canopy:  #2D6645;
-  --leaf:    #4A9E6A;
-  --lime:    #8DC26F;
-  --cream:   #F5F0E4;
-  --sand:    #E8DCC8;
-  --ochre:   #C9923A;
-  --ink:     #0F1E14;
-  --mist:    #F9F6EF;
-  --white:   #FDFCF8;
+  --forest: #1A3D28;
+  --canopy: #2D6645;
+  --leaf:   #4A9E6A;
+  --cream:  #F5F0E4;
+  --sand:   #E8DCC8;
+  --ink:    #0F1E14;
+  --mist:   #F9F6EF;
+  --mid:    #6B7B70;
+  --white:  #FDFCF8;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-
 html { scroll-behavior: smooth; }
 
 body {
-  font-family: 'DM Sans', sans-serif;
-  background: var(--mist);
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--white);
   color: var(--ink);
   overflow-x: hidden;
-}
-
-/* ── CURSOR ── */
-*, *::before, *::after { cursor: none; }
-.cursor {
-  position: fixed; width: 12px; height: 12px;
-  background: var(--ochre); border-radius: 50%;
-  pointer-events: none; z-index: 9999;
-  transition: transform .15s ease, opacity .2s;
-  mix-blend-mode: multiply;
-}
-.cursor-ring {
-  position: fixed; width: 36px; height: 36px;
-  border: 1.5px solid var(--canopy); border-radius: 50%;
-  pointer-events: none; z-index: 9998;
-  transition: transform .3s ease;
-  mix-blend-mode: multiply;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* ── NAV ── */
 nav {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 20px 48px;
-  transition: all .4s ease;
+  padding: 22px 48px;
+  transition: all .35s ease;
 }
 nav.scrolled {
-  background: rgba(245,240,228,.92);
-  backdrop-filter: blur(12px);
-  padding: 14px 48px;
+  background: rgba(253, 252, 248, 0.94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding: 16px 48px;
   border-bottom: 1px solid var(--sand);
+  box-shadow: 0 1px 16px rgba(15,30,20,.05);
 }
-.nav-logo {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.6rem; font-weight: 900; letter-spacing: -.02em;
+.nav-brand {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.15rem;
+  font-weight: 700;
   color: var(--forest);
+  letter-spacing: .03em;
   text-decoration: none;
-  display: flex; align-items: center; gap: 10px;
 }
-.nav-logo .leaf-icon { font-size: 1.2rem; }
-.nav-links { display: flex; align-items: center; gap: 36px; }
-.nav-links a {
-  font-size: .82rem; font-weight: 500; letter-spacing: .08em;
-  text-transform: uppercase; color: var(--forest);
-  text-decoration: none; position: relative;
+.nav-brand span {
+  color: var(--leaf);
 }
-.nav-links a::after {
-  content: ''; position: absolute; bottom: -3px; left: 0; right: 0;
-  height: 1px; background: var(--ochre);
-  transform: scaleX(0); transition: transform .3s ease;
-  transform-origin: left;
-}
-.nav-links a:hover::after { transform: scaleX(1); }
-.nav-cta {
-  background: var(--forest); color: var(--cream) !important;
-  padding: 10px 24px; border-radius: 2px;
-  font-size: .78rem !important; letter-spacing: .1em !important;
-}
-.nav-cta::after { display: none !important; }
-.nav-cta:hover { background: var(--canopy); }
 
 /* ── HERO ── */
 .hero {
   min-height: 100vh;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--white);
   position: relative;
-  overflow: hidden;
+  padding: 120px 24px 80px;
+  text-align: center;
 }
-.hero-left {
-  display: flex; flex-direction: column; justify-content: center;
-  padding: 120px 64px 80px;
-  position: relative; z-index: 2;
+
+/* subtle texture */
+.hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(74,158,106,.07) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(26,61,40,.04) 0%, transparent 60%);
+  pointer-events: none;
 }
-.hero-eyebrow {
-  font-family: 'Space Mono', monospace;
-  font-size: .68rem; letter-spacing: .2em; text-transform: uppercase;
-  color: var(--ochre); margin-bottom: 24px;
-  display: flex; align-items: center; gap: 12px;
+
+.hero-inner {
+  position: relative;
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
 }
-.hero-eyebrow::before {
-  content: ''; display: block; width: 32px; height: 1px; background: var(--ochre);
-}
-.hero-title {
-  font-family: 'Playfair Display', serif;
-  font-size: clamp(3rem, 5vw, 5.5rem);
-  font-weight: 900; line-height: 1.05;
-  letter-spacing: -.03em; color: var(--forest);
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 16px;
+  background: rgba(74,158,106,.1);
+  border: 1px solid rgba(74,158,106,.25);
+  border-radius: 100px;
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--canopy);
+  letter-spacing: .08em;
+  text-transform: uppercase;
   margin-bottom: 28px;
 }
-.hero-title em {
-  font-style: italic; color: var(--canopy);
-  display: block;
-}
-.hero-sub {
-  font-size: 1rem; color: #4A5E50; line-height: 1.7;
-  max-width: 440px; margin-bottom: 48px;
-  font-weight: 300;
-}
-.hero-actions { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
-.btn-primary {
-  background: var(--forest); color: var(--cream);
-  padding: 16px 36px; border-radius: 2px;
-  font-size: .82rem; font-weight: 500; letter-spacing: .1em; text-transform: uppercase;
-  text-decoration: none; transition: all .3s;
-  border: 2px solid var(--forest);
-  display: inline-flex; align-items: center; gap: 10px;
-}
-.btn-primary:hover { background: transparent; color: var(--forest); }
-.btn-ghost {
-  color: var(--forest); padding: 16px 36px; border-radius: 2px;
-  font-size: .82rem; font-weight: 500; letter-spacing: .08em;
-  text-decoration: none; transition: all .3s;
-  border: 2px solid var(--sand);
-  display: inline-flex; align-items: center; gap: 10px;
-}
-.btn-ghost:hover { border-color: var(--canopy); }
 
-.hero-stats {
-  margin-top: 72px; display: flex; gap: 40px;
-  border-top: 1px solid var(--sand); padding-top: 32px;
-}
-.stat-num {
-  font-family: 'Playfair Display', serif;
-  font-size: 2.2rem; font-weight: 900; color: var(--forest); line-height: 1;
-}
-.stat-label {
-  font-size: .72rem; color: #6B8070; letter-spacing: .06em;
-  text-transform: uppercase; margin-top: 4px;
+.hero-badge::before {
+  content: '';
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--leaf);
+  flex-shrink: 0;
 }
 
-/* ── HERO RIGHT — foto collage ── */
-.hero-right {
-  position: relative; overflow: hidden;
-  background: var(--forest);
-}
-.hero-img-main {
-  width: 100%; height: 100%; object-fit: cover; opacity: .85;
-  transition: transform 8s ease;
-}
-.hero-right:hover .hero-img-main { transform: scale(1.04); }
-.hero-overlay {
-  position: absolute; inset: 0;
-  background: linear-gradient(135deg, rgba(26,61,40,.4) 0%, transparent 60%);
-}
-.hero-tag {
-  position: absolute; bottom: 40px; left: 32px;
-  background: rgba(245,240,228,.95); backdrop-filter: blur(8px);
-  padding: 14px 20px; border-radius: 4px;
-  border-left: 3px solid var(--ochre);
-}
-.hero-tag-label { font-size: .65rem; color: var(--canopy); font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
-.hero-tag-val { font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--forest); font-weight: 700; margin-top: 2px; }
-
-/* ── MARQUEE ── */
-.marquee-wrap {
-  background: var(--forest); padding: 14px 0; overflow: hidden;
-  border-top: 1px solid var(--canopy); border-bottom: 1px solid var(--canopy);
-}
-.marquee-track {
-  display: flex; gap: 0; white-space: nowrap;
-  animation: marquee 28s linear infinite;
-}
-.marquee-item {
-  font-family: 'Space Mono', monospace;
-  font-size: .72rem; letter-spacing: .15em; text-transform: uppercase;
-  color: var(--cream); opacity: .7; padding: 0 32px;
-  display: flex; align-items: center; gap: 12px;
-}
-.marquee-item::after { content: '✦'; color: var(--ochre); opacity: 1; }
-@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-
-/* ── SERVICES ── */
-.services { padding: 120px 64px; max-width: 1200px; margin: 0 auto; }
-.section-header { margin-bottom: 72px; }
-.section-eyebrow {
-  font-family: 'Space Mono', monospace;
-  font-size: .68rem; letter-spacing: .2em; text-transform: uppercase;
-  color: var(--ochre); margin-bottom: 16px;
-  display: flex; align-items: center; gap: 12px;
-}
-.section-eyebrow::before {
-  content: ''; display: block; width: 24px; height: 1px; background: var(--ochre);
-}
-.section-title {
-  font-family: 'Playfair Display', serif;
-  font-size: clamp(2.2rem, 3.5vw, 3.5rem);
-  font-weight: 900; line-height: 1.1; color: var(--forest);
+h1 {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(2.6rem, 6vw, 4.2rem);
+  font-weight: 900;
+  color: var(--forest);
+  line-height: 1.08;
   letter-spacing: -.02em;
+  margin-bottom: 20px;
 }
-.section-title em { font-style: italic; color: var(--canopy); }
 
-.services-grid {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px;
+h1 em {
+  font-style: italic;
+  color: var(--canopy);
 }
-.service-card {
-  background: var(--white); padding: 40px 32px;
+
+.hero-sub {
+  font-size: clamp(.95rem, 2vw, 1.1rem);
+  font-weight: 400;
+  color: var(--mid);
+  line-height: 1.7;
+  max-width: 520px;
+  margin: 0 auto 36px;
+  letter-spacing: .01em;
+}
+
+.hero-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 44px;
+}
+
+.tag {
+  padding: 5px 14px;
+  background: var(--mist);
   border: 1px solid var(--sand);
-  position: relative; overflow: hidden;
-  transition: all .4s ease;
+  border-radius: 100px;
+  font-size: .73rem;
+  font-weight: 500;
+  color: var(--canopy);
+  letter-spacing: .04em;
 }
-.service-card::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0;
-  height: 3px; background: var(--leaf);
-  transform: scaleX(0); transition: transform .4s ease;
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: center;
 }
-.service-card:hover::before { transform: scaleX(1); }
-.service-card:hover { transform: translateY(-6px); box-shadow: 0 24px 48px rgba(26,61,40,.12); }
-.service-icon {
-  font-size: 2rem; margin-bottom: 20px;
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 15px 32px;
+  background: var(--forest);
+  color: var(--white);
+  border: 2px solid var(--forest);
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: .88rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+  text-decoration: none;
+  transition: all .2s ease;
+  white-space: nowrap;
+}
+.btn-primary:hover {
+  background: var(--canopy);
+  border-color: var(--canopy);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(26,61,40,.2);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 15px 32px;
+  background: transparent;
+  color: var(--forest);
+  border: 2px solid var(--sand);
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: .88rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+  text-decoration: none;
+  transition: all .2s ease;
+  white-space: nowrap;
+}
+.btn-secondary:hover {
+  border-color: var(--canopy);
+  color: var(--canopy);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(26,61,40,.08);
+}
+
+/* ── DIVIDER ── */
+.divider {
+  width: 100%;
+  height: 1px;
+  background: var(--sand);
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* ── VALUE PROPS ── */
+.values {
+  background: var(--mist);
+  padding: 80px 24px;
+  border-top: 1px solid var(--sand);
+  border-bottom: 1px solid var(--sand);
+}
+
+.values-inner {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.values-label {
+  text-align: center;
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  color: var(--leaf);
+  margin-bottom: 48px;
+}
+
+.values-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  background: var(--sand);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.value-card {
+  background: var(--white);
+  padding: 40px 32px;
+  text-align: center;
+  transition: background .2s;
+}
+.value-card:hover { background: var(--cream); }
+
+.value-icon {
+  font-size: 1.8rem;
+  margin-bottom: 16px;
   display: block;
 }
-.service-num {
-  font-family: 'Space Mono', monospace;
-  font-size: .65rem; color: var(--ochre); letter-spacing: .1em;
-  margin-bottom: 12px; display: block;
-}
-.service-name {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.35rem; font-weight: 700; color: var(--forest);
-  margin-bottom: 12px; line-height: 1.2;
-}
-.service-desc { font-size: .85rem; color: #5A6E60; line-height: 1.65; }
 
-/* ── ABOUT STRIP ── */
-.about-strip {
-  background: var(--forest); color: var(--cream);
-  display: grid; grid-template-columns: 1fr 1fr;
-  min-height: 520px; overflow: hidden;
-}
-.about-img-wrap { position: relative; overflow: hidden; }
-.about-img {
-  width: 100%; height: 100%; object-fit: cover; opacity: .6;
-  filter: sepia(20%);
-}
-.about-content {
-  padding: 80px 72px; display: flex; flex-direction: column; justify-content: center;
-}
-.about-eyebrow {
-  font-family: 'Space Mono', monospace;
-  font-size: .65rem; letter-spacing: .2em; text-transform: uppercase;
-  color: var(--lime); margin-bottom: 20px;
-}
-.about-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 2.8rem; font-weight: 700; line-height: 1.15;
-  margin-bottom: 24px; letter-spacing: -.02em;
-}
-.about-title em { font-style: italic; color: var(--lime); }
-.about-text { font-size: .92rem; color: rgba(245,240,228,.75); line-height: 1.8; margin-bottom: 36px; }
-.about-pills { display: flex; gap: 10px; flex-wrap: wrap; }
-.pill {
-  border: 1px solid rgba(245,240,228,.3);
-  padding: 6px 16px; border-radius: 100px;
-  font-size: .72rem; letter-spacing: .06em;
-  color: rgba(245,240,228,.8);
+.value-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--forest);
+  margin-bottom: 10px;
+  line-height: 1.3;
 }
 
-/* ── PRODUCTS ── */
-.products { padding: 120px 64px; background: var(--cream); }
-.products-inner { max-width: 1200px; margin: 0 auto; }
-.products-grid {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 56px;
+.value-desc {
+  font-size: .8rem;
+  color: var(--mid);
+  line-height: 1.65;
+  font-weight: 400;
 }
-.product-card {
-  background: var(--white); border-radius: 4px; overflow: hidden;
-  border: 1px solid var(--sand); transition: all .3s;
-  position: relative;
-}
-.product-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(26,61,40,.1); }
-.product-img-wrap {
-  height: 240px; overflow: hidden; position: relative;
-  background: var(--forest);
-}
-.product-img {
-  width: 100%; height: 100%; object-fit: cover;
-  transition: transform .6s ease; opacity: .88;
-}
-.product-card:hover .product-img { transform: scale(1.06); }
-.product-badge {
-  position: absolute; top: 14px; left: 14px;
-  background: var(--ochre); color: var(--cream);
-  font-family: 'Space Mono', monospace;
-  font-size: .6rem; letter-spacing: .1em; text-transform: uppercase;
-  padding: 4px 10px; border-radius: 2px;
-}
-.product-body { padding: 24px; }
-.product-name {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.25rem; font-weight: 700; color: var(--forest);
-  margin-bottom: 8px;
-}
-.product-desc { font-size: .82rem; color: #6B8070; line-height: 1.6; margin-bottom: 16px; }
-.product-footer {
-  display: flex; justify-content: space-between; align-items: center;
-  border-top: 1px solid var(--sand); padding-top: 14px;
-}
-.product-price {
-  font-family: 'Space Mono', monospace;
-  font-size: .75rem; color: var(--canopy); font-weight: 700;
-}
-.product-link {
-  font-size: .72rem; color: var(--ochre); font-weight: 500;
-  text-decoration: none; letter-spacing: .05em;
-  display: flex; align-items: center; gap: 4px;
-}
-
-/* ── CTA BAND ── */
-.cta-band {
-  background: var(--ochre); padding: 80px 64px;
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 40px; flex-wrap: wrap;
-}
-.cta-text h2 {
-  font-family: 'Playfair Display', serif;
-  font-size: 2.4rem; font-weight: 900; color: var(--forest);
-  line-height: 1.1; letter-spacing: -.02em;
-}
-.cta-text p { font-size: .92rem; color: rgba(15,30,20,.7); margin-top: 10px; line-height: 1.6; }
-.btn-dark {
-  background: var(--forest); color: var(--cream);
-  padding: 18px 40px; border-radius: 2px;
-  font-size: .82rem; font-weight: 500; letter-spacing: .1em; text-transform: uppercase;
-  text-decoration: none; white-space: nowrap;
-  border: 2px solid var(--forest); transition: all .3s;
-  display: inline-flex; align-items: center; gap: 10px;
-}
-.btn-dark:hover { background: transparent; color: var(--forest); }
-
-/* ── CONTACT ── */
-.contact { padding: 120px 64px; max-width: 1200px; margin: 0 auto; }
-.contact-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 80px; margin-top: 56px; }
-.contact-info h3 {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.6rem; color: var(--forest); margin-bottom: 20px;
-}
-.contact-info p { font-size: .88rem; color: #5A6E60; line-height: 1.8; margin-bottom: 32px; }
-.contact-detail {
-  display: flex; align-items: flex-start; gap: 14px; margin-bottom: 20px;
-}
-.contact-icon {
-  width: 36px; height: 36px; border-radius: 2px;
-  background: var(--forest); color: var(--cream);
-  display: flex; align-items: center; justify-content: center;
-  font-size: .9rem; flex-shrink: 0;
-}
-.contact-val { font-size: .85rem; color: var(--ink); font-weight: 500; }
-.contact-val span { display: block; font-size: .75rem; color: #8A9E90; font-weight: 400; margin-top: 2px; }
-
-.contact-form { display: flex; flex-direction: column; gap: 16px; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.form-group { display: flex; flex-direction: column; gap: 6px; }
-.form-group label {
-  font-size: .72rem; letter-spacing: .08em; text-transform: uppercase;
-  color: var(--canopy); font-weight: 600;
-}
-.form-group input, .form-group textarea, .form-group select {
-  padding: 12px 16px; border: 1.5px solid var(--sand); border-radius: 2px;
-  font-family: 'DM Sans', sans-serif; font-size: .88rem; color: var(--ink);
-  background: var(--white); transition: border-color .2s; outline: none;
-}
-.form-group input:focus, .form-group textarea:focus, .form-group select:focus {
-  border-color: var(--canopy);
-}
-.form-group textarea { resize: vertical; min-height: 100px; }
-.form-submit {
-  background: var(--forest); color: var(--cream);
-  padding: 14px 32px; border: none; border-radius: 2px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: .82rem; font-weight: 500; letter-spacing: .1em; text-transform: uppercase;
-  cursor: pointer; transition: background .3s; align-self: flex-start;
-}
-.form-submit:hover { background: var(--canopy); }
 
 /* ── FOOTER ── */
 footer {
-  background: var(--ink); color: rgba(245,240,228,.6);
-  padding: 56px 64px 32px;
+  padding: 36px 24px;
+  text-align: center;
+  background: var(--white);
 }
-.footer-top {
-  display: flex; justify-content: space-between; align-items: flex-start;
-  margin-bottom: 48px; flex-wrap: wrap; gap: 40px;
-}
-.footer-brand .logo {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.8rem; font-weight: 900; color: var(--cream); margin-bottom: 10px;
-}
-.footer-brand p { font-size: .8rem; line-height: 1.7; max-width: 260px; }
-.footer-links h4 {
-  font-family: 'Space Mono', monospace;
-  font-size: .65rem; letter-spacing: .15em; text-transform: uppercase;
-  color: var(--lime); margin-bottom: 16px;
-}
-.footer-links ul { list-style: none; }
-.footer-links li { margin-bottom: 10px; }
-.footer-links a {
-  font-size: .82rem; color: rgba(245,240,228,.55);
-  text-decoration: none; transition: color .2s;
-}
-.footer-links a:hover { color: var(--cream); }
-.footer-bottom {
-  border-top: 1px solid rgba(245,240,228,.1);
-  padding-top: 24px;
-  display: flex; justify-content: space-between; align-items: center;
-  flex-wrap: wrap; gap: 10px;
-}
-.footer-bottom p { font-size: .75rem; }
-.footer-bottom a { color: var(--lime); text-decoration: none; }
 
-/* ── SCROLL REVEAL ── */
-.reveal { opacity: 0; transform: translateY(32px); transition: all .7s cubic-bezier(.16,1,.3,1); }
-.reveal.visible { opacity: 1; transform: translateY(0); }
-.reveal-delay-1 { transition-delay: .1s; }
-.reveal-delay-2 { transition-delay: .2s; }
-.reveal-delay-3 { transition-delay: .3s; }
-.reveal-delay-4 { transition-delay: .4s; }
-
-/* ── RESPONSIVE ── */
-@media (max-width: 900px) {
-  .hero { grid-template-columns: 1fr; }
-  .hero-right { height: 50vw; }
-  .hero-left { padding: 100px 32px 60px; }
-  .services-grid { grid-template-columns: repeat(2,1fr); }
-  .about-strip { grid-template-columns: 1fr; }
-  .about-img-wrap { height: 300px; }
-  .products-grid { grid-template-columns: repeat(2,1fr); }
-  .contact-grid { grid-template-columns: 1fr; gap: 48px; }
-  nav { padding: 16px 24px; }
-  .nav-links { gap: 20px; }
-  .services, .contact { padding: 80px 32px; }
-  .products { padding: 80px 32px; }
-  .cta-band { padding: 60px 32px; }
-  footer { padding: 48px 32px 24px; }
+.footer-brand {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--forest);
+  margin-bottom: 8px;
+  letter-spacing: .03em;
 }
-@media (max-width: 600px) {
-  .services-grid, .products-grid { grid-template-columns: 1fr; }
-  .hero-stats { gap: 24px; }
-  .form-row { grid-template-columns: 1fr; }
-  .nav-links a:not(.nav-cta) { display: none; }
-  .footer-top { flex-direction: column; }
+
+.footer-info {
+  font-size: .75rem;
+  color: var(--mid);
+  font-weight: 400;
+  line-height: 1.8;
+}
+
+.footer-info a {
+  color: var(--canopy);
+  text-decoration: none;
+  font-weight: 500;
+}
+.footer-info a:hover { text-decoration: underline; }
+
+/* ── MOBILE ── */
+@media (max-width: 640px) {
+  nav { padding: 18px 20px; }
+  nav.scrolled { padding: 14px 20px; }
+
+  .hero { padding: 100px 20px 64px; }
+
+  .hero-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  .btn-primary, .btn-secondary {
+    width: 100%;
+    max-width: 320px;
+    justify-content: center;
+  }
+
+  .values { padding: 60px 20px; }
+  .values-grid {
+    grid-template-columns: 1fr;
+  }
+  .value-card { padding: 32px 24px; }
+}
+
+@media (max-width: 480px) {
+  .nav-brand { font-size: 1rem; }
 }
 </style>
 </head>
 <body>
 
-<!-- Cursor -->
-<div class="cursor" id="cursor"></div>
-<div class="cursor-ring" id="cursor-ring"></div>
-
-<!-- Nav -->
+<!-- NAV -->
 <nav id="nav">
-  <a href="/" class="nav-logo">
-    <span class="leaf-icon">🌿</span> AJÚA
-  </a>
-  <div class="nav-links">
-    <a href="#servicios">Servicios</a>
-    <a href="#productos">Productos</a>
-    <a href="#nosotros">Nosotros</a>
-    <a href="#contacto">Contacto</a>
-    <a href="https://tienda.agroajua.com" class="nav-cta">Tienda →</a>
-  </div>
+  <a href="/" class="nav-brand">AJÚA<span>·</span>AG</a>
 </nav>
 
-<!-- Hero -->
+<!-- HERO -->
 <section class="hero">
-  <div class="hero-left">
-    <div class="hero-eyebrow reveal">Agroindustria de Guatemala</div>
-    <h1 class="hero-title reveal reveal-delay-1">
-      Del campo<br>a tu mesa,
-      <em>con calidad.</em>
-    </h1>
-    <p class="hero-sub reveal reveal-delay-2">
-      Distribuimos vegetales frescos a supermercados, instituciones y exportadores. 
-      Producción responsable desde el corazón de Guatemala.
+  <div class="hero-inner">
+
+    <div class="hero-badge">Guatemala · Agroindustria</div>
+
+    <h1>AJÚA<br><em>Agroindustria</em></h1>
+
+    <p class="hero-sub">
+      Proveedor certificado de vegetales frescos.<br>
+      Exportación, maquila y empaque para Guatemala y Centroamérica.
     </p>
-    <div class="hero-actions reveal reveal-delay-3">
-      <a href="#productos" class="btn-primary">Ver productos <span>→</span></a>
-      <a href="#contacto" class="btn-ghost">Cotizar volumen</a>
+
+    <div class="hero-tags">
+      <span class="tag">Cadena de frío</span>
+      <span class="tag">BPM certificado</span>
+      <span class="tag">Entrega puntual</span>
     </div>
-    <div class="hero-stats reveal reveal-delay-4">
-      <div>
-        <div class="stat-num">15+</div>
-        <div class="stat-label">Años de experiencia</div>
-      </div>
-      <div>
-        <div class="stat-num">40+</div>
-        <div class="stat-label">Productos frescos</div>
-      </div>
-      <div>
-        <div class="stat-num">500+</div>
-        <div class="stat-label">Clientes activos</div>
-      </div>
+
+    <div class="hero-actions">
+      <a href="https://app.agroajua.com" class="btn-primary">
+        Sistema Interno &rarr;
+      </a>
+      <a href="https://tienda.agroajua.com" class="btn-secondary">
+        Portal de Clientes &rarr;
+      </a>
     </div>
+
   </div>
-  <div class="hero-right">
-    <img class="hero-img-main"
-      src="https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=1200&q=85&auto=format&fit=crop"
-      alt="Vegetales frescos AJÚA"
-      onerror="this.src='https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1200&q=85'">
-    <div class="hero-overlay"></div>
-    <div class="hero-tag">
-      <div class="hero-tag-label">Disponibilidad</div>
-      <div class="hero-tag-val">Entrega 24-48 hrs</div>
+</section>
+
+<!-- VALUE PROPS -->
+<section class="values">
+  <div class="values-inner">
+
+    <div class="values-label">Por qué AJÚA</div>
+
+    <div class="values-grid">
+
+      <div class="value-card">
+        <span class="value-icon">🌿</span>
+        <div class="value-title">Calidad BPM<br>Certificada</div>
+        <p class="value-desc">Buenas Prácticas de Manufactura en toda la cadena. Trazabilidad completa desde origen hasta entrega.</p>
+      </div>
+
+      <div class="value-card">
+        <span class="value-icon">❄️</span>
+        <div class="value-title">Cadena de frío<br>−18 °C</div>
+        <p class="value-desc">Infraestructura de refrigeración continua. Temperatura controlada en bodega, transporte y despacho.</p>
+      </div>
+
+      <div class="value-card">
+        <span class="value-icon">📦</span>
+        <div class="value-title">Entrega<br>Puntual</div>
+        <p class="value-desc">Logística propia con rutas optimizadas. Cumplimiento de ventanas horarias para supermercados y distribuidores.</p>
+      </div>
+
     </div>
   </div>
 </section>
 
-<!-- Marquee -->
-<div class="marquee-wrap">
-  <div class="marquee-track">
-    <span class="marquee-item">Repollo</span>
-    <span class="marquee-item">Cebolla</span>
-    <span class="marquee-item">Zanahoria</span>
-    <span class="marquee-item">Chile Pimiento</span>
-    <span class="marquee-item">Ejote</span>
-    <span class="marquee-item">Brócoli</span>
-    <span class="marquee-item">Papa</span>
-    <span class="marquee-item">Tomate</span>
-    <span class="marquee-item">Güicoy</span>
-    <span class="marquee-item">Aguacate</span>
-    <span class="marquee-item">Repollo</span>
-    <span class="marquee-item">Cebolla</span>
-    <span class="marquee-item">Zanahoria</span>
-    <span class="marquee-item">Chile Pimiento</span>
-    <span class="marquee-item">Ejote</span>
-    <span class="marquee-item">Brócoli</span>
-    <span class="marquee-item">Papa</span>
-    <span class="marquee-item">Tomate</span>
-    <span class="marquee-item">Güicoy</span>
-    <span class="marquee-item">Aguacate</span>
-  </div>
-</div>
-
-<!-- Servicios -->
-<section class="services" id="servicios">
-  <div class="section-header reveal">
-    <div class="section-eyebrow">Lo que hacemos</div>
-    <h2 class="section-title">Soluciones para<br><em>toda la cadena</em></h2>
-  </div>
-  <div class="services-grid">
-    <div class="service-card reveal">
-      <span class="service-icon">🥦</span>
-      <span class="service-num">01</span>
-      <div class="service-name">Vegetales Frescos</div>
-      <p class="service-desc">Repollo, cebolla, zanahoria, brócoli, ejote y más — cosechados y distribuidos con cadena de frío controlada.</p>
-    </div>
-    <div class="service-card reveal reveal-delay-1">
-      <span class="service-icon">🚛</span>
-      <span class="service-num">02</span>
-      <div class="service-name">Distribución Mayorista</div>
-      <p class="service-desc">Abastecimiento continuo para supermercados, mercados institucionales y cadenas de restaurantes a nivel nacional.</p>
-    </div>
-    <div class="service-card reveal reveal-delay-2">
-      <span class="service-icon">✈️</span>
-      <span class="service-num">03</span>
-      <div class="service-name">Exportación</div>
-      <p class="service-desc">Logística de exportación con documentación fitosanitaria completa hacia mercados de Norteamérica y Europa.</p>
-    </div>
-    <div class="service-card reveal reveal-delay-3">
-      <span class="service-icon">📦</span>
-      <span class="service-num">04</span>
-      <div class="service-name">Maquila y Empaque</div>
-      <p class="service-desc">Lavado, selección, empaque y etiquetado con marca propia o del cliente, cumpliendo normas internacionales de calidad.</p>
-    </div>
-  </div>
-</section>
-
-<!-- About -->
-<section class="about-strip" id="nosotros">
-  <div class="about-img-wrap">
-    <img class="about-img"
-      src="https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=900&q=80&auto=format&fit=crop"
-      alt="Campos de Guatemala"
-      onerror="this.src='https://images.unsplash.com/photo-1500651230702-0e2d8a49d4ad?w=900&q=80'">
-  </div>
-  <div class="about-content">
-    <div class="about-eyebrow reveal">Quiénes somos</div>
-    <h2 class="about-title reveal reveal-delay-1">
-      Raíces guatemaltecas,<br>
-      <em>estándares globales.</em>
-    </h2>
-    <p class="about-text reveal reveal-delay-2">
-      AJÚA Agroindustria nació con la misión de conectar el campo guatemalteco con los mercados más exigentes. 
-      Trabajamos directamente con productores locales, garantizando trazabilidad, frescura y calidad en cada entrega.
-    </p>
-    <div class="about-pills reveal reveal-delay-3">
-      <span class="pill">BPA Certificado</span>
-      <span class="pill">Cadena de Frío</span>
-      <span class="pill">HACCP</span>
-      <span class="pill">Registro Sanitario</span>
-      <span class="pill">Trazabilidad completa</span>
-    </div>
-  </div>
-</section>
-
-<!-- Productos -->
-<section class="products" id="productos">
-  <div class="products-inner">
-    <div class="section-header reveal">
-      <div class="section-eyebrow">Nuestro catálogo</div>
-      <h2 class="section-title">Frescos,<br><em>siempre disponibles.</em></h2>
-    </div>
-    <div class="products-grid">
-      <div class="product-card reveal">
-        <div class="product-img-wrap">
-          <img class="product-img"
-            src="https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?w=600&q=80&auto=format&fit=crop"
-            alt="Repollo"
-            onerror="this.src='https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&q=80'">
-          <span class="product-badge">Destacado</span>
-        </div>
-        <div class="product-body">
-          <div class="product-name">Repollo</div>
-          <p class="product-desc">Variedad verde y morado. Disponible en cajas de 4 unidades o sacos. Calibre uniforme.</p>
-          <div class="product-footer">
-            <span class="product-price">Desde Q 45 / caja</span>
-            <a href="https://tienda.agroajua.com" class="product-link">Ver en tienda →</a>
-          </div>
-        </div>
-      </div>
-      <div class="product-card reveal reveal-delay-1">
-        <div class="product-img-wrap">
-          <img class="product-img"
-            src="https://images.unsplash.com/photo-1582284540020-8acbe03f4924?w=600&q=80&auto=format&fit=crop"
-            alt="Brócoli"
-            onerror="this.src='https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?w=600&q=80'">
-          <span class="product-badge">Exportación</span>
-        </div>
-        <div class="product-body">
-          <div class="product-name">Brócoli</div>
-          <p class="product-desc">Brócoli premium para mercado nacional e internacional. Calibres A y B. Empaque a pedido.</p>
-          <div class="product-footer">
-            <span class="product-price">Consultar precio</span>
-            <a href="https://tienda.agroajua.com" class="product-link">Ver en tienda →</a>
-          </div>
-        </div>
-      </div>
-      <div class="product-card reveal reveal-delay-2">
-        <div class="product-img-wrap">
-          <img class="product-img"
-            src="https://images.unsplash.com/photo-1508747703725-719777637510?w=600&q=80&auto=format&fit=crop"
-            alt="Cebolla"
-            onerror="this.src='https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=600&q=80'">
-        </div>
-        <div class="product-body">
-          <div class="product-name">Cebolla Blanca</div>
-          <p class="product-desc">Cebolla seca de primera calidad. Mallas de 25 lb y 50 lb. Disponibilidad constante.</p>
-          <div class="product-footer">
-            <span class="product-price">Desde Q 80 / malla</span>
-            <a href="https://tienda.agroajua.com" class="product-link">Ver en tienda →</a>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div style="text-align:center;margin-top:48px;" class="reveal">
-      <a href="https://tienda.agroajua.com" class="btn-primary">Ver catálogo completo →</a>
-    </div>
-  </div>
-</section>
-
-<!-- CTA -->
-<div class="cta-band">
-  <div class="cta-text reveal">
-    <h2>¿Comprás en volumen?<br>Negociemos.</h2>
-    <p>Precios especiales para supermercados, gobierno e instituciones.<br>Registrate y accedé a tu lista de precios privada.</p>
-  </div>
-  <a href="https://tienda.agroajua.com" class="btn-dark reveal reveal-delay-1">Crear cuenta privada →</a>
-</div>
-
-<!-- Contacto -->
-<section class="contact" id="contacto">
-  <div class="section-header reveal">
-    <div class="section-eyebrow">Hablemos</div>
-    <h2 class="section-title">¿Listo para<br><em>hacer negocio?</em></h2>
-  </div>
-  <div class="contact-grid">
-    <div class="contact-info reveal">
-      <h3>Estamos en Guatemala</h3>
-      <p>Contactanos para cotizaciones, pedidos especiales o para registrarte como cliente mayorista. Respondemos en menos de 24 horas.</p>
-      <div class="contact-detail">
-        <div class="contact-icon">📍</div>
-        <div>
-          <div class="contact-val">Guatemala, Guatemala
-            <span>Servicio a nivel nacional</span>
-          </div>
-        </div>
-      </div>
-      <div class="contact-detail">
-        <div class="contact-icon">📧</div>
-        <div>
-          <div class="contact-val">agroajua@gmail.com
-            <span>Respuesta en 24 hrs</span>
-          </div>
-        </div>
-      </div>
-      <div class="contact-detail">
-        <div class="contact-icon">💬</div>
-        <div>
-          <div class="contact-val">WhatsApp Disponible
-            <span>Para clientes registrados</span>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="reveal reveal-delay-1">
-      <form class="contact-form" onsubmit="submitForm(event)">
-        <div class="form-row">
-          <div class="form-group">
-            <label>Nombre</label>
-            <input type="text" placeholder="Tu nombre completo" required>
-          </div>
-          <div class="form-group">
-            <label>Empresa</label>
-            <input type="text" placeholder="Nombre de tu empresa">
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Email</label>
-            <input type="email" placeholder="correo@empresa.com" required>
-          </div>
-          <div class="form-group">
-            <label>Tipo de cliente</label>
-            <select>
-              <option value="">Seleccionar...</option>
-              <option>Supermercado / Cadena</option>
-              <option>Institución Gobierno</option>
-              <option>Restaurante / Hotel</option>
-              <option>Mayorista / Distribuidor</option>
-              <option>Exportador</option>
-              <option>Otro</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Mensaje</label>
-          <textarea placeholder="Describí tu requerimiento, volumen aproximado y frecuencia de pedido..." required></textarea>
-        </div>
-        <button type="submit" class="form-submit">Enviar mensaje →</button>
-      </form>
-    </div>
-  </div>
-</section>
-
-<!-- Footer -->
+<!-- FOOTER -->
 <footer>
-  <div class="footer-top">
-    <div class="footer-brand">
-      <div class="logo">🌿 AJÚA</div>
-      <p>Agroindustria guatemalteca con estándares internacionales. Del campo a tu mesa.</p>
-    </div>
-    <div class="footer-links">
-      <h4>Empresa</h4>
-      <ul>
-        <li><a href="#nosotros">Quiénes somos</a></li>
-        <li><a href="#servicios">Servicios</a></li>
-        <li><a href="#productos">Productos</a></li>
-        <li><a href="#contacto">Contacto</a></li>
-      </ul>
-    </div>
-    <div class="footer-links">
-      <h4>Portal</h4>
-      <ul>
-        <li><a href="https://tienda.agroajua.com">Tienda en línea</a></li>
-        <li><a href="https://tienda.agroajua.com/registro">Crear cuenta</a></li>
-        <li><a href="/bpm.html">Sistema interno</a></li>
-      </ul>
-    </div>
-  </div>
-  <div class="footer-bottom">
-    <p>© 2026 AJÚA Agroindustria — Guatemala. Todos los derechos reservados.</p>
-    <p>Diseñado por <a href="#">AJÚA Digital</a></p>
+  <div class="footer-brand">AJÚA · Agroindustria</div>
+  <div class="footer-info">
+    Guatemala &nbsp;·&nbsp; <a href="mailto:agroajua@gmail.com">agroajua@gmail.com</a>
   </div>
 </footer>
 
 <script>
-// Cursor
-const cursor = document.getElementById('cursor');
-const ring = document.getElementById('cursor-ring');
-let mx=0,my=0,rx=0,ry=0;
-document.addEventListener('mousemove', e => {
-  mx = e.clientX; my = e.clientY;
-  cursor.style.transform = `translate(${mx-6}px,${my-6}px)`;
-});
-function animRing(){
-  rx += (mx-rx)*.12; ry += (my-ry)*.12;
-  ring.style.transform = `translate(${rx-18}px,${ry-18}px)`;
-  requestAnimationFrame(animRing);
-}
-animRing();
-
-// Nav scroll
-window.addEventListener('scroll', () => {
-  document.getElementById('nav').classList.toggle('scrolled', scrollY > 60);
-});
-
-// Scroll reveal
-const obs = new IntersectionObserver(entries => {
-  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
-}, { threshold: .12 });
-document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
-
-// Form submit
-function submitForm(e) {
-  e.preventDefault();
-  const btn = e.target.querySelector('.form-submit');
-  btn.textContent = '✓ Mensaje enviado';
-  btn.style.background = '#2D6645';
-  setTimeout(() => { btn.textContent = 'Enviar mensaje →'; btn.style.background = ''; e.target.reset(); }, 3000);
-}
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 20);
+  }, { passive: true });
 </script>
+
 </body>
 </html>
