@@ -281,6 +281,108 @@ h1 em {
   font-weight: 400;
 }
 
+/* ── INSUMOS ── */
+.insumos {
+  background: var(--white);
+  padding: 88px 24px;
+}
+
+.insumos-inner {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.section-label {
+  text-align: center;
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  color: var(--leaf);
+  margin-bottom: 14px;
+}
+
+.section-heading {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  font-weight: 900;
+  color: var(--forest);
+  text-align: center;
+  line-height: 1.15;
+  margin-bottom: 12px;
+  letter-spacing: -.01em;
+}
+
+.section-sub {
+  text-align: center;
+  font-size: .9rem;
+  color: var(--mid);
+  line-height: 1.65;
+  max-width: 480px;
+  margin: 0 auto 52px;
+  font-weight: 400;
+}
+
+.insumos-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.insumo-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 28px 28px;
+  border: 1.5px solid var(--sand);
+  border-radius: 12px;
+  background: var(--mist);
+  transition: all .22s ease;
+  text-decoration: none;
+}
+.insumo-card:hover {
+  border-color: var(--leaf);
+  background: var(--cream);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(26,61,40,.08);
+}
+
+.insumo-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: rgba(74,158,106,.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  flex-shrink: 0;
+}
+
+.insumo-body {}
+
+.insumo-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--forest);
+  margin-bottom: 6px;
+  line-height: 1.2;
+}
+
+.insumo-desc {
+  font-size: .78rem;
+  color: var(--mid);
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+@media (max-width: 640px) {
+  .insumos { padding: 60px 20px; }
+  .insumos-grid { grid-template-columns: 1fr; gap: 12px; }
+  .insumo-card { padding: 22px 20px; }
+}
+
 /* ── FOOTER ── */
 footer {
   padding: 36px 24px;
@@ -402,6 +504,55 @@ footer {
         <span class="value-icon">📦</span>
         <div class="value-title">Entrega<br>Puntual</div>
         <p class="value-desc">Logística propia con rutas optimizadas. Cumplimiento de ventanas horarias para supermercados y distribuidores.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- INSUMOS IMPORTADOS -->
+<section class="insumos">
+  <div class="insumos-inner">
+
+    <div class="section-label">Insumos Importados</div>
+    <h2 class="section-heading">Todo lo que necesitas<br><em>para empacar y producir</em></h2>
+    <p class="section-sub">
+      Materiales de empaque y agroinsumos importados directamente.<br>
+      Disponibilidad inmediata para productores y procesadoras.
+    </p>
+
+    <div class="insumos-grid">
+
+      <div class="insumo-card">
+        <div class="insumo-icon">🛍️</div>
+        <div class="insumo-body">
+          <div class="insumo-title">Bolsas</div>
+          <p class="insumo-desc">Bolsas plásticas y de malla para empaque de vegetales frescos. Diferentes calibres y medidas para exportación y retail.</p>
+        </div>
+      </div>
+
+      <div class="insumo-card">
+        <div class="insumo-icon">📦</div>
+        <div class="insumo-body">
+          <div class="insumo-title">Cajillas Plásticas</div>
+          <p class="insumo-desc">Cajillas reutilizables para manejo, transporte y almacenamiento en cadena de frío. Alta resistencia y apilables.</p>
+        </div>
+      </div>
+
+      <div class="insumo-card">
+        <div class="insumo-icon">🗂️</div>
+        <div class="insumo-body">
+          <div class="insumo-title">Empaques</div>
+          <p class="insumo-desc">Cajas de cartón, bandejas y materiales de empaque para presentación en supermercados. Diseño y etiquetado a medida.</p>
+        </div>
+      </div>
+
+      <div class="insumo-card">
+        <div class="insumo-icon">🌱</div>
+        <div class="insumo-body">
+          <div class="insumo-title">Insumos Agrícolas</div>
+          <p class="insumo-desc">Fertilizantes, bioinsumos y agroquímicos importados para producción certificada. Asesoría técnica incluida.</p>
+        </div>
       </div>
 
     </div>
