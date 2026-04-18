@@ -60,50 +60,101 @@ function backupDownloadJSON(manual = false) {
   }
 }
 
-// ── Descarga Excel diaria ──────────────────────────────────────────
+// ── Construir workbook Excel ───────────────────────────────────────
+function backupBuildWB() {
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, rpSheetResumen('2020-01-01','2099-12-31','Historico'), 'Resumen');
+  XLSX.utils.book_append_sheet(wb, rpSheetGastosDiarios('2020-01-01','2099-12-31'),      'Gastos Diarios');
+  XLSX.utils.book_append_sheet(wb, rpSheetMaquila('2020-01-01','2099-12-31'),            'Maquila Semanal');
+  XLSX.utils.book_append_sheet(wb, rpSheetVentasGT('2020-01-01','2099-12-31'),           'Ventas GT');
+  XLSX.utils.book_append_sheet(wb, rpSheetVentasExport('2020-01-01','2099-12-31'),       'Ventas Export');
+  XLSX.utils.book_append_sheet(wb, rpSheetWalmart('2020-01-01','2099-12-31'),            'Pedidos Walmart');
+  XLSX.utils.book_append_sheet(wb, rpSheetTL('2020-01-01','2099-12-31'),                 'Control TL');
+  XLSX.utils.book_append_sheet(wb, rpSheetDT('2020-01-01','2099-12-31'),                 'Control DT');
+  XLSX.utils.book_append_sheet(wb, rpSheetAL('2020-01-01','2099-12-31'),                 'Control AL');
+  XLSX.utils.book_append_sheet(wb, rpSheetBAS('2020-01-01','2099-12-31'),                'Control BAS');
+  XLSX.utils.book_append_sheet(wb, rpSheetROD('2020-01-01','2099-12-31'),                'Control ROD');
+  XLSX.utils.book_append_sheet(wb, rpSheetFUM('2020-01-01','2099-12-31'),                'Control FUM');
+  XLSX.utils.book_append_sheet(wb, rpSheetIentradas('2020-01-01','2099-12-31'),          'Inv Entradas');
+  XLSX.utils.book_append_sheet(wb, rpSheetIsalidas('2020-01-01','2099-12-31'),           'Inv Salidas');
+  if (typeof rpSheetGCConcursos    === 'function') XLSX.utils.book_append_sheet(wb, rpSheetGCConcursos(),    'GC Concursos');
+  if (typeof rpSheetGCDescubiertos === 'function') XLSX.utils.book_append_sheet(wb, rpSheetGCDescubiertos(), 'GC Descubiertos');
+  return wb;
+}
+
+// ── Descarga Excel (llamar SOLO desde gesto de usuario) ────────────
+function backupEjecutarDescargaExcel(nombre) {
+  try {
+    rpEnsureXLSX(function() {
+      try {
+        var wb = backupBuildWB();
+        XLSX.writeFile(wb, nombre);
+        console.log('📊 Backup Excel descargado: ' + nombre);
+      } catch(e) {
+        console.warn('⚠ Backup Excel error al escribir:', e.message);
+        toast('⚠ Error al generar Excel: ' + e.message, true);
+      }
+    });
+  } catch(e) {
+    console.warn('⚠ backupEjecutarDescargaExcel error:', e.message);
+  }
+}
+
+// ── Preparar backup Excel diario (muestra botón, NO descarga solo) ─
 function backupDownloadExcel(manual) {
   try {
     var today = new Date(Date.now() - 6*3600000).toISOString().split('T')[0];
     if (!manual) {
-      if (localStorage.getItem(BACKUP_DAILY_XLSX_KEY) === today) return; // ya se descargó hoy
+      if (localStorage.getItem(BACKUP_DAILY_XLSX_KEY) === today) return; // ya se notificó hoy
     }
     if (typeof rpEnsureXLSX !== 'function' || typeof rpSheetGastosDiarios !== 'function') {
       console.warn('⚠ Módulo Excel no disponible aún, reintentando en 30s');
       setTimeout(function() { backupDownloadExcel(manual); }, 30000);
       return;
     }
-    rpEnsureXLSX(function() {
-      try {
-        var wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, rpSheetResumen('2020-01-01','2099-12-31','Historico'), 'Resumen');
-        XLSX.utils.book_append_sheet(wb, rpSheetGastosDiarios('2020-01-01','2099-12-31'),      'Gastos Diarios');
-        XLSX.utils.book_append_sheet(wb, rpSheetMaquila('2020-01-01','2099-12-31'),            'Maquila Semanal');
-        XLSX.utils.book_append_sheet(wb, rpSheetVentasGT('2020-01-01','2099-12-31'),           'Ventas GT');
-        XLSX.utils.book_append_sheet(wb, rpSheetVentasExport('2020-01-01','2099-12-31'),       'Ventas Export');
-        XLSX.utils.book_append_sheet(wb, rpSheetWalmart('2020-01-01','2099-12-31'),            'Pedidos Walmart');
-        XLSX.utils.book_append_sheet(wb, rpSheetTL('2020-01-01','2099-12-31'),                 'Control TL');
-        XLSX.utils.book_append_sheet(wb, rpSheetDT('2020-01-01','2099-12-31'),                 'Control DT');
-        XLSX.utils.book_append_sheet(wb, rpSheetAL('2020-01-01','2099-12-31'),                 'Control AL');
-        XLSX.utils.book_append_sheet(wb, rpSheetBAS('2020-01-01','2099-12-31'),                'Control BAS');
-        XLSX.utils.book_append_sheet(wb, rpSheetROD('2020-01-01','2099-12-31'),                'Control ROD');
-        XLSX.utils.book_append_sheet(wb, rpSheetFUM('2020-01-01','2099-12-31'),                'Control FUM');
-        XLSX.utils.book_append_sheet(wb, rpSheetIentradas('2020-01-01','2099-12-31'),          'Inv Entradas');
-        XLSX.utils.book_append_sheet(wb, rpSheetIsalidas('2020-01-01','2099-12-31'),           'Inv Salidas');
-        if (typeof rpSheetGCConcursos    === 'function') XLSX.utils.book_append_sheet(wb, rpSheetGCConcursos(),    'GC Concursos');
-        if (typeof rpSheetGCDescubiertos === 'function') XLSX.utils.book_append_sheet(wb, rpSheetGCDescubiertos(), 'GC Descubiertos');
-        var nombre = 'AJUA_backup_' + today + '.xlsx';
-        XLSX.writeFile(wb, nombre);
-        localStorage.setItem(BACKUP_DAILY_XLSX_KEY, today);
-        if (manual) toast('✅ Backup Excel descargado');
-        console.log('📊 Backup Excel descargado: ' + nombre);
-      } catch(e) {
-        console.warn('⚠ Backup Excel falló:', e.message);
-        if (manual) toast('⚠ Error backup Excel: ' + e.message, true);
-      }
-    });
+    var nombre = 'AJUA_backup_' + today + '.xlsx';
+    if (manual) {
+      // Descarga directa si el usuario hizo click
+      backupEjecutarDescargaExcel(nombre);
+      localStorage.setItem(BACKUP_DAILY_XLSX_KEY, today);
+      toast('✅ Backup Excel descargado');
+    } else {
+      // Automático: mostrar botón flotante en lugar de descargar
+      localStorage.setItem(BACKUP_DAILY_XLSX_KEY, today);
+      backupMostrarBotonPendiente(nombre);
+    }
   } catch(e) {
     console.warn('⚠ backupDownloadExcel error:', e.message);
   }
+}
+
+// ── Botón flotante "Backup listo → Descargar" ─────────────────────
+function backupMostrarBotonPendiente(nombre) {
+  // Evitar duplicados
+  var existing = document.getElementById('backup-ready-btn');
+  if (existing) existing.remove();
+
+  var btn = document.createElement('button');
+  btn.id = 'backup-ready-btn';
+  btn.innerHTML = '📊 Backup diario listo &nbsp;→&nbsp; Descargar Excel';
+  btn.title = nombre;
+  btn.style.cssText = [
+    'position:fixed', 'bottom:24px', 'right:24px', 'z-index:99999',
+    'padding:11px 20px', 'background:#1B5E20', 'color:#fff',
+    'border:none', 'border-radius:8px', 'font-size:.85rem',
+    'font-weight:700', 'cursor:pointer', 'box-shadow:0 4px 16px rgba(0,0,0,.25)',
+    'font-family:inherit', 'transition:opacity .2s',
+  ].join(';');
+  btn.addEventListener('click', function() {
+    backupEjecutarDescargaExcel(nombre);
+    btn.innerHTML = '✅ Descargado';
+    btn.style.background = '#2E7D32';
+    setTimeout(function() { btn.remove(); }, 3000);
+  });
+  // Auto-ocultar después de 10 minutos
+  setTimeout(function() { if (btn.parentNode) btn.remove(); }, 600000);
+  document.body.appendChild(btn);
+  console.log('📊 Backup diario listo — botón mostrado');
 }
 
 // ── Restaurar desde snapshot ───────────────────────────────────────
