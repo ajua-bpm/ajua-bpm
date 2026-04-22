@@ -362,24 +362,104 @@ function wiCheckQueue() {
     var qRef = _fbDb.doc(_fbDb.db, 'ajua_bpm', 'walmart_queue');
     _fbDb.getDoc(qRef).then(function(snap) {
       if (!snap.exists()) return;
-      var data    = snap.data();
-      var queue   = (data.queue || []).filter(function(p) { return !p._importado; });
+      var data  = snap.data();
+      var queue = (data.queue || []).filter(function(p) { return !p._importado; });
       if (!queue.length) return;
       _wiQueuePending = queue;
-      var btn = document.getElementById('wi-btn-queue');
-      if (btn) { btn.style.display = ''; btn.textContent = '📬 ' + queue.length + ' nuevo' + (queue.length > 1 ? 's' : ''); }
-      // Banner dashboard + badge menú
-      var n = queue.length;
-      var banner = document.getElementById('dash-wm-banner');
-      var bannerTxt = document.getElementById('dash-wm-banner-txt');
-      var badge = document.getElementById('nav-wm-badge');
-      if (n > 0) {
-        if (bannerTxt) bannerTxt.textContent = n + ' pedido' + (n > 1 ? 's' : '') + ' nuevo' + (n > 1 ? 's' : '') + ' de Walmart';
-        if (banner) banner.style.display = '';
-        if (badge) { badge.textContent = n; badge.style.display = ''; }
+
+      // Auto-importar silenciosamente los que no existan aún en DB
+      if (typeof _fbLoaded !== 'undefined' && _fbLoaded) {
+        _wiAutoImportar(queue);
+      } else {
+        // Mostrar botón si Firebase aún no cargó (fallback manual)
+        _wiMostrarBadge(queue.length);
       }
     }).catch(function(e) { console.log('wiCheckQueue:', e.message); });
   } catch(e) { console.log('wiCheckQueue err:', e.message); }
+}
+
+function _wiAutoImportar(queue) {
+  if (!DB.pedidosWalmart) DB.pedidosWalmart = [];
+  var importados = 0;
+
+  queue.forEach(function(p) {
+    var dup = DB.pedidosWalmart.some(function(x) {
+      return x.correlativo === p.correlativo ||
+             (x.fechaEntrega === p.fechaEntrega &&
+              x.rubros && p.rubros && x.rubros.length === p.rubros.length);
+    });
+    if (dup) return;
+
+    DB.pedidosWalmart.unshift({
+      id: p.id || uid(), ts: p.ts || now(),
+      correlativo:  p.correlativo  || '',
+      fechaEntrega: p.fechaEntrega || '',
+      horaEntrega:  p.horaEntrega  || '16:00',
+      rampa:        p.rampa        || '',
+      oc: '', atlas: '',
+      nota:         p.nota         || '',
+      obs:          'Auto-importado desde Gmail · ' + (p.correlativo || p.id || ''),
+      rubros: (p.rubros || []).map(function(r, idx) {
+        return {
+          n: idx + 1, item: r.n || r.item || '',
+          descripcion:  r.desc || r.descripcion || '',
+          cajasPedidas: r.cajas || r.cajasPedidas || 0,
+          productoId:   r.prodId || r.productoId || '',
+          estado: 'pendiente', cajasAceptadas: null, cajasRechazadas: null,
+        };
+      }),
+      estado: 'pendiente', esAgregado: false, baseId: null,
+      albaranDoc: null, rechazoDoc: null, cierreTs: null,
+    });
+    importados++;
+  });
+
+  if (!importados) return;
+
+  save();
+  try { pwRenderLista(); }      catch(e) {}
+  try { pwRenderCalendario(); } catch(e) {}
+
+  // Notificación toast + browser notification
+  var msg = '📬 ' + importados + ' pedido' + (importados > 1 ? 's' : '') + ' nuevo' + (importados > 1 ? 's' : '') + ' de Walmart importado' + (importados > 1 ? 's' : '') + ' automáticamente';
+  try { toast(msg); } catch(e) {}
+
+  if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+    try {
+      new Notification('AJÚA BPM — Pedido Walmart', {
+        body: importados + ' pedido(s) nuevo(s) importados desde Gmail · ' + (queue[0].correlativo || ''),
+        icon: '/favicon.ico',
+      });
+    } catch(e) {}
+  } else if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+
+  // Limpiar cola en Firestore
+  try {
+    var qRef = _fbDb.doc(_fbDb.db, 'ajua_bpm', 'walmart_queue');
+    _fbDb.setDoc(qRef, { queue: [], lastCleared: now() });
+  } catch(e) {}
+
+  _wiMostrarBadge(0);
+  console.log('✅ wiAutoImportar: ' + importados + ' pedido(s) importados automáticamente');
+}
+
+function _wiMostrarBadge(n) {
+  var btn      = document.getElementById('wi-btn-queue');
+  var banner   = document.getElementById('dash-wm-banner');
+  var bannerTxt = document.getElementById('dash-wm-banner-txt');
+  var badge    = document.getElementById('nav-wm-badge');
+  if (n > 0) {
+    if (btn)       { btn.style.display = ''; btn.textContent = '📬 ' + n + ' nuevo' + (n > 1 ? 's' : ''); }
+    if (bannerTxt) bannerTxt.textContent = n + ' pedido' + (n > 1 ? 's' : '') + ' nuevo' + (n > 1 ? 's' : '') + ' de Walmart';
+    if (banner)    banner.style.display = '';
+    if (badge)     { badge.textContent = n; badge.style.display = ''; }
+  } else {
+    if (btn)    btn.style.display = 'none';
+    if (banner) banner.style.display = 'none';
+    if (badge)  badge.style.display = 'none';
+  }
 }
 
 function wiImportarQueue() {
@@ -598,11 +678,12 @@ function wiCerrarRemitentes() {
   _wiTempSenders = null;
 }
 
-// Verificar cola 8 segundos después de que Firebase cargue
+// Verificar cola al cargar + cada 5 minutos (polling)
 var _wiInitCheck = setInterval(function() {
   if (typeof _fbLoaded !== 'undefined' && _fbLoaded) {
     clearInterval(_wiInitCheck);
     setTimeout(wiCheckQueue, 8000);
+    setInterval(wiCheckQueue, 5 * 60 * 1000); // polling cada 5 min
   }
 }, 2000);
 
