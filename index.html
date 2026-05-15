@@ -3,592 +3,786 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AGROSIS · Sistema de gestión de campo y empaque</title>
-<meta name="description" content="Plataforma BPM, trazabilidad y control de productos para productores, empacadores y compradores agrícolas. Inspecciones, CAPA, cadena de frío.">
+<title>Agrosis — Plataforma de gestión de campo y empaque</title>
+<meta name="description" content="Plataforma de inocuidad, trazabilidad y gestión operativa para productores, empacadores y compradores agrícolas.">
 <link rel="icon" href="/favicon-32.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,400;1,9..144,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --forest: #1A3D28;
-  --canopy: #2D6645;
-  --leaf:   #4A9E6A;
-  --cream:  #F5F0E4;
-  --sand:   #E8DCC8;
-  --ink:    #0F1E14;
-  --mist:   #F9F6EF;
-  --mid:    #6B7B70;
-  --white:  #FDFCF8;
-  --danger: #C62828;
+  --bone:   #F8F3E9;
+  --ink:    #1A1A18;
+  --forest: #1F3A2C;
+  --ochre:  #A8835A;
+  --muted:  #6B6B60;
+  --sand:   #E7DDC9;
+  --rule:   rgba(26,26,24,.10);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 body {
   font-family: 'Inter', system-ui, sans-serif;
-  background: var(--white);
+  background: var(--bone);
   color: var(--ink);
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  text-rendering: optimizeLegibility;
 }
+::selection { background: var(--ochre); color: var(--bone); }
 a { color: inherit; text-decoration: none; }
-img { max-width: 100%; display: block; }
 
-/* ── NAV ── */
-nav {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 18px 32px;
-  background: rgba(253, 252, 248, 0.92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+/* ── Mark ── */
+.mark {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 1.05rem;
+  letter-spacing: -.01em;
+  color: var(--forest);
+}
+.mark em {
+  font-style: italic;
+  color: var(--ochre);
+  font-weight: 400;
+}
+
+/* ── Top bar ── */
+header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 22px 56px;
+  background: rgba(248,243,233,.84);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border-bottom: 1px solid transparent;
-  transition: border-color .2s;
+  transition: border-color .25s;
 }
-nav.scrolled { border-bottom-color: var(--sand); box-shadow: 0 1px 12px rgba(15,30,20,.04); }
-.nav-brand {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 1.45rem; font-weight: 900;
-  color: var(--forest); letter-spacing: .04em;
+header.lined { border-bottom-color: var(--rule); }
+header nav { font-size: .82rem; color: var(--muted); }
+header nav a {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: .95rem;
+  color: var(--forest);
+  border-bottom: 1px solid var(--ochre);
+  padding-bottom: 1px;
 }
-.nav-brand span { color: var(--leaf); }
-.nav-cta {
-  padding: 9px 20px; border-radius: 100px;
-  background: var(--forest); color: #fff;
-  font-weight: 600; font-size: .85rem;
-  transition: background .15s;
+@media (max-width: 720px) {
+  header { padding: 16px 22px; }
 }
-.nav-cta:hover { background: var(--canopy); }
-@media (max-width: 640px) {
-  nav { padding: 14px 18px; }
-  .nav-brand { font-size: 1.2rem; }
-  .nav-cta { padding: 7px 14px; font-size: .78rem; }
+
+/* ── Layout ── */
+.wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 56px;
+}
+@media (max-width: 720px) { .wrap { padding: 0 22px; } }
+
+.section-num {
+  font-family: 'Inter', sans-serif;
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .26em;
+  text-transform: uppercase;
+  color: var(--ochre);
+  margin-bottom: 22px;
+}
+
+h2 {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: clamp(2.1rem, 4vw, 3.1rem);
+  line-height: 1.08;
+  letter-spacing: -.015em;
+  color: var(--forest);
+  max-width: 14ch;
+}
+h2 em { font-style: italic; font-weight: 400; color: var(--ochre); }
+
+.lead {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.04rem;
+  line-height: 1.62;
+  color: var(--muted);
+  max-width: 56ch;
+  margin-top: 24px;
 }
 
 /* ── HERO ── */
 .hero {
-  min-height: 96vh;
-  display: flex; align-items: center; justify-content: center;
-  padding: 130px 24px 90px;
-  text-align: center;
-  position: relative;
-  background:
-    radial-gradient(ellipse 70% 60% at 50% 10%, rgba(74,158,106,.10) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at 50% 100%, rgba(26,61,40,.05) 0%, transparent 60%);
+  padding: 200px 56px 160px;
+  max-width: 1180px;
+  margin: 0 auto;
 }
-.hero-inner { max-width: 880px; }
-.hero-eyebrow {
-  display: inline-block;
-  padding: 5px 14px; border-radius: 100px;
-  background: rgba(45,102,69,.10);
-  color: var(--canopy);
-  font-size: .78rem; font-weight: 700;
-  text-transform: uppercase; letter-spacing: .12em;
-  margin-bottom: 28px;
+.hero .stamp {
+  font-family: 'Inter', sans-serif;
+  font-size: .76rem;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  margin-bottom: 36px;
 }
-h1.hero-title {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: clamp(2.4rem, 6.5vw, 4.6rem);
-  font-weight: 900;
-  line-height: 1.06;
+.hero .stamp::before {
+  content: ''; display: inline-block; width: 28px; height: 1px;
+  background: var(--ochre); vertical-align: middle; margin-right: 14px;
+}
+.hero h1 {
+  font-family: 'Fraunces', serif;
+  font-weight: 400;
+  font-size: clamp(2.8rem, 7.5vw, 5.6rem);
+  line-height: 1.02;
+  letter-spacing: -.025em;
+  color: var(--ink);
+  max-width: 18ch;
+  margin-bottom: 36px;
+}
+.hero h1 em {
+  font-style: italic;
+  font-weight: 600;
   color: var(--forest);
-  letter-spacing: -.02em;
-  margin-bottom: 22px;
 }
-h1.hero-title em {
-  font-style: italic; color: var(--leaf);
+.hero .sub {
+  font-size: 1.18rem;
+  line-height: 1.55;
+  color: var(--muted);
+  max-width: 58ch;
+  margin-bottom: 48px;
+  font-weight: 300;
 }
-.hero-sub {
-  font-size: clamp(1rem, 1.8vw, 1.22rem);
-  color: var(--mid); font-weight: 400;
-  max-width: 620px; margin: 0 auto 36px;
+.hero .row {
+  display: flex; align-items: center; gap: 28px; flex-wrap: wrap;
+}
+.link-arrow {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.05rem;
+  color: var(--forest);
+  border-bottom: 1px solid var(--forest);
+  padding-bottom: 2px;
+  transition: color .15s, border-color .15s;
+}
+.link-arrow:hover { color: var(--ochre); border-bottom-color: var(--ochre); }
+.aside {
+  font-size: .82rem;
+  color: var(--muted);
+  font-weight: 400;
+}
+.aside::before {
+  content: '·'; margin-right: 14px; color: var(--ochre);
+}
+@media (max-width: 720px) {
+  .hero { padding: 140px 22px 100px; }
+}
+
+/* ── Section 01 — audiencias ── */
+.audiencias {
+  padding: 120px 56px;
+  border-top: 1px solid var(--rule);
+}
+.audiencias .head {
+  max-width: 1080px; margin: 0 auto 80px;
+}
+.aud-list {
+  max-width: 1080px; margin: 0 auto;
+}
+.aud-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 2fr;
+  gap: 36px;
+  padding: 44px 0;
+  border-top: 1px solid var(--rule);
+  align-items: baseline;
+}
+.aud-row:last-child { border-bottom: 1px solid var(--rule); }
+.aud-num {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.5rem;
+  color: var(--ochre);
+}
+.aud-title {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 1.85rem;
+  letter-spacing: -.01em;
+  color: var(--forest);
+  line-height: 1.05;
+}
+.aud-body {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.02rem;
+  line-height: 1.65;
+  color: var(--ink);
+  font-weight: 400;
+}
+.aud-body span {
+  display: block;
+  font-size: .85rem;
+  color: var(--muted);
+  margin-top: 14px;
   line-height: 1.55;
 }
-.hero-cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-.btn-primary {
-  padding: 14px 28px; border-radius: 100px;
-  background: var(--forest); color: #fff;
-  font-weight: 700; font-size: .95rem;
-  border: none; cursor: pointer; font-family: inherit;
-  transition: all .15s;
-  box-shadow: 0 4px 16px rgba(26,61,40,.18);
-}
-.btn-primary:hover { background: var(--canopy); transform: translateY(-1px); box-shadow: 0 6px 22px rgba(26,61,40,.25); }
-.btn-secondary {
-  padding: 14px 28px; border-radius: 100px;
-  background: transparent; color: var(--forest);
-  font-weight: 600; font-size: .95rem;
-  border: 1.5px solid var(--forest); cursor: pointer; font-family: inherit;
-  transition: all .15s;
-}
-.btn-secondary:hover { background: rgba(26,61,40,.06); }
-
-/* ── SECTION BASE ── */
-section { padding: 90px 24px; }
-.container { max-width: 1180px; margin: 0 auto; }
-.section-header { text-align: center; margin-bottom: 56px; }
-.section-eyebrow {
-  display: inline-block; font-size: .75rem; font-weight: 700;
-  text-transform: uppercase; letter-spacing: .14em;
-  color: var(--leaf); margin-bottom: 12px;
-}
-h2.section-title {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: clamp(1.9rem, 4vw, 2.8rem); font-weight: 700;
-  color: var(--forest); line-height: 1.15; letter-spacing: -.01em;
-  max-width: 720px; margin: 0 auto;
-}
-.section-lead {
-  font-size: 1.05rem; color: var(--mid);
-  max-width: 620px; margin: 16px auto 0; line-height: 1.55;
+@media (max-width: 820px) {
+  .audiencias { padding: 80px 22px; }
+  .aud-row { grid-template-columns: 1fr; gap: 12px; padding: 32px 0; }
+  .aud-num { font-size: 1.2rem; }
+  .aud-title { font-size: 1.5rem; }
 }
 
-/* ── AUDIENCIAS ── */
-#audiencias { background: var(--mist); }
-.audiencia-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 24px;
+/* ── Section 02 — módulos ── */
+.modulos {
+  padding: 120px 56px;
+  background: linear-gradient(180deg, var(--bone) 0%, var(--sand) 100%);
+  border-top: 1px solid var(--rule);
 }
-.audiencia-card {
-  background: #fff; border-radius: 18px;
-  padding: 36px 28px;
-  border: 1px solid var(--sand);
-  transition: transform .2s, box-shadow .2s;
+.modulos .head { max-width: 1080px; margin: 0 auto 70px; }
+.mod-groups { max-width: 1080px; margin: 0 auto; }
+.mod-group { padding: 36px 0; border-top: 1px solid var(--rule); }
+.mod-group:last-child { border-bottom: 1px solid var(--rule); }
+.mod-group-label {
+  font-family: 'Inter', sans-serif;
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--ochre);
+  margin-bottom: 28px;
 }
-.audiencia-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(15,30,20,.07); }
-.audiencia-icon {
-  font-size: 2.4rem; margin-bottom: 14px;
+.mod-items {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  column-gap: 60px;
+  row-gap: 20px;
 }
-.audiencia-card h3 {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 1.5rem; font-weight: 700;
-  color: var(--forest); margin-bottom: 8px;
+@media (max-width: 720px) {
+  .modulos { padding: 80px 22px; }
+  .mod-items { grid-template-columns: 1fr; }
 }
-.audiencia-card p {
-  color: var(--mid); font-size: .94rem; line-height: 1.55;
-  margin-bottom: 16px;
+.mod-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  padding-bottom: 14px;
+  border-bottom: 1px dotted rgba(26,26,24,.18);
 }
-.audiencia-card ul {
-  list-style: none; padding: 0;
+.mod-item-name {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 1.08rem;
+  color: var(--forest);
+  letter-spacing: -.005em;
 }
-.audiencia-card li {
-  padding: 6px 0; font-size: .88rem; color: var(--ink);
-  display: flex; align-items: flex-start; gap: 8px;
-}
-.audiencia-card li::before {
-  content: '✓'; color: var(--leaf); font-weight: 800; flex-shrink: 0;
-}
-
-/* ── MÓDULOS ── */
-.modulos-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 20px;
-}
-.modulo {
-  padding: 28px 22px; border-radius: 14px;
-  background: var(--white); border: 1px solid var(--sand);
-  transition: all .18s;
-}
-.modulo:hover { border-color: var(--leaf); background: var(--mist); }
-.modulo-icon {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 44px; height: 44px; border-radius: 10px;
-  background: rgba(74,158,106,.12); color: var(--canopy);
-  font-size: 1.4rem; margin-bottom: 14px;
-}
-.modulo h4 {
-  font-size: 1.05rem; font-weight: 700; color: var(--forest);
-  margin-bottom: 6px;
-}
-.modulo p { font-size: .87rem; color: var(--mid); line-height: 1.5; }
-
-/* ── PROCESO ── */
-#proceso { background: var(--forest); color: var(--cream); }
-#proceso .section-title { color: #fff; }
-#proceso .section-eyebrow { color: var(--leaf); }
-#proceso .section-lead { color: rgba(245,240,228,.75); }
-.proceso-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 32px; margin-top: 40px;
-}
-.proceso-step {
-  text-align: center; padding: 0 12px;
-}
-.proceso-num {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 56px; height: 56px; border-radius: 50%;
-  background: var(--leaf); color: var(--forest);
-  font-family: 'Playfair Display', serif;
-  font-size: 1.6rem; font-weight: 900;
-  margin-bottom: 18px;
-}
-.proceso-step h4 {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.35rem; font-weight: 700; color: #fff;
-  margin-bottom: 10px;
-}
-.proceso-step p {
-  color: rgba(245,240,228,.78); font-size: .94rem; line-height: 1.55;
+.mod-item-desc {
+  font-family: 'Inter', sans-serif;
+  font-size: .86rem;
+  color: var(--muted);
+  margin-top: 4px;
+  line-height: 1.5;
+  grid-column: 1 / -1;
 }
 
-/* ── DIFERENCIADORES ── */
-.dif-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 14px;
+/* ── Section 03 — proceso ── */
+.proceso {
+  padding: 140px 56px;
+  background: var(--ink);
+  color: var(--bone);
 }
+.proceso .head { max-width: 1080px; margin: 0 auto 90px; }
+.proceso h2 { color: var(--bone); }
+.proceso h2 em { color: var(--ochre); }
+.proceso .lead { color: rgba(248,243,233,.62); }
+.proc-steps { max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: 60px; }
+.proc-step {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 40px;
+  align-items: baseline;
+  padding-bottom: 48px;
+  border-bottom: 1px solid rgba(248,243,233,.10);
+}
+.proc-step:last-child { border-bottom: none; padding-bottom: 0; }
+.proc-num {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 7rem;
+  line-height: 1;
+  color: var(--ochre);
+  letter-spacing: -.04em;
+}
+.proc-title {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 1.7rem;
+  letter-spacing: -.01em;
+  color: var(--bone);
+  margin-bottom: 14px;
+}
+.proc-body {
+  font-size: 1rem; line-height: 1.65;
+  color: rgba(248,243,233,.72);
+  max-width: 50ch;
+}
+@media (max-width: 720px) {
+  .proceso { padding: 90px 22px; }
+  .proc-step { grid-template-columns: 1fr; gap: 14px; padding-bottom: 36px; }
+  .proc-num { font-size: 4rem; }
+  .proc-title { font-size: 1.3rem; }
+}
+
+/* ── Section 04 — diferenciadores ── */
 .dif {
-  padding: 22px 20px; border-left: 3px solid var(--leaf);
-  background: var(--mist); border-radius: 0 10px 10px 0;
+  padding: 120px 56px;
 }
-.dif h5 { font-size: 1rem; font-weight: 700; color: var(--forest); margin-bottom: 4px; }
-.dif p { font-size: .86rem; color: var(--mid); line-height: 1.5; }
+.dif .head { max-width: 1080px; margin: 0 auto 60px; }
+.dif-list {
+  max-width: 1080px; margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  column-gap: 80px;
+  row-gap: 44px;
+}
+@media (max-width: 720px) {
+  .dif { padding: 80px 22px; }
+  .dif-list { grid-template-columns: 1fr; row-gap: 32px; }
+}
+.dif-item {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 20px;
+  align-items: baseline;
+}
+.dif-mark {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.15rem;
+  color: var(--ochre);
+}
+.dif-text strong {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 1.18rem;
+  color: var(--forest);
+  display: block;
+  margin-bottom: 6px;
+  letter-spacing: -.005em;
+}
+.dif-text p {
+  font-size: .94rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
 
-/* ── FORM ── */
-#contacto {
-  background: linear-gradient(180deg, var(--mist) 0%, var(--white) 100%);
+/* ── Section 05 — form ── */
+.contacto {
+  padding: 130px 56px 80px;
+  border-top: 1px solid var(--rule);
+  background: var(--bone);
 }
-.form-wrap {
-  max-width: 640px; margin: 40px auto 0;
-  background: #fff; border-radius: 20px;
-  padding: 44px 36px;
-  border: 1px solid var(--sand);
-  box-shadow: 0 8px 40px rgba(15,30,20,.06);
+.contacto .head { max-width: 720px; margin: 0 auto 60px; text-align: center; }
+.contacto h2 { max-width: 20ch; margin: 0 auto; }
+.contacto .lead { margin-left: auto; margin-right: auto; }
+.form {
+  max-width: 560px; margin: 0 auto;
+  display: flex; flex-direction: column; gap: 28px;
 }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-@media (max-width: 540px) { .form-row { grid-template-columns: 1fr; } }
-.form-field { margin-bottom: 16px; }
-.form-field label {
-  display: block; font-size: .76rem; font-weight: 700;
-  text-transform: uppercase; letter-spacing: .08em;
-  color: var(--canopy); margin-bottom: 6px;
+.field { display: flex; flex-direction: column; gap: 8px; }
+.field label {
+  font-family: 'Inter', sans-serif;
+  font-size: .7rem;
+  font-weight: 600;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--ochre);
 }
-.form-field input,
-.form-field select,
-.form-field textarea {
-  width: 100%; padding: 12px 14px; border-radius: 8px;
-  border: 1.5px solid var(--sand);
-  font-size: .92rem; font-family: inherit; color: var(--ink);
-  background: var(--white);
-  transition: border-color .15s;
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  padding: 12px 0;
+  border: none;
+  border-bottom: 1px solid var(--rule);
+  background: transparent;
+  font-family: 'Inter', sans-serif;
+  font-size: 1.02rem;
+  color: var(--ink);
   outline: none;
+  transition: border-color .15s;
 }
-.form-field input:focus,
-.form-field select:focus,
-.form-field textarea:focus { border-color: var(--leaf); }
-.form-field textarea { min-height: 80px; resize: vertical; }
-.form-submit {
-  width: 100%; padding: 15px; border-radius: 100px;
-  background: var(--forest); color: #fff;
-  font-weight: 700; font-size: .95rem;
-  border: none; cursor: pointer; font-family: inherit;
-  margin-top: 8px; transition: all .15s;
+.field input::placeholder,
+.field textarea::placeholder { color: rgba(26,26,24,.32); font-style: italic; }
+.field input:focus,
+.field select:focus,
+.field textarea:focus { border-bottom-color: var(--forest); }
+.field select { appearance: none; background-image: none; cursor: pointer; }
+.field textarea { resize: vertical; min-height: 60px; padding: 12px 0; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+@media (max-width: 540px) { .row2 { grid-template-columns: 1fr; } }
+.submit {
+  margin-top: 16px;
+  align-self: flex-start;
+  padding: 0 0 4px;
+  background: transparent;
+  border: none;
+  border-bottom: 1.5px solid var(--forest);
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.18rem;
+  color: var(--forest);
+  cursor: pointer;
+  letter-spacing: -.005em;
+  transition: color .15s, border-color .15s;
 }
-.form-submit:hover:not(:disabled) { background: var(--canopy); }
-.form-submit:disabled { background: #BDBDBD; cursor: not-allowed; }
-.form-msg {
-  text-align: center; padding: 12px; border-radius: 8px;
-  margin-top: 14px; font-size: .9rem; font-weight: 600;
+.submit:hover:not(:disabled) { color: var(--ochre); border-bottom-color: var(--ochre); }
+.submit:disabled { color: var(--muted); border-bottom-color: var(--muted); cursor: not-allowed; }
+.msg {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 1rem;
+  padding-top: 4px;
   display: none;
 }
-.form-msg.ok { display: block; background: rgba(74,158,106,.14); color: var(--forest); }
-.form-msg.err { display: block; background: rgba(198,40,40,.10); color: var(--danger); }
+.msg.ok  { color: var(--forest); display: block; }
+.msg.err { color: #8B2A2A; display: block; }
 
-/* ── FOOTER ── */
+/* ── Footer ── */
 footer {
-  background: var(--ink); color: var(--cream);
-  padding: 40px 24px; text-align: center;
+  padding: 50px 56px 60px;
+  border-top: 1px solid var(--rule);
+  display: flex; align-items: baseline; justify-content: space-between;
+  flex-wrap: wrap; gap: 16px;
+  font-size: .82rem;
+  color: var(--muted);
 }
-footer .foot-brand {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.4rem; font-weight: 900;
-  color: #fff; margin-bottom: 8px; letter-spacing: .04em;
-}
-footer .foot-brand span { color: var(--leaf); }
-footer p { font-size: .82rem; color: rgba(245,240,228,.6); }
-footer p a { color: var(--leaf); }
-
-/* fade-in on scroll */
-.reveal { opacity: 0; transform: translateY(20px); transition: opacity .6s, transform .6s; }
-.reveal.in { opacity: 1; transform: translateY(0); }
+footer a { border-bottom: 1px solid var(--ochre); padding-bottom: 1px; }
+footer .copy { font-style: italic; }
+@media (max-width: 720px) { footer { padding: 36px 22px 44px; } }
 </style>
 </head>
 <body>
 
-<nav id="nav">
-  <a href="#" class="nav-brand">AGRO<span>SIS</span></a>
-  <a href="#contacto" class="nav-cta">Solicitar demo</a>
-</nav>
+<header id="top">
+  <a href="#" class="mark">Agros<em>i</em>s</a>
+  <nav><a href="#contacto">Solicitar acceso</a></nav>
+</header>
 
 <!-- ── HERO ── -->
 <section class="hero">
-  <div class="hero-inner reveal">
-    <div class="hero-eyebrow">Plataforma de campo y empaque</div>
-    <h1 class="hero-title">Tu campo, tu empaque, tu cadena<br><em>bajo control.</em></h1>
-    <p class="hero-sub">
-      Sistema integral de gestión agrícola para productores, empacadores y compradores.
-      Control BPM, trazabilidad, cadena de frío y cumplimiento de normas de supermercados — en una sola plataforma.
+  <div class="stamp">Plataforma agrícola — 2026</div>
+  <h1>
+    Una operación agrícola se mide en <em>registros,</em> no en intenciones.
+  </h1>
+  <p class="sub">
+    Agrosis es la plataforma donde productores, empacadores y compradores
+    documentan, supervisan y demuestran el cuidado de cada lote — desde
+    el campo hasta el cliente final.
+  </p>
+  <div class="row">
+    <a href="#contacto" class="link-arrow">Solicitar acceso</a>
+    <span class="aside">Implementación guiada en una semana</span>
+  </div>
+</section>
+
+<!-- ── 01 — AUDIENCIAS ── -->
+<section class="audiencias" id="quienes">
+  <div class="head wrap" style="padding: 0;">
+    <div class="section-num">— Sección 01 / Para quién</div>
+    <h2>Tres perfiles, <em>una misma</em> plataforma.</h2>
+    <p class="lead">
+      No importa si tu rol está en el campo, en la línea de empaque o en la mesa de compras —
+      Agrosis se ajusta a cómo trabajás vos.
     </p>
-    <div class="hero-cta-row">
-      <a href="#contacto"><button class="btn-primary">Solicitar demo gratis</button></a>
-      <a href="#modulos"><button class="btn-secondary">Ver módulos</button></a>
-    </div>
   </div>
-</section>
 
-<!-- ── AUDIENCIAS ── -->
-<section id="audiencias">
-  <div class="container">
-    <div class="section-header reveal">
-      <div class="section-eyebrow">¿Para quién es?</div>
-      <h2 class="section-title">Una plataforma, tres roles.</h2>
-      <p class="section-lead">Adaptable al productor que cultiva, al empacador que clasifica y al comprador que recibe.</p>
+  <div class="aud-list">
+    <div class="aud-row">
+      <div class="aud-num">01</div>
+      <div class="aud-title">Productores</div>
+      <div class="aud-body">
+        Para quien cultiva, riega, fumiga y cosecha. Llevás el control diario de campo
+        — aplicaciones agrícolas, períodos de carencia, capacitación de personal,
+        trazabilidad de lote desde la finca.
+        <span>Bitácoras de aplicación. Registros de cosecha. Hojas de campo digitales.</span>
+      </div>
     </div>
-    <div class="audiencia-grid">
-      <div class="audiencia-card reveal">
-        <div class="audiencia-icon">🌱</div>
-        <h3>Productores</h3>
-        <p>Gestiona campo, cultivo y cosecha bajo normas de inocuidad.</p>
-        <ul>
-          <li>Bitácoras de fumigación y riego</li>
-          <li>Trazabilidad de lote desde campo</li>
-          <li>Control de personal y BPM</li>
-          <li>Registros de capacitaciones</li>
-        </ul>
+    <div class="aud-row">
+      <div class="aud-num">02</div>
+      <div class="aud-title">Empacadores</div>
+      <div class="aud-body">
+        Para quien recibe, lava, clasifica y despacha. Operás bajo norma de inocuidad
+        con control de temperatura, cloro, plagas, vidrio y plástico, despacho y báscula.
+        Inspecciones y CAPA listas para auditoría.
+        <span>Cumplimiento BPM. Cadena de frío. Trazabilidad lote a lote.</span>
       </div>
-      <div class="audiencia-card reveal">
-        <div class="audiencia-icon">📦</div>
-        <h3>Empacadores</h3>
-        <p>Inspecciona, clasifica y despacha cumpliendo cualquier estándar de supermercado.</p>
-        <ul>
-          <li>BPM en planta empacadora</li>
-          <li>Control de temperatura y cloro</li>
-          <li>Inspecciones con checklist completo</li>
-          <li>Despacho, transporte y báscula</li>
-        </ul>
-      </div>
-      <div class="audiencia-card reveal">
-        <div class="audiencia-icon">🛒</div>
-        <h3>Compradores</h3>
-        <p>Gestiona tus proveedores asegurando cuidado, tratamiento y traslado del producto.</p>
-        <ul>
-          <li>Verificación de cumplimiento BPM</li>
-          <li>Historial de recepciones y rechazos</li>
-          <li>Trazabilidad inversa de lote</li>
-          <li>Cuentas por pagar a proveedores</li>
-        </ul>
+    </div>
+    <div class="aud-row">
+      <div class="aud-num">03</div>
+      <div class="aud-title">Compradores</div>
+      <div class="aud-body">
+        Para quien recibe producto de varios proveedores. Verificás cumplimiento,
+        registrás recepciones y rechazos, llevás cuentas por pagar y exigís —
+        con evidencia — el estándar que necesita tu cliente.
+        <span>Historial de proveedor. Rechazos documentados. Pago contra cumplimiento.</span>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ── MÓDULOS ── -->
-<section id="modulos">
-  <div class="container">
-    <div class="section-header reveal">
-      <div class="section-eyebrow">Módulos</div>
-      <h2 class="section-title">Todo lo que necesitás, integrado.</h2>
-      <p class="section-lead">Diseñado bajo normas internacionales de inocuidad y validado en producción real.</p>
-    </div>
-    <div class="modulos-grid">
-      <div class="modulo reveal">
-        <div class="modulo-icon">📋</div>
-        <h4>Inspecciones BPM</h4>
-        <p>Checklist de 49 puntos con clasificación de severidad — prioritarias, mayores, menores.</p>
-      </div>
-      <div class="modulo reveal">
-        <div class="modulo-icon">⚡</div>
-        <h4>CAPA Seguimiento</h4>
-        <p>Acciones correctivas y preventivas con causa raíz, responsable, fecha objetivo y verificación.</p>
-      </div>
-      <div class="modulo reveal">
-        <div class="modulo-icon">🌡️</div>
-        <h4>Cadena de frío</h4>
-        <p>Control diario de temperatura por cooler, alertas de fuera de rango, historial completo.</p>
-      </div>
-      <div class="modulo reveal">
-        <div class="modulo-icon">💧</div>
-        <h4>Control de cloro</h4>
-        <p>Registros de cloración de agua y lavado de producto con rangos validados por BPM.</p>
-      </div>
-      <div class="modulo reveal">
-        <div class="modulo-icon">🐀</div>
-        <h4>Manejo de plagas</h4>
-        <p>Croquis de trampas, revisión periódica, registros de fumigación interna y externa.</p>
-      </div>
-      <div class="modulo reveal">
-        <div class="modulo-icon">🔍</div>
-        <h4>Vidrio y plástico</h4>
-        <p>Inspección de elementos quebradizos por área con hallazgos y acciones documentadas.</p>
-      </div>
-      <div class="modulo reveal">
-        <div class="modulo-icon">🚛</div>
-        <h4>Transporte y despacho</h4>
-        <p>Limpieza de camiones, inspección antes de cargar y control de despacho a cliente.</p>
-      </div>
-      <div class="modulo reveal">
-        <div class="modulo-icon">⚖️</div>
-        <h4>Básculas y peso</h4>
-        <p>Calibración, revisión diaria y registro de variaciones por báscula.</p>
-      </div>
-      <div class="modulo reveal">
-        <div class="modulo-icon">📥</div>
-        <h4>Inventario y trazabilidad</h4>
-        <p>Recepción, salida, stock en tiempo real con seguimiento lote a lote.</p>
-      </div>
-      <div class="modulo reveal">
-        <div class="modulo-icon">👥</div>
-        <h4>Control de personal</h4>
-        <p>Higiene, capacitaciones, empleados enfermos, control de visitas externas.</p>
-      </div>
-      <div class="modulo reveal">
-        <div class="modulo-icon">💼</div>
-        <h4>Cuentas y finanzas</h4>
-        <p>Cuentas por pagar y cobrar, gastos, conciliación bancaria y P&L semanal.</p>
-      </div>
-      <div class="modulo reveal">
-        <div class="modulo-icon">📊</div>
-        <h4>Reportes y exportación</h4>
-        <p>Excel completo, PDF de estados de cuenta y reportes por período.</p>
-      </div>
-    </div>
+<!-- ── 02 — MÓDULOS ── -->
+<section class="modulos">
+  <div class="head">
+    <div class="section-num">— Sección 02 / Lo que controlás</div>
+    <h2>Trece áreas operativas, <em>una sola</em> base de datos.</h2>
+    <p class="lead">
+      Lo que antes vivía en cuadernos, hojas sueltas y carpetas físicas — ahora ordenado,
+      buscable y exportable.
+    </p>
   </div>
-</section>
 
-<!-- ── PROCESO ── -->
-<section id="proceso">
-  <div class="container">
-    <div class="section-header reveal">
-      <div class="section-eyebrow">Implementación</div>
-      <h2 class="section-title">De cero a operando en una semana.</h2>
-      <p class="section-lead">Configuración guiada, sin instalaciones complicadas, accesible desde cualquier dispositivo.</p>
-    </div>
-    <div class="proceso-grid">
-      <div class="proceso-step reveal">
-        <div class="proceso-num">1</div>
-        <h4>Demo y diagnóstico</h4>
-        <p>Recorrido por la plataforma y revisión de tus procesos actuales. Sin compromiso.</p>
-      </div>
-      <div class="proceso-step reveal">
-        <div class="proceso-num">2</div>
-        <h4>Configuración a medida</h4>
-        <p>Cargamos tu personal, productos, proveedores y áreas. Te entrenamos en uso diario.</p>
-      </div>
-      <div class="proceso-step reveal">
-        <div class="proceso-num">3</div>
-        <h4>Operando con soporte</h4>
-        <p>Tu equipo registra en web o celular. Reportes, auditorías y trazabilidad listos.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ── DIFERENCIADORES ── -->
-<section>
-  <div class="container">
-    <div class="section-header reveal">
-      <div class="section-eyebrow">¿Por qué AGROSIS?</div>
-      <h2 class="section-title">Validado en producción, no en presentaciones.</h2>
-    </div>
-    <div class="dif-grid">
-      <div class="dif reveal">
-        <h5>Probado en operación real</h5>
-        <p>Plataforma usada todos los días en planta empacadora certificada.</p>
-      </div>
-      <div class="dif reveal">
-        <h5>Acceso desde cualquier dispositivo</h5>
-        <p>Funciona en computadora, tablet y celular. Sin instalaciones.</p>
-      </div>
-      <div class="dif reveal">
-        <h5>Datos seguros en la nube</h5>
-        <p>Respaldos automáticos diarios. Tu información no se pierde.</p>
-      </div>
-      <div class="dif reveal">
-        <h5>Listo para auditoría</h5>
-        <p>Generá reportes en PDF y Excel para cualquier auditor en segundos.</p>
-      </div>
-      <div class="dif reveal">
-        <h5>Hecho para Guatemala</h5>
-        <p>Adaptado a normativa MAGA y requerimientos de supermercados regionales.</p>
-      </div>
-      <div class="dif reveal">
-        <h5>Soporte directo</h5>
-        <p>Atención por WhatsApp y correo. Sin call centers.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ── FORMULARIO ── -->
-<section id="contacto">
-  <div class="container">
-    <div class="section-header reveal">
-      <div class="section-eyebrow">Solicitar demo</div>
-      <h2 class="section-title">Contactanos.</h2>
-      <p class="section-lead">Completá el formulario y te contactamos en menos de 24 horas para mostrarte la plataforma.</p>
-    </div>
-
-    <form id="lead-form" class="form-wrap reveal">
-      <div class="form-row">
-        <div class="form-field">
-          <label for="f-nombre">Nombre *</label>
-          <input id="f-nombre" name="nombre" type="text" required placeholder="Tu nombre completo">
+  <div class="mod-groups">
+    <div class="mod-group">
+      <div class="mod-group-label">Inspección y cumplimiento</div>
+      <div class="mod-items">
+        <div class="mod-item">
+          <span class="mod-item-name">Inspecciones BPM</span>
+          <span class="mod-item-desc">Checklist de 49 puntos con clasificación de severidad — prioritarias, mayores, menores.</span>
         </div>
-        <div class="form-field">
-          <label for="f-empresa">Empresa *</label>
-          <input id="f-empresa" name="empresa" type="text" required placeholder="Nombre de tu empresa">
+        <div class="mod-item">
+          <span class="mod-item-name">CAPA</span>
+          <span class="mod-item-desc">Acciones correctivas y preventivas con causa raíz, responsable y verificación de cierre.</span>
+        </div>
+        <div class="mod-item">
+          <span class="mod-item-name">Manejo integrado de plagas</span>
+          <span class="mod-item-desc">Croquis de trampas numeradas, revisión periódica, registros de novedad.</span>
+        </div>
+        <div class="mod-item">
+          <span class="mod-item-name">Vidrio y plástico</span>
+          <span class="mod-item-desc">Inspección por área con hallazgos, acciones y evidencia fotográfica.</span>
         </div>
       </div>
-      <div class="form-row">
-        <div class="form-field">
-          <label for="f-tel">Teléfono / WhatsApp *</label>
-          <input id="f-tel" name="telefono" type="tel" required placeholder="5555-1234" pattern="[0-9\s\-+()]{7,}">
+    </div>
+
+    <div class="mod-group">
+      <div class="mod-group-label">Operación diaria</div>
+      <div class="mod-items">
+        <div class="mod-item">
+          <span class="mod-item-name">Cadena de frío</span>
+          <span class="mod-item-desc">Toma de temperatura por cooler, alertas fuera de rango, histórico continuo.</span>
         </div>
-        <div class="form-field">
-          <label for="f-email">Correo</label>
-          <input id="f-email" name="email" type="email" placeholder="vos@ejemplo.com">
+        <div class="mod-item">
+          <span class="mod-item-name">Control de cloro</span>
+          <span class="mod-item-desc">Cloración de agua y lavado de producto con rangos validados.</span>
+        </div>
+        <div class="mod-item">
+          <span class="mod-item-name">Fumigación y sanitización</span>
+          <span class="mod-item-desc">Programa mensual y semanal por instalación, registros de aplicación.</span>
+        </div>
+        <div class="mod-item">
+          <span class="mod-item-name">Transporte y despacho</span>
+          <span class="mod-item-desc">Limpieza de camiones, inspección previa a carga y control de salida.</span>
+        </div>
+        <div class="mod-item">
+          <span class="mod-item-name">Báscula y peso</span>
+          <span class="mod-item-desc">Calibración, revisión diaria y registro de variaciones por equipo.</span>
+        </div>
+        <div class="mod-item">
+          <span class="mod-item-name">Personal y visitas</span>
+          <span class="mod-item-desc">Higiene, capacitaciones, empleados enfermos y control de visitantes externos.</span>
         </div>
       </div>
-      <div class="form-field">
-        <label for="f-tipo">¿Qué tipo de operación tenés? *</label>
-        <select id="f-tipo" name="tipo" required>
-          <option value="">Seleccionar...</option>
-          <option value="productor">Productor agrícola</option>
-          <option value="empacador">Empacador / planta</option>
-          <option value="productor-empacador">Productor + empacador</option>
-          <option value="comprador">Comprador / distribuidor</option>
-          <option value="otro">Otro</option>
-        </select>
+    </div>
+
+    <div class="mod-group">
+      <div class="mod-group-label">Gestión y trazabilidad</div>
+      <div class="mod-items">
+        <div class="mod-item">
+          <span class="mod-item-name">Inventario y stock vivo</span>
+          <span class="mod-item-desc">Recepción y salida con seguimiento lote a lote en tiempo real.</span>
+        </div>
+        <div class="mod-item">
+          <span class="mod-item-name">Cuentas por pagar y cobrar</span>
+          <span class="mod-item-desc">Recepciones, pagos, rechazos y estados de cuenta por proveedor o cliente.</span>
+        </div>
+        <div class="mod-item">
+          <span class="mod-item-name">Reportes y exportación</span>
+          <span class="mod-item-desc">Excel, PDF y resúmenes por período listos para auditor o gerencia.</span>
+        </div>
       </div>
-      <div class="form-field">
-        <label for="f-msg">¿Qué te interesa más? (opcional)</label>
-        <textarea id="f-msg" name="mensaje" placeholder="Contanos qué problema querés resolver..."></textarea>
-      </div>
-      <button type="submit" class="form-submit" id="f-submit">Enviar solicitud</button>
-      <div class="form-msg" id="f-msg-ok">✓ Recibido. Te contactamos pronto.</div>
-      <div class="form-msg" id="f-msg-err">Hubo un problema. Intentá de nuevo o escribinos a <a href="mailto:contacto@agroajua.com" style="color:inherit;font-weight:700">contacto@agroajua.com</a></div>
-    </form>
+    </div>
   </div>
+</section>
+
+<!-- ── 03 — PROCESO ── -->
+<section class="proceso">
+  <div class="head">
+    <div class="section-num">— Sección 03 / Implementación</div>
+    <h2>De diagnóstico a operación, <em>en una semana.</em></h2>
+    <p class="lead">
+      Configuramos contigo. No te dejamos solo frente a una pantalla en blanco.
+    </p>
+  </div>
+
+  <div class="proc-steps">
+    <div class="proc-step">
+      <div class="proc-num">01</div>
+      <div>
+        <div class="proc-title">Diagnóstico</div>
+        <p class="proc-body">
+          Demo personalizada y mapeo de tus procesos actuales — qué llevás en papel,
+          qué en Excel, qué cuello de botella te ahoga. Sin compromiso.
+        </p>
+      </div>
+    </div>
+    <div class="proc-step">
+      <div class="proc-num">02</div>
+      <div>
+        <div class="proc-title">Configuración</div>
+        <p class="proc-body">
+          Cargamos tu personal, productos, proveedores, áreas y umbrales operativos.
+          Entrenamiento a tu equipo en uso diario.
+        </p>
+      </div>
+    </div>
+    <div class="proc-step">
+      <div class="proc-num">03</div>
+      <div>
+        <div class="proc-title">Operación con soporte</div>
+        <p class="proc-body">
+          Tu equipo registra en web o celular. Vos accedés a reportes, auditorías y
+          trazabilidad desde el primer día. Soporte por WhatsApp directo.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 04 — DIFERENCIADORES ── -->
+<section class="dif">
+  <div class="head">
+    <div class="section-num">— Sección 04 / Por qué Agrosis</div>
+    <h2>Hecho en operación, <em>no en presentaciones.</em></h2>
+  </div>
+
+  <div class="dif-list">
+    <div class="dif-item">
+      <div class="dif-mark">i.</div>
+      <div class="dif-text">
+        <strong>Validado en producción real</strong>
+        <p>Plataforma usada todos los días en planta empacadora certificada — no un prototipo de demo.</p>
+      </div>
+    </div>
+    <div class="dif-item">
+      <div class="dif-mark">ii.</div>
+      <div class="dif-text">
+        <strong>Web y móvil, sin instalación</strong>
+        <p>Funciona en computadora, tablet y celular. Acceso desde cualquier conexión.</p>
+      </div>
+    </div>
+    <div class="dif-item">
+      <div class="dif-mark">iii.</div>
+      <div class="dif-text">
+        <strong>Datos seguros en la nube</strong>
+        <p>Respaldo automático diario. Tu información permanece tuya y accesible.</p>
+      </div>
+    </div>
+    <div class="dif-item">
+      <div class="dif-mark">iv.</div>
+      <div class="dif-text">
+        <strong>Listo para auditoría</strong>
+        <p>Reportes en PDF y Excel exportables para cualquier auditor, en segundos.</p>
+      </div>
+    </div>
+    <div class="dif-item">
+      <div class="dif-mark">v.</div>
+      <div class="dif-text">
+        <strong>Adaptado a Guatemala</strong>
+        <p>Pensado para normativa MAGA y estándares regionales de cadenas de supermercados.</p>
+      </div>
+    </div>
+    <div class="dif-item">
+      <div class="dif-mark">vi.</div>
+      <div class="dif-text">
+        <strong>Soporte humano</strong>
+        <p>WhatsApp directo con alguien que entiende tu operación. Sin tickets ni colas.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 05 — CONTACTO ── -->
+<section class="contacto" id="contacto">
+  <div class="head">
+    <div class="section-num" style="text-align: center;">— Sección 05 / Empezar</div>
+    <h2>Pedí <em>acceso.</em></h2>
+    <p class="lead">
+      Completá el formulario. Te respondemos en menos de 24 horas para mostrarte la
+      plataforma en una sesión corta.
+    </p>
+  </div>
+
+  <form id="lead-form" class="form">
+    <div class="row2">
+      <div class="field">
+        <label for="f-nombre">Nombre</label>
+        <input id="f-nombre" name="nombre" type="text" required placeholder="Tu nombre">
+      </div>
+      <div class="field">
+        <label for="f-empresa">Empresa</label>
+        <input id="f-empresa" name="empresa" type="text" required placeholder="Nombre de la empresa">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="f-tel">Teléfono / WhatsApp</label>
+        <input id="f-tel" name="telefono" type="tel" required placeholder="5555-1234" pattern="[0-9\s\-+()]{7,}">
+      </div>
+      <div class="field">
+        <label for="f-email">Correo</label>
+        <input id="f-email" name="email" type="email" placeholder="vos@ejemplo.com">
+      </div>
+    </div>
+    <div class="field">
+      <label for="f-tipo">Tipo de operación</label>
+      <select id="f-tipo" name="tipo" required>
+        <option value="">Seleccionar...</option>
+        <option value="productor">Productor agrícola</option>
+        <option value="empacador">Empacador / planta</option>
+        <option value="productor-empacador">Productor y empacador</option>
+        <option value="comprador">Comprador / distribuidor</option>
+        <option value="otro">Otro</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="f-msg">Qué te interesa resolver</label>
+      <textarea id="f-msg" name="mensaje" rows="2" placeholder="Contanos brevemente..."></textarea>
+    </div>
+    <button type="submit" class="submit" id="f-submit">Enviar solicitud →</button>
+    <div class="msg" id="f-msg-ok">Recibido. Te contactamos pronto.</div>
+    <div class="msg" id="f-msg-err">Hubo un problema. Escribinos a <a href="mailto:contacto@agroajua.com" style="border-bottom:1px solid currentColor">contacto@agroajua.com</a></div>
+  </form>
 </section>
 
 <footer>
-  <div class="foot-brand">AGRO<span>SIS</span></div>
-  <p>Sistema de gestión de campo y empaque · <a href="mailto:contacto@agroajua.com">contacto@agroajua.com</a></p>
-  <p style="margin-top: 8px; font-size: .72rem;">© 2026 · Todos los derechos reservados</p>
+  <span class="mark">Agros<em>i</em>s</span>
+  <span><a href="mailto:contacto@agroajua.com">contacto@agroajua.com</a></span>
+  <span class="copy">© 2026</span>
 </footer>
 
 <script>
-// Nav scroll effect
-const nav = document.getElementById('nav');
+const header = document.getElementById('top');
 window.addEventListener('scroll', () => {
-  nav.classList.toggle('scrolled', window.scrollY > 30);
+  header.classList.toggle('lined', window.scrollY > 30);
 });
 
-// Reveal on scroll
-const io = new IntersectionObserver(entries => {
-  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
-}, { threshold: 0.12 });
-document.querySelectorAll('.reveal').forEach(el => io.observe(el));
-
-// Form submit → Firestore REST
 const form = document.getElementById('lead-form');
 const btn  = document.getElementById('f-submit');
 const okEl = document.getElementById('f-msg-ok');
@@ -618,12 +812,12 @@ form.addEventListener('submit', async (e) => {
       { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fields }) }
     );
     if (!res.ok) throw new Error('Error de servidor');
-    okEl.classList.add('ok'); okEl.style.display = 'block';
+    okEl.classList.add('ok');
     form.reset();
     btn.textContent = '✓ Enviado';
   } catch (err) {
-    erEl.classList.add('err'); erEl.style.display = 'block';
-    btn.disabled = false; btn.textContent = 'Enviar solicitud';
+    erEl.classList.add('err');
+    btn.disabled = false; btn.textContent = 'Enviar solicitud →';
   }
 });
 </script>
