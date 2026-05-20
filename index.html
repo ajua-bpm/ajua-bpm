@@ -458,13 +458,40 @@ h2 em { font-style: italic; font-weight: 400; color: var(--ochre); }
 footer {
   padding: 50px 56px 60px;
   border-top: 1px solid var(--rule);
-  display: flex; align-items: baseline; justify-content: space-between;
-  flex-wrap: wrap; gap: 16px;
   font-size: .82rem;
   color: var(--muted);
 }
-footer a { border-bottom: 1px solid var(--ochre); padding-bottom: 1px; }
-footer .copy { font-style: italic; }
+.foot-access {
+  display: flex; gap: 28px; flex-wrap: wrap;
+  padding-bottom: 28px; margin-bottom: 28px;
+  border-bottom: 1px solid var(--rule);
+}
+.foot-access a {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: .98rem;
+  color: var(--forest);
+  border-bottom: 1px solid var(--ochre);
+  padding-bottom: 1px;
+  transition: color .15s, border-color .15s;
+}
+.foot-access a:hover { color: var(--ochre); border-bottom-color: var(--forest); }
+.foot-access .access-label {
+  font-family: 'Inter', sans-serif;
+  font-size: .7rem;
+  font-weight: 600;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border: none; padding: 0;
+  align-self: center;
+}
+.foot-meta {
+  display: flex; align-items: baseline; justify-content: space-between;
+  flex-wrap: wrap; gap: 16px;
+}
+.foot-meta a { border-bottom: 1px solid var(--ochre); padding-bottom: 1px; }
+.foot-meta .copy { font-style: italic; }
 @media (max-width: 720px) { footer { padding: 36px 22px 44px; } }
 </style>
 </head>
@@ -772,9 +799,17 @@ footer .copy { font-style: italic; }
 </section>
 
 <footer>
-  <span class="mark">Agros<em>i</em>s</span>
-  <span><a href="mailto:contacto@agroajua.com">contacto@agroajua.com</a></span>
-  <span class="copy">© 2026</span>
+  <div class="foot-access">
+    <span class="access-label">Accesos</span>
+    <a href="https://app.agroajua.com">Sistema interno</a>
+    <a href="https://mari.agroajua.com">MARI</a>
+    <a href="https://tienda.agroajua.com">Tienda</a>
+  </div>
+  <div class="foot-meta">
+    <span class="mark">Agros<em>i</em>s</span>
+    <span><a href="mailto:contacto@agroajua.com">contacto@agroajua.com</a></span>
+    <span class="copy">© 2026</span>
+  </div>
 </footer>
 
 <script>
