@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cotización de Importación — México → Guatemala</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bone:   #F8F3E9;
+  --paper:  #FFFFFF;
+  --ink:    #1A1A18;
+  --forest: #1F3A2C;
+  --canopy: #2D6645;
+  --ochre:  #A8835A;
+  --muted:  #6B6B60;
+  --sand:   #E7DDC9;
+  --rule:   rgba(26,26,24,.10);
+  --green:  #2E7D32;
+  --red:    #C62828;
+  --highlight: rgba(168,131,90,.10);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bone);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 40px 48px 60px;
+  background: var(--paper);
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+header.doc-head {
+  border-bottom: 2px solid var(--forest);
+  padding-bottom: 24px;
+  margin-bottom: 32px;
+}
+.head-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; flex-wrap: wrap; }
+.brand {
+  font-family: 'Fraunces', serif;
+  font-size: 1.7rem; font-weight: 900;
+  color: var(--forest); letter-spacing: .02em;
+}
+.brand span { color: var(--ochre); }
+.doc-title {
+  font-family: 'Fraunces', serif;
+  font-size: 1.3rem; font-weight: 700;
+  color: var(--ink); margin-top: 4px;
+}
+.doc-sub { font-size: .82rem; color: var(--muted); margin-top: 2px; }
+.meta {
+  text-align: right; font-size: .78rem; color: var(--muted);
+  display: flex; flex-direction: column; gap: 3px;
+}
+.meta b { color: var(--ink); font-weight: 600; }
+.meta input { font-family: inherit; color: var(--ink); }
+
+/* ── SECTIONS ── */
+section.block { margin-bottom: 36px; page-break-inside: avoid; }
+.section-num {
+  font-family: 'Inter', sans-serif;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .26em;
+  text-transform: uppercase;
+  color: var(--ochre);
+  margin-bottom: 10px;
+}
+h2.section-title {
+  font-family: 'Fraunces', serif;
+  font-size: 1.35rem; font-weight: 700;
+  color: var(--forest); letter-spacing: -.005em;
+  margin-bottom: 16px;
+}
+
+/* ── INPUTS ── */
+input, select {
+  font-family: inherit; font-size: inherit;
+  color: var(--ink); background: transparent;
+  border: 1px solid transparent; border-bottom: 1px dashed var(--rule);
+  padding: 4px 6px; outline: none; transition: border-color .15s, background .15s;
+  border-radius: 2px;
+}
+input:hover, select:hover { background: var(--highlight); border-bottom-color: var(--ochre); }
+input:focus, select:focus { background: #fff; border-color: var(--canopy); border-bottom-style: solid; }
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+input[type="number"] { -moz-appearance: textfield; }
+
+/* Config grid */
+.cfg {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 18px 24px; padding: 18px 22px;
+  background: var(--bone); border: 1px solid var(--rule); border-radius: 6px;
+}
+.cfg-field { display: flex; flex-direction: column; gap: 4px; }
+.cfg-field label {
+  font-size: .66rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--muted);
+}
+.cfg-field input { font-size: 1.05rem; font-weight: 600; color: var(--forest); padding: 4px 0; }
+.cfg-field .hint { font-size: .68rem; color: var(--muted); font-style: italic; }
+
+/* ── TABLES ── */
+table.t {
+  width: 100%; border-collapse: collapse;
+  font-size: .86rem;
+}
+table.t thead th {
+  text-align: left; padding: 9px 8px;
+  font-size: .68rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--bone); background: var(--forest);
+  border-right: 1px solid rgba(255,255,255,.10);
+  white-space: nowrap;
+}
+table.t thead th:last-child { border-right: none; }
+table.t thead th.num { text-align: right; }
+table.t tbody td {
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: middle;
+}
+table.t tbody td.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.t tbody td.bold { font-weight: 600; color: var(--ink); }
+table.t tbody td input { width: 100%; }
+table.t tbody td input.num { text-align: right; }
+table.t tbody tr:nth-child(even) { background: rgba(232,220,200,.18); }
+table.t tbody tr:hover { background: rgba(168,131,90,.08); }
+table.t tfoot td {
+  padding: 10px 8px;
+  font-weight: 700;
+  background: var(--bone);
+  border-top: 2px solid var(--forest);
+  color: var(--forest);
+  font-size: .9rem;
+}
+table.t tfoot td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+.action-btn {
+  background: transparent; border: 1px solid var(--rule);
+  color: var(--muted); padding: 3px 8px; border-radius: 3px;
+  cursor: pointer; font-family: inherit; font-size: .72rem;
+  transition: all .12s;
+}
+.action-btn:hover { color: var(--red); border-color: var(--red); }
+.add-row {
+  margin-top: 8px; padding: 6px 14px;
+  background: transparent; border: 1px dashed var(--canopy);
+  color: var(--canopy); border-radius: 4px;
+  cursor: pointer; font-family: inherit; font-size: .82rem; font-weight: 500;
+  transition: all .12s;
+}
+.add-row:hover { background: var(--canopy); color: #fff; }
+
+/* ── KPI cards ── */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; }
+.kpi {
+  padding: 16px 18px; background: var(--bone);
+  border-left: 3px solid var(--ochre);
+  border-radius: 0 6px 6px 0;
+}
+.kpi .lbl {
+  font-size: .66rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--muted);
+  margin-bottom: 6px;
+}
+.kpi .val {
+  font-family: 'Fraunces', serif;
+  font-size: 1.45rem; font-weight: 700; color: var(--forest);
+  font-variant-numeric: tabular-nums; line-height: 1.1;
+}
+.kpi .sub { font-size: .76rem; color: var(--muted); margin-top: 4px; }
+.kpi.good { border-left-color: var(--green); }
+.kpi.good .val { color: var(--green); }
+.kpi.bad  { border-left-color: var(--red); }
+.kpi.bad  .val { color: var(--red); }
+
+/* ── Reparto ── */
+.reparto-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+.reparto-grid > div { background: var(--paper); padding: 14px 16px; }
+.reparto-grid .h {
+  background: var(--forest); color: var(--bone);
+  font-size: .7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+}
+.reparto-grid .h.num { text-align: right; }
+.reparto-grid .num { text-align: right; font-variant-numeric: tabular-nums; }
+.reparto-grid .total { font-weight: 700; color: var(--forest); background: var(--bone); }
+.reparto-grid .total .num { color: var(--forest); }
+
+/* ── Footer / actions ── */
+.actions {
+  position: sticky; bottom: 12px; z-index: 10;
+  display: flex; gap: 10px; justify-content: flex-end;
+  padding: 12px 0;
+}
+.btn {
+  padding: 10px 22px; border-radius: 30px; border: none;
+  font-family: inherit; font-weight: 600; font-size: .88rem;
+  cursor: pointer; transition: all .15s;
+}
+.btn-print { background: var(--forest); color: var(--bone); }
+.btn-print:hover { background: var(--canopy); }
+.btn-secondary { background: var(--paper); color: var(--forest); border: 1.5px solid var(--forest); }
+.btn-secondary:hover { background: var(--forest); color: var(--bone); }
+
+footer.doc-foot {
+  margin-top: 50px; padding-top: 20px;
+  border-top: 1px solid var(--rule);
+  font-size: .72rem; color: var(--muted);
+  display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+}
+
+/* ── Print ── */
+@media print {
+  body { background: #fff; }
+  .page { padding: 20px; }
+  .actions { display: none; }
+  input, select {
+    border: none !important; background: transparent !important;
+    -webkit-appearance: none; appearance: none;
+  }
+  .add-row, .action-btn { display: none; }
+  section.block { page-break-inside: auto; }
+  .cfg { border: 1px solid var(--rule); }
+}
+
+@media (max-width: 780px) {
+  .page { padding: 24px 18px; }
+  .head-row { flex-direction: column; }
+  .meta { text-align: left; }
+  table.t { font-size: .78rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- HEADER -->
+  <header class="doc-head">
+    <div class="head-row">
+      <div>
+        <div class="brand">AGROAJUA<span>.</span></div>
+        <div class="doc-title">Cotización de Importación</div>
+        <div class="doc-sub">México → Guatemala — venta cadena supermercado</div>
+      </div>
+      <div class="meta">
+        <div><b>Cotización</b> <input id="m-numero" placeholder="ej: COT-2026-001" size="14"></div>
+        <div><b>Fecha</b> <input type="date" id="m-fecha"></div>
+        <div><b>Productor</b> <input id="m-productor" placeholder="Nombre del productor" size="20"></div>
+        <div><b>Ubicación</b> <input id="m-ubic" placeholder="ej: Sinaloa, México" size="20"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 1. CONFIGURACIÓN -->
+  <section class="block">
+    <div class="section-num">— 01 / Configuración</div>
+    <h2 class="section-title">Tipos de cambio y comisión</h2>
+    <div class="cfg">
+      <div class="cfg-field">
+        <label>TC · 1 MXN equivale a Q</label>
+        <input type="number" id="tcMXN" step="0.0001" value="0.4425">
+        <span class="hint">Tipo de cambio MXN → GTQ</span>
+      </div>
+      <div class="cfg-field">
+        <label>TC · 1 USD equivale a Q</label>
+        <input type="number" id="tcUSD" step="0.01" value="7.78">
+        <span class="hint">Tipo de cambio USD → GTQ</span>
+      </div>
+      <div class="cfg-field">
+        <label>Comisión AGROAJUA (margen %)</label>
+        <input type="number" id="margenPct" step="0.1" value="15">
+        <span class="hint">Sobre costo total puesto en bodega</span>
+      </div>
+      <div class="cfg-field">
+        <label>IVA Guatemala (%)</label>
+        <input type="number" id="ivaPct" step="0.1" value="12">
+        <span class="hint">Para descuento de retenciones</span>
+      </div>
+      <div class="cfg-field">
+        <label>Retención IVA cliente (%)</label>
+        <input type="number" id="retIvaPct" step="0.1" value="80">
+        <span class="hint">% del IVA que retiene</span>
+      </div>
+      <div class="cfg-field">
+        <label>Pronto pago (%)</label>
+        <input type="number" id="prontoPct" step="0.01" value="1.25">
+        <span class="hint">Descuento sobre precio venta</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. PRODUCTOS -->
+  <section class="block">
+    <div class="section-num">— 02 / Productos a importar</div>
+    <h2 class="section-title">Lista de compra al productor</h2>
+    <table class="t" id="t-productos">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th class="num">Cajas</th>
+          <th class="num">kg / caja</th>
+          <th class="num">lbs / caja</th>
+          <th class="num">Precio MXN / caja</th>
+          <th class="num">Subtotal MXN</th>
+          <th class="num">Subtotal GTQ</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tb-productos"></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="5">Totales</td>
+          <td class="num" id="ft-subMXN">$ 0.00</td>
+          <td class="num" id="ft-subGTQ">Q 0.00</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+    <button class="add-row" onclick="addProducto()">+ Agregar producto</button>
+  </section>
+
+  <!-- 3. GASTOS DE IMPORTACIÓN -->
+  <section class="block">
+    <div class="section-num">— 03 / Gastos de importación</div>
+    <h2 class="section-title">Costos asociados al envío</h2>
+
+    <h3 style="font-size:.85rem;color:var(--canopy);margin-bottom:6px;font-weight:600;">Gastos origen — México (MXN)</h3>
+    <table class="t" id="t-gastosMX">
+      <thead><tr><th>Concepto</th><th class="num">Monto MXN</th><th class="num">Equivalente GTQ</th><th></th></tr></thead>
+      <tbody id="tb-gastosMX"></tbody>
+      <tfoot><tr><td>Total origen</td><td class="num" id="ft-gastosMX-mxn">$ 0.00</td><td class="num" id="ft-gastosMX-gtq">Q 0.00</td><td></td></tr></tfoot>
+    </table>
+    <button class="add-row" onclick="addGasto('mx')">+ Agregar gasto MX</button>
+
+    <h3 style="font-size:.85rem;color:var(--canopy);margin:20px 0 6px;font-weight:600;">Gastos destino — Guatemala (GTQ)</h3>
+    <table class="t" id="t-gastosGT">
+      <thead><tr><th>Concepto</th><th class="num">Monto GTQ</th><th></th></tr></thead>
+      <tbody id="tb-gastosGT"></tbody>
+      <tfoot><tr><td>Total destino</td><td class="num" id="ft-gastosGT">Q 0.00</td><td></td></tr></tfoot>
+    </table>
+    <button class="add-row" onclick="addGasto('gt')">+ Agregar gasto GT</button>
+  </section>
+
+  <!-- 4. COSTO POR PRODUCTO -->
+  <section class="block">
+    <div class="section-num">— 04 / Costo final por producto</div>
+    <h2 class="section-title">Costo en bodega con gastos prorrateados</h2>
+    <table class="t" id="t-costos">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th class="num">Compra GTQ</th>
+          <th class="num">Gastos prorrateados</th>
+          <th class="num">Costo total GTQ</th>
+          <th class="num">Costo / caja GTQ</th>
+          <th class="num">Costo / lb GTQ</th>
+        </tr>
+      </thead>
+      <tbody id="tb-costos"></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="3">Costo total puesto en bodega</td>
+          <td class="num" id="ft-costoTotal">Q 0.00</td>
+          <td colspan="2"></td>
+        </tr>
+      </tfoot>
+    </table>
+  </section>
+
+  <!-- 5. VENTA -->
+  <section class="block">
+    <div class="section-num">— 05 / Venta al cliente</div>
+    <h2 class="section-title">Precio de venta y cálculo neto</h2>
+    <table class="t" id="t-venta">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th class="num">Precio venta / caja (GTQ)</th>
+          <th class="num">Sin IVA 12%</th>
+          <th class="num">Retención IVA 80%</th>
+          <th class="num">Pronto pago 1.25%</th>
+          <th class="num">Final neto / caja</th>
+          <th class="num">Final neto USD</th>
+          <th class="num">Final neto MXN</th>
+        </tr>
+      </thead>
+      <tbody id="tb-venta"></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="5">Venta total neta</td>
+          <td class="num" id="ft-ventaGTQ">Q 0.00</td>
+          <td class="num" id="ft-ventaUSD">$ 0.00</td>
+          <td class="num" id="ft-ventaMXN">$ 0.00</td>
+        </tr>
+      </tfoot>
+    </table>
+  </section>
+
+  <!-- 6. KPIS -->
+  <section class="block">
+    <div class="section-num">— 06 / Resumen financiero</div>
+    <h2 class="section-title">Indicadores clave</h2>
+    <div class="kpis">
+      <div class="kpi"><div class="lbl">Compra origen</div><div class="val" id="k-compra">Q 0.00</div><div class="sub" id="k-compraMXN">$ 0.00 MXN</div></div>
+      <div class="kpi"><div class="lbl">Gastos importación</div><div class="val" id="k-gastos">Q 0.00</div><div class="sub" id="k-gastosPct">0% del costo</div></div>
+      <div class="kpi"><div class="lbl">Costo total</div><div class="val" id="k-costo">Q 0.00</div><div class="sub">Puesto en bodega</div></div>
+      <div class="kpi good"><div class="lbl">Venta neta</div><div class="val" id="k-venta">Q 0.00</div><div class="sub" id="k-ventaUSD">$ 0.00 USD</div></div>
+      <div class="kpi good"><div class="lbl">Margen AGROAJUA</div><div class="val" id="k-margen">Q 0.00</div><div class="sub" id="k-margenPct">0%</div></div>
+    </div>
+  </section>
+
+  <!-- 7. REPARTO ENTRE EMPRESAS -->
+  <section class="block">
+    <div class="section-num">— 07 / Reparto entre empresas</div>
+    <h2 class="section-title">Distribución del precio de venta</h2>
+    <div class="reparto-grid">
+      <div class="h">Empresa / concepto</div>
+      <div class="h num">Monto GTQ</div>
+      <div class="h num">% de la venta</div>
+
+      <div><b id="lbl-productor">Productor</b><br><span style="font-size:.74rem;color:var(--muted);">Costo origen de productos</span></div>
+      <div class="num" id="rep-productor">Q 0.00</div>
+      <div class="num" id="rep-productorPct">0%</div>
+
+      <div><b>Importación / Logística</b><br><span style="font-size:.74rem;color:var(--muted);">Flete, aduana, transporte, etc.</span></div>
+      <div class="num" id="rep-gastos">Q 0.00</div>
+      <div class="num" id="rep-gastosPct">0%</div>
+
+      <div><b>AGROAJUA</b><br><span style="font-size:.74rem;color:var(--muted);">Comisión, manejo, riesgo comercial</span></div>
+      <div class="num" id="rep-ajua">Q 0.00</div>
+      <div class="num" id="rep-ajuaPct">0%</div>
+
+      <div><b>Retenciones e impuestos</b><br><span style="font-size:.74rem;color:var(--muted);">IVA retenido + pronto pago</span></div>
+      <div class="num" id="rep-impuestos">Q 0.00</div>
+      <div class="num" id="rep-impuestosPct">0%</div>
+
+      <div class="total"><b>Precio venta bruto al cliente</b></div>
+      <div class="num total" id="rep-total">Q 0.00</div>
+      <div class="num total">100%</div>
+    </div>
+  </section>
+
+  <!-- Actions -->
+  <div class="actions">
+    <button class="btn btn-secondary" onclick="window.print()">📄 Imprimir / PDF</button>
+    <button class="btn btn-print" onclick="copyShareableLink()">🔗 Copiar enlace</button>
+  </div>
+
+  <footer class="doc-foot">
+    <span>Documento generado por AGROAJUA · contacto@agroajua.com</span>
+    <span id="foot-ts"></span>
+  </footer>
+
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const fmt = (n, dec = 2) => Number.isFinite(n) ? n.toLocaleString('es-GT', { minimumFractionDigits: dec, maximumFractionDigits: dec }) : '0.00';
+const fmtQ = (n) => 'Q ' + fmt(n);
+const fmt$ = (n) => '$ ' + fmt(n);
+const today = () => new Date().toISOString().slice(0, 10);
+
+// ── State ─────────────────────────────────────────────────────────
+let productos = [
+  { nombre: 'Repollo',   cajas: 100, kgCaja: 12, precioMXN: 50 },
+  { nombre: 'Zanahoria', cajas: 80,  kgCaja: 10, precioMXN: 40 },
+  { nombre: 'Coliflor',  cajas: 60,  kgCaja: 8,  precioMXN: 60 },
+];
+let gastosMX = [
+  { concepto: 'Flete México → frontera',  monto: 25000 },
+  { concepto: 'Empaque y carga',           monto: 5000 },
+  { concepto: 'Documentación origen',      monto: 2000 },
+];
+let gastosGT = [
+  { concepto: 'Aduana / impuestos',        monto: 8000 },
+  { concepto: 'Transporte interno GT',     monto: 3500 },
+  { concepto: 'Almacenamiento temporal',   monto: 1200 },
+];
+
+// ── Add/remove ────────────────────────────────────────────────────
+function addProducto() { productos.push({ nombre: 'Nuevo producto', cajas: 0, kgCaja: 0, precioMXN: 0 }); renderProductos(); recalc(); }
+function removeProducto(i) { productos.splice(i, 1); renderProductos(); recalc(); }
+function addGasto(tipo) {
+  if (tipo === 'mx') gastosMX.push({ concepto: 'Nuevo gasto', monto: 0 });
+  else               gastosGT.push({ concepto: 'Nuevo gasto', monto: 0 });
+  renderGastos(); recalc();
+}
+function removeGasto(tipo, i) {
+  if (tipo === 'mx') gastosMX.splice(i, 1);
+  else               gastosGT.splice(i, 1);
+  renderGastos(); recalc();
+}
+
+// ── Renders ───────────────────────────────────────────────────────
+function renderProductos() {
+  const tb = $('tb-productos');
+  tb.innerHTML = productos.map((p, i) => {
+    const lbsCaja = (parseFloat(p.kgCaja) || 0) * 2.20462;
+    const subMXN  = (parseFloat(p.cajas) || 0) * (parseFloat(p.precioMXN) || 0);
+    const tc = parseFloat($('tcMXN').value) || 0;
+    const subGTQ = subMXN * tc;
+    return `
+      <tr>
+        <td><input value="${p.nombre}" data-i="${i}" data-f="nombre" placeholder="Producto"></td>
+        <td class="num"><input class="num" type="number" step="any" value="${p.cajas}" data-i="${i}" data-f="cajas"></td>
+        <td class="num"><input class="num" type="number" step="0.1" value="${p.kgCaja}" data-i="${i}" data-f="kgCaja"></td>
+        <td class="num">${fmt(lbsCaja, 2)}</td>
+        <td class="num"><input class="num" type="number" step="0.01" value="${p.precioMXN}" data-i="${i}" data-f="precioMXN"></td>
+        <td class="num bold">${fmt$(subMXN)}</td>
+        <td class="num bold">${fmtQ(subGTQ)}</td>
+        <td><button class="action-btn" onclick="removeProducto(${i})">✕</button></td>
+      </tr>`;
+  }).join('');
+  tb.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const idx = +e.target.dataset.i, field = e.target.dataset.f;
+      productos[idx][field] = field === 'nombre' ? e.target.value : (parseFloat(e.target.value) || 0);
+      recalc();
+    });
+  });
+}
+
+function renderGastos() {
+  const renderTable = (arr, bodyId, tipo) => {
+    const tc = parseFloat($('tcMXN').value) || 0;
+    const tb = $(bodyId);
+    tb.innerHTML = arr.map((g, i) => {
+      const m = parseFloat(g.monto) || 0;
+      const eqGTQ = tipo === 'mx' ? m * tc : null;
+      const cells = tipo === 'mx'
+        ? `<td class="num"><input class="num" type="number" step="0.01" value="${g.monto}" data-i="${i}" data-f="monto" data-t="mx"></td>
+           <td class="num bold">${fmtQ(eqGTQ)}</td>`
+        : `<td class="num"><input class="num" type="number" step="0.01" value="${g.monto}" data-i="${i}" data-f="monto" data-t="gt"></td>`;
+      return `
+        <tr>
+          <td><input value="${g.concepto}" data-i="${i}" data-f="concepto" data-t="${tipo}" placeholder="Concepto"></td>
+          ${cells}
+          <td><button class="action-btn" onclick="removeGasto('${tipo}', ${i})">✕</button></td>
+        </tr>`;
+    }).join('');
+    tb.querySelectorAll('input').forEach(inp => {
+      inp.addEventListener('input', e => {
+        const idx = +e.target.dataset.i, field = e.target.dataset.f, t = e.target.dataset.t;
+        const arr = t === 'mx' ? gastosMX : gastosGT;
+        arr[idx][field] = field === 'concepto' ? e.target.value : (parseFloat(e.target.value) || 0);
+        recalc();
+      });
+    });
+  };
+  renderTable(gastosMX, 'tb-gastosMX', 'mx');
+  renderTable(gastosGT, 'tb-gastosGT', 'gt');
+}
+
+// ── Calc ──────────────────────────────────────────────────────────
+function recalc() {
+  const tc = parseFloat($('tcMXN').value) || 0;
+  const tcUSD = parseFloat($('tcUSD').value) || 1;
+  const margenPct = (parseFloat($('margenPct').value) || 0) / 100;
+  const ivaPct = (parseFloat($('ivaPct').value) || 0) / 100;
+  const retIvaPct = (parseFloat($('retIvaPct').value) || 0) / 100;
+  const prontoPct = (parseFloat($('prontoPct').value) || 0) / 100;
+
+  // Productos
+  let totalSubMXN = 0, totalSubGTQ = 0;
+  productos.forEach(p => {
+    const subMXN = (parseFloat(p.cajas) || 0) * (parseFloat(p.precioMXN) || 0);
+    totalSubMXN += subMXN;
+    totalSubGTQ += subMXN * tc;
+  });
+  $('ft-subMXN').textContent = fmt$(totalSubMXN);
+  $('ft-subGTQ').textContent = fmtQ(totalSubGTQ);
+
+  // Gastos
+  let totalGastosMXN = 0, totalGastosMXNenGTQ = 0;
+  gastosMX.forEach(g => { const m = parseFloat(g.monto) || 0; totalGastosMXN += m; totalGastosMXNenGTQ += m * tc; });
+  let totalGastosGT = 0;
+  gastosGT.forEach(g => { totalGastosGT += parseFloat(g.monto) || 0; });
+  const totalGastosGTQ = totalGastosMXNenGTQ + totalGastosGT;
+  $('ft-gastosMX-mxn').textContent = fmt$(totalGastosMXN);
+  $('ft-gastosMX-gtq').textContent = fmtQ(totalGastosMXNenGTQ);
+  $('ft-gastosGT').textContent = fmtQ(totalGastosGT);
+
+  // Costos por producto (gastos prorrateados)
+  const costoTotalGlobal = totalSubGTQ + totalGastosGTQ;
+  const tbC = $('tb-costos'); tbC.innerHTML = '';
+  productos.forEach((p, i) => {
+    const subMXN = (parseFloat(p.cajas) || 0) * (parseFloat(p.precioMXN) || 0);
+    const subGTQ = subMXN * tc;
+    const cajas = parseFloat(p.cajas) || 0;
+    const lbsCaja = (parseFloat(p.kgCaja) || 0) * 2.20462;
+    const pctGastos = totalSubGTQ > 0 ? subGTQ / totalSubGTQ : 0;
+    const gastosProrr = totalGastosGTQ * pctGastos;
+    const costoTot = subGTQ + gastosProrr;
+    const costoCaja = cajas > 0 ? costoTot / cajas : 0;
+    const costoLb   = (cajas * lbsCaja) > 0 ? costoTot / (cajas * lbsCaja) : 0;
+    // Guardar para uso en venta
+    productos[i]._costoTot = costoTot;
+    productos[i]._costoCaja = costoCaja;
+    productos[i]._costoLb = costoLb;
+    productos[i]._lbsTotal = cajas * lbsCaja;
+    tbC.innerHTML += `
+      <tr>
+        <td class="bold">${p.nombre || '—'}</td>
+        <td class="num">${fmtQ(subGTQ)}</td>
+        <td class="num">${fmtQ(gastosProrr)}</td>
+        <td class="num bold">${fmtQ(costoTot)}</td>
+        <td class="num">${fmtQ(costoCaja)}</td>
+        <td class="num">${fmtQ(costoLb)}</td>
+      </tr>`;
+  });
+  $('ft-costoTotal').textContent = fmtQ(costoTotalGlobal);
+
+  // Venta (precio sugerido = costoCaja × (1 + margen))
+  const tbV = $('tb-venta'); tbV.innerHTML = '';
+  let totalVentaGTQ = 0, totalVentaUSD = 0, totalVentaMXN = 0;
+  productos.forEach((p, i) => {
+    const costoCaja = p._costoCaja || 0;
+    if (!productos[i]._precioVenta && productos[i]._precioVenta !== 0) {
+      productos[i]._precioVenta = +(costoCaja * (1 + margenPct)).toFixed(2);
+    }
+    const precio = productos[i]._precioVenta;
+    const sinIVA = precio / (1 + ivaPct);
+    const iva    = precio - sinIVA;
+    const retIVA = iva * retIvaPct;
+    const pronto = precio * prontoPct;
+    const finalNeto = precio - retIVA - pronto;
+    const finalUSD  = tcUSD > 0 ? finalNeto / tcUSD : 0;
+    const finalMXN  = tc > 0 ? finalNeto / tc : 0;
+    const cajas = parseFloat(p.cajas) || 0;
+    totalVentaGTQ += finalNeto * cajas;
+    totalVentaUSD += finalUSD * cajas;
+    totalVentaMXN += finalMXN * cajas;
+    tbV.innerHTML += `
+      <tr>
+        <td class="bold">${p.nombre || '—'}</td>
+        <td class="num"><input class="num" type="number" step="0.01" value="${precio.toFixed(2)}" onchange="setPrecio(${i}, this.value)"></td>
+        <td class="num">${fmtQ(sinIVA)}</td>
+        <td class="num" style="color:var(--red)">${fmtQ(retIVA)}</td>
+        <td class="num" style="color:var(--red)">${fmtQ(pronto)}</td>
+        <td class="num bold" style="color:var(--green)">${fmtQ(finalNeto)}</td>
+        <td class="num">${fmt$(finalUSD)}</td>
+        <td class="num">$ ${fmt(finalMXN)} MXN</td>
+      </tr>`;
+  });
+  $('ft-ventaGTQ').textContent = fmtQ(totalVentaGTQ);
+  $('ft-ventaUSD').textContent = fmt$(totalVentaUSD);
+  $('ft-ventaMXN').textContent = '$ ' + fmt(totalVentaMXN) + ' MXN';
+
+  // KPIs
+  $('k-compra').textContent = fmtQ(totalSubGTQ);
+  $('k-compraMXN').textContent = fmt$(totalSubMXN) + ' MXN';
+  $('k-gastos').textContent = fmtQ(totalGastosGTQ);
+  $('k-gastosPct').textContent = costoTotalGlobal > 0 ? ((totalGastosGTQ / costoTotalGlobal) * 100).toFixed(1) + '% del costo' : '0% del costo';
+  $('k-costo').textContent = fmtQ(costoTotalGlobal);
+  $('k-venta').textContent = fmtQ(totalVentaGTQ);
+  $('k-ventaUSD').textContent = fmt$(totalVentaUSD) + ' USD';
+  const margen = totalVentaGTQ - costoTotalGlobal;
+  $('k-margen').textContent = fmtQ(margen);
+  $('k-margenPct').textContent = costoTotalGlobal > 0 ? ((margen / costoTotalGlobal) * 100).toFixed(1) + '% sobre costo' : '0%';
+  const kMargenEl = document.querySelectorAll('.kpi.good')[1];
+  if (kMargenEl) {
+    kMargenEl.classList.remove('bad');
+    if (margen < 0) { kMargenEl.classList.add('bad'); kMargenEl.classList.remove('good'); }
+    else            { kMargenEl.classList.add('good'); }
+  }
+
+  // Reparto entre empresas
+  // Calcular sobre precio venta BRUTO (no neto)
+  let totalVentaBruta = 0;
+  productos.forEach(p => { totalVentaBruta += (p._precioVenta || 0) * (parseFloat(p.cajas) || 0); });
+  const retencionesTotal = totalVentaBruta - totalVentaGTQ;
+  const ajuaMargen = totalVentaGTQ - costoTotalGlobal;
+  const pct = (n) => totalVentaBruta > 0 ? (n / totalVentaBruta * 100).toFixed(1) + '%' : '0%';
+  $('rep-productor').textContent = fmtQ(totalSubGTQ);
+  $('rep-productorPct').textContent = pct(totalSubGTQ);
+  $('rep-gastos').textContent = fmtQ(totalGastosGTQ);
+  $('rep-gastosPct').textContent = pct(totalGastosGTQ);
+  $('rep-ajua').textContent = fmtQ(ajuaMargen);
+  $('rep-ajuaPct').textContent = pct(ajuaMargen);
+  $('rep-impuestos').textContent = fmtQ(retencionesTotal);
+  $('rep-impuestosPct').textContent = pct(retencionesTotal);
+  $('rep-total').textContent = fmtQ(totalVentaBruta);
+
+  // Productor name
+  const prodName = $('m-productor').value;
+  $('lbl-productor').textContent = prodName ? `Productor — ${prodName}` : 'Productor';
+}
+
+function setPrecio(i, v) {
+  productos[i]._precioVenta = parseFloat(v) || 0;
+  recalc();
+}
+
+function copyShareableLink() {
+  navigator.clipboard.writeText(window.location.href);
+  alert('Enlace copiado. Compartilo con el productor.');
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+$('m-fecha').value = today();
+$('foot-ts').textContent = 'Última actualización: ' + new Date().toLocaleString('es-GT');
+renderProductos();
+renderGastos();
+recalc();
+
+// Wire config inputs
+['tcMXN', 'tcUSD', 'margenPct', 'ivaPct', 'retIvaPct', 'prontoPct', 'm-productor'].forEach(id => {
+  $(id).addEventListener('input', () => { renderProductos(); renderGastos(); recalc(); });
+});
+</script>
+</body>
+</html>
