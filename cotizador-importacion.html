@@ -280,11 +280,6 @@ footer.doc-foot {
         <span class="hint">Tipo de cambio USD → GTQ</span>
       </div>
       <div class="cfg-field">
-        <label>Comisión AGROAJUA (margen %)</label>
-        <input type="number" id="margenPct" step="0.1" value="15">
-        <span class="hint">Sobre costo total puesto en bodega</span>
-      </div>
-      <div class="cfg-field">
         <label>IVA Guatemala (%)</label>
         <input type="number" id="ivaPct" step="0.1" value="12">
         <span class="hint">Para descuento de retenciones</span>
@@ -305,14 +300,26 @@ footer.doc-foot {
   <!-- 2. PRODUCTOS -->
   <section class="block">
     <div class="section-num">— 02 / Productos a importar</div>
-    <h2 class="section-title">Lista de compra al productor</h2>
+    <h2 class="section-title">Lista de compra al productor — kg / caja / unidad</h2>
+    <div style="font-size:.78rem;color:var(--muted);margin-bottom:14px;font-style:italic;">
+      Compra a productor en <b>kg por caja</b>. La venta se hace por <b>libra</b> (1 kg = 2.20462 lb).
+    </div>
+    <div id="contenedor-resumen" style="padding:12px 18px;background:var(--forest);color:var(--bone);border-radius:6px;margin-bottom:12px;
+      display:flex;gap:24px;flex-wrap:wrap;align-items:center;font-size:.86rem;">
+      <span style="font-family:'Fraunces',serif;font-weight:700;font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;opacity:.75;">Contenedor</span>
+      <span><span id="cnt-cajas" style="font-weight:700;color:#fff;">0</span> cajas</span>
+      <span><span id="cnt-kg" style="font-weight:700;color:var(--ochre);">0.00</span> kg</span>
+      <span><span id="cnt-lbs" style="font-weight:700;color:var(--ochre);">0.00</span> lbs</span>
+      <span><span id="cnt-prods" style="font-weight:700;color:#fff;">0</span> productos</span>
+    </div>
     <table class="t" id="t-productos">
       <thead>
         <tr>
           <th>Producto</th>
           <th class="num">Cajas</th>
           <th class="num">kg / caja</th>
-          <th class="num">lbs / caja</th>
+          <th class="num">Total kg</th>
+          <th class="num">Total lbs</th>
           <th class="num">Precio MXN / caja</th>
           <th class="num">Subtotal MXN</th>
           <th class="num">Subtotal GTQ</th>
@@ -322,7 +329,10 @@ footer.doc-foot {
       <tbody id="tb-productos"></tbody>
       <tfoot>
         <tr>
-          <td colspan="5">Totales</td>
+          <td colspan="3">Totales</td>
+          <td class="num" id="ft-kgTot">0.00</td>
+          <td class="num" id="ft-lbsTot">0.00</td>
+          <td></td>
           <td class="num" id="ft-subMXN">$ 0.00</td>
           <td class="num" id="ft-subGTQ">Q 0.00</td>
           <td></td>
@@ -365,8 +375,9 @@ footer.doc-foot {
           <th class="num">Compra GTQ</th>
           <th class="num">Gastos prorrateados</th>
           <th class="num">Costo total GTQ</th>
-          <th class="num">Costo / caja GTQ</th>
-          <th class="num">Costo / lb GTQ</th>
+          <th class="num">Costo / caja</th>
+          <th class="num">Costo / kg</th>
+          <th class="num">Costo / lb</th>
         </tr>
       </thead>
       <tbody id="tb-costos"></tbody>
@@ -374,7 +385,7 @@ footer.doc-foot {
         <tr>
           <td colspan="3">Costo total puesto en bodega</td>
           <td class="num" id="ft-costoTotal">Q 0.00</td>
-          <td colspan="2"></td>
+          <td colspan="3"></td>
         </tr>
       </tfoot>
     </table>
@@ -383,27 +394,34 @@ footer.doc-foot {
   <!-- 5. VENTA -->
   <section class="block">
     <div class="section-num">— 05 / Venta al cliente</div>
-    <h2 class="section-title">Precio de venta y cálculo neto</h2>
+    <h2 class="section-title">Precio de venta por libra y cálculo neto</h2>
+    <div style="font-size:.78rem;color:var(--muted);margin-bottom:8px;font-style:italic;">
+      Precio fijado <b>por libra</b>. Multiplicado por las libras totales para obtener venta total.
+    </div>
     <table class="t" id="t-venta">
       <thead>
         <tr>
           <th>Producto</th>
-          <th class="num">Precio venta / caja (GTQ)</th>
-          <th class="num">Sin IVA 12%</th>
-          <th class="num">Retención IVA 80%</th>
-          <th class="num">Pronto pago 1.25%</th>
-          <th class="num">Final neto / caja</th>
-          <th class="num">Final neto USD</th>
-          <th class="num">Final neto MXN</th>
+          <th class="num">Precio venta / lb (Q)</th>
+          <th class="num">Sin IVA 12% / lb</th>
+          <th class="num">Retención IVA / lb</th>
+          <th class="num">Pronto pago / lb</th>
+          <th class="num">Final neto / lb</th>
+          <th class="num">Total lbs</th>
+          <th class="num">Total venta neta</th>
         </tr>
       </thead>
       <tbody id="tb-venta"></tbody>
       <tfoot>
         <tr>
-          <td colspan="5">Venta total neta</td>
+          <td colspan="6">Venta total neta</td>
+          <td class="num" id="ft-lbsTot2">0.00</td>
           <td class="num" id="ft-ventaGTQ">Q 0.00</td>
-          <td class="num" id="ft-ventaUSD">$ 0.00</td>
-          <td class="num" id="ft-ventaMXN">$ 0.00</td>
+        </tr>
+        <tr>
+          <td colspan="6" style="background:var(--bone);">Equivalente en otras monedas</td>
+          <td class="num" id="ft-ventaUSD">$ 0.00 USD</td>
+          <td class="num" id="ft-ventaMXN">$ 0.00 MXN</td>
         </tr>
       </tfoot>
     </table>
@@ -426,30 +444,89 @@ footer.doc-foot {
   <section class="block">
     <div class="section-num">— 07 / Reparto entre empresas</div>
     <h2 class="section-title">Distribución del precio de venta</h2>
+    <h3 style="font-size:.85rem;color:#B4513A;margin-bottom:6px;font-weight:600;">🇲🇽 México (origen)</h3>
+    <div class="reparto-grid" style="margin-bottom:18px;">
+      <div class="h">Empresa / concepto</div>
+      <div class="h num">Monto GTQ</div>
+      <div class="h num">% de la venta</div>
+
+      <div><b id="lbl-productor">Productor</b><br><span style="font-size:.74rem;color:var(--muted);">Compra de producto (precio MXN convertido)</span></div>
+      <div class="num" id="rep-productor">Q 0.00</div>
+      <div class="num" id="rep-productorPct">0%</div>
+
+      <div><b>Gastos México</b><br><span style="font-size:.74rem;color:var(--muted);">Flete origen, empaque, documentación</span></div>
+      <div class="num" id="rep-gastosMX">Q 0.00</div>
+      <div class="num" id="rep-gastosMXPct">0%</div>
+
+      <div class="total"><b>Subtotal México</b></div>
+      <div class="num total" id="rep-subMX">Q 0.00</div>
+      <div class="num total" id="rep-subMXPct">0%</div>
+    </div>
+
+    <h3 style="font-size:.85rem;color:var(--canopy);margin-bottom:6px;font-weight:600;">🇬🇹 Guatemala (destino)</h3>
     <div class="reparto-grid">
       <div class="h">Empresa / concepto</div>
       <div class="h num">Monto GTQ</div>
       <div class="h num">% de la venta</div>
 
-      <div><b id="lbl-productor">Productor</b><br><span style="font-size:.74rem;color:var(--muted);">Costo origen de productos</span></div>
-      <div class="num" id="rep-productor">Q 0.00</div>
-      <div class="num" id="rep-productorPct">0%</div>
-
-      <div><b>Importación / Logística</b><br><span style="font-size:.74rem;color:var(--muted);">Flete, aduana, transporte, etc.</span></div>
-      <div class="num" id="rep-gastos">Q 0.00</div>
-      <div class="num" id="rep-gastosPct">0%</div>
+      <div><b>Gastos Guatemala</b><br><span style="font-size:.74rem;color:var(--muted);">Aduana, transporte interno, almacenamiento</span></div>
+      <div class="num" id="rep-gastosGT">Q 0.00</div>
+      <div class="num" id="rep-gastosGTPct">0%</div>
 
       <div><b>AGROAJUA</b><br><span style="font-size:.74rem;color:var(--muted);">Comisión, manejo, riesgo comercial</span></div>
       <div class="num" id="rep-ajua">Q 0.00</div>
       <div class="num" id="rep-ajuaPct">0%</div>
 
-      <div><b>Retenciones e impuestos</b><br><span style="font-size:.74rem;color:var(--muted);">IVA retenido + pronto pago</span></div>
+      <div><b>Retenciones e impuestos</b><br><span style="font-size:.74rem;color:var(--muted);">IVA retenido + pronto pago al fisco GT</span></div>
       <div class="num" id="rep-impuestos">Q 0.00</div>
       <div class="num" id="rep-impuestosPct">0%</div>
 
-      <div class="total"><b>Precio venta bruto al cliente</b></div>
-      <div class="num total" id="rep-total">Q 0.00</div>
-      <div class="num total">100%</div>
+      <div class="total"><b>Subtotal Guatemala</b></div>
+      <div class="num total" id="rep-subGT">Q 0.00</div>
+      <div class="num total" id="rep-subGTPct">0%</div>
+    </div>
+
+    <div style="margin-top:14px;padding:14px 18px;background:var(--bone);border-radius:6px;display:flex;justify-content:space-between;align-items:center;border-left:3px solid var(--forest);">
+      <span style="font-family:'Fraunces',serif;font-weight:700;color:var(--forest);font-size:1.05rem;">Precio venta bruto al cliente</span>
+      <span style="font-family:'Fraunces',serif;font-weight:700;color:var(--forest);font-size:1.3rem;" id="rep-total">Q 0.00</span>
+    </div>
+  </section>
+
+  <!-- 8. COMISIÓN AGROAJUA -->
+  <section class="block">
+    <div class="section-num">— 08 / Comisión AGROAJUA</div>
+    <h2 class="section-title">Margen objetivo de AGROAJUA</h2>
+    <div style="font-size:.84rem;color:var(--muted);margin-bottom:14px;">
+      Definí cuánto querés ganar: como porcentaje sobre el costo, o como monto fijo por libra. Esto determina el precio de venta sugerido por libra para cada producto.
+    </div>
+    <div class="cfg" style="background:#FFFBEF;border-color:var(--ochre);">
+      <div class="cfg-field">
+        <label>Modo de comisión</label>
+        <select id="comMode" style="font-size:1.05rem;font-weight:600;color:var(--forest);padding:4px 0;">
+          <option value="pct">Porcentaje sobre costo (%)</option>
+          <option value="qlb">Monto fijo por libra (Q/lb)</option>
+        </select>
+        <span class="hint">Cambiá la forma de calcular</span>
+      </div>
+      <div class="cfg-field" id="cf-pct">
+        <label>% sobre costo / lb</label>
+        <input type="number" id="comPct" step="0.1" value="15">
+        <span class="hint">Ej: 15% → precio = costo × 1.15</span>
+      </div>
+      <div class="cfg-field" id="cf-qlb" style="display:none;">
+        <label>Q por libra</label>
+        <input type="number" id="comQlb" step="0.01" value="1.50">
+        <span class="hint">Ej: Q 1.50/lb → precio = costo + 1.50</span>
+      </div>
+      <div class="cfg-field">
+        <button class="add-row" onclick="recalcularPrecios()" style="margin-top:18px;">↻ Recalcular precios sugeridos</button>
+      </div>
+    </div>
+    <div class="kpis" style="margin-top:18px;">
+      <div class="kpi"><div class="lbl">Costo total</div><div class="val" id="cm-costo">Q 0.00</div></div>
+      <div class="kpi"><div class="lbl">Venta neta</div><div class="val" id="cm-venta">Q 0.00</div></div>
+      <div class="kpi good"><div class="lbl">Comisión AGROAJUA</div><div class="val" id="cm-comision">Q 0.00</div><div class="sub" id="cm-comisionInfo">—</div></div>
+      <div class="kpi"><div class="lbl">Q por libra promedio</div><div class="val" id="cm-promLb">Q 0.00</div><div class="sub" id="cm-promLbPct">— sobre costo/lb</div></div>
     </div>
   </section>
 
@@ -508,8 +585,11 @@ function removeGasto(tipo, i) {
 function renderProductos() {
   const tb = $('tb-productos');
   tb.innerHTML = productos.map((p, i) => {
-    const lbsCaja = (parseFloat(p.kgCaja) || 0) * 2.20462;
-    const subMXN  = (parseFloat(p.cajas) || 0) * (parseFloat(p.precioMXN) || 0);
+    const cajas   = parseFloat(p.cajas) || 0;
+    const kgCaja  = parseFloat(p.kgCaja) || 0;
+    const kgTot   = cajas * kgCaja;
+    const lbsTot  = kgTot * 2.20462;
+    const subMXN  = cajas * (parseFloat(p.precioMXN) || 0);
     const tc = parseFloat($('tcMXN').value) || 0;
     const subGTQ = subMXN * tc;
     return `
@@ -517,7 +597,8 @@ function renderProductos() {
         <td><input value="${p.nombre}" data-i="${i}" data-f="nombre" placeholder="Producto"></td>
         <td class="num"><input class="num" type="number" step="any" value="${p.cajas}" data-i="${i}" data-f="cajas"></td>
         <td class="num"><input class="num" type="number" step="0.1" value="${p.kgCaja}" data-i="${i}" data-f="kgCaja"></td>
-        <td class="num">${fmt(lbsCaja, 2)}</td>
+        <td class="num">${fmt(kgTot, 2)}</td>
+        <td class="num bold">${fmt(lbsTot, 2)}</td>
         <td class="num"><input class="num" type="number" step="0.01" value="${p.precioMXN}" data-i="${i}" data-f="precioMXN"></td>
         <td class="num bold">${fmt$(subMXN)}</td>
         <td class="num bold">${fmtQ(subGTQ)}</td>
@@ -568,20 +649,35 @@ function renderGastos() {
 function recalc() {
   const tc = parseFloat($('tcMXN').value) || 0;
   const tcUSD = parseFloat($('tcUSD').value) || 1;
-  const margenPct = (parseFloat($('margenPct').value) || 0) / 100;
   const ivaPct = (parseFloat($('ivaPct').value) || 0) / 100;
   const retIvaPct = (parseFloat($('retIvaPct').value) || 0) / 100;
   const prontoPct = (parseFloat($('prontoPct').value) || 0) / 100;
+  const comMode = $('comMode').value; // 'pct' o 'qlb'
+  const comPct  = (parseFloat($('comPct').value)  || 0) / 100;
+  const comQlb  = parseFloat($('comQlb').value) || 0;
 
-  // Productos
-  let totalSubMXN = 0, totalSubGTQ = 0;
+  // Productos — totales
+  let totalSubMXN = 0, totalSubGTQ = 0, totalKg = 0, totalLbs = 0;
   productos.forEach(p => {
-    const subMXN = (parseFloat(p.cajas) || 0) * (parseFloat(p.precioMXN) || 0);
+    const cajas = parseFloat(p.cajas) || 0;
+    const kgCaja = parseFloat(p.kgCaja) || 0;
+    const subMXN = cajas * (parseFloat(p.precioMXN) || 0);
     totalSubMXN += subMXN;
     totalSubGTQ += subMXN * tc;
+    totalKg     += cajas * kgCaja;
+    totalLbs    += cajas * kgCaja * 2.20462;
   });
   $('ft-subMXN').textContent = fmt$(totalSubMXN);
   $('ft-subGTQ').textContent = fmtQ(totalSubGTQ);
+  $('ft-kgTot').textContent  = fmt(totalKg, 2);
+  $('ft-lbsTot').textContent = fmt(totalLbs, 2);
+
+  // Banner contenedor
+  const totalCajas = productos.reduce((s, p) => s + (parseFloat(p.cajas) || 0), 0);
+  $('cnt-cajas').textContent = fmt(totalCajas, 0);
+  $('cnt-kg').textContent    = fmt(totalKg, 2);
+  $('cnt-lbs').textContent   = fmt(totalLbs, 2);
+  $('cnt-prods').textContent = productos.length;
 
   // Gastos
   let totalGastosMXN = 0, totalGastosMXNenGTQ = 0;
@@ -593,24 +689,29 @@ function recalc() {
   $('ft-gastosMX-gtq').textContent = fmtQ(totalGastosMXNenGTQ);
   $('ft-gastosGT').textContent = fmtQ(totalGastosGT);
 
-  // Costos por producto (gastos prorrateados)
+  // Costos por producto (gastos prorrateados según peso por producto en GTQ)
   const costoTotalGlobal = totalSubGTQ + totalGastosGTQ;
   const tbC = $('tb-costos'); tbC.innerHTML = '';
   productos.forEach((p, i) => {
-    const subMXN = (parseFloat(p.cajas) || 0) * (parseFloat(p.precioMXN) || 0);
-    const subGTQ = subMXN * tc;
     const cajas = parseFloat(p.cajas) || 0;
-    const lbsCaja = (parseFloat(p.kgCaja) || 0) * 2.20462;
+    const kgCaja = parseFloat(p.kgCaja) || 0;
+    const lbsCaja = kgCaja * 2.20462;
+    const subMXN = cajas * (parseFloat(p.precioMXN) || 0);
+    const subGTQ = subMXN * tc;
+    const kgTot  = cajas * kgCaja;
+    const lbsTot = kgTot * 2.20462;
     const pctGastos = totalSubGTQ > 0 ? subGTQ / totalSubGTQ : 0;
     const gastosProrr = totalGastosGTQ * pctGastos;
     const costoTot = subGTQ + gastosProrr;
     const costoCaja = cajas > 0 ? costoTot / cajas : 0;
-    const costoLb   = (cajas * lbsCaja) > 0 ? costoTot / (cajas * lbsCaja) : 0;
-    // Guardar para uso en venta
-    productos[i]._costoTot = costoTot;
+    const costoKg   = kgTot > 0 ? costoTot / kgTot : 0;
+    const costoLb   = lbsTot > 0 ? costoTot / lbsTot : 0;
+    productos[i]._costoTot  = costoTot;
     productos[i]._costoCaja = costoCaja;
-    productos[i]._costoLb = costoLb;
-    productos[i]._lbsTotal = cajas * lbsCaja;
+    productos[i]._costoKg   = costoKg;
+    productos[i]._costoLb   = costoLb;
+    productos[i]._lbsTotal  = lbsTot;
+    productos[i]._kgTotal   = kgTot;
     tbC.innerHTML += `
       <tr>
         <td class="bold">${p.nombre || '—'}</td>
@@ -618,31 +719,36 @@ function recalc() {
         <td class="num">${fmtQ(gastosProrr)}</td>
         <td class="num bold">${fmtQ(costoTot)}</td>
         <td class="num">${fmtQ(costoCaja)}</td>
-        <td class="num">${fmtQ(costoLb)}</td>
+        <td class="num">${fmtQ(costoKg)}</td>
+        <td class="num" style="color:var(--canopy);font-weight:600">${fmtQ(costoLb)}</td>
       </tr>`;
   });
   $('ft-costoTotal').textContent = fmtQ(costoTotalGlobal);
 
-  // Venta (precio sugerido = costoCaja × (1 + margen))
+  // Venta POR LIBRA
   const tbV = $('tb-venta'); tbV.innerHTML = '';
-  let totalVentaGTQ = 0, totalVentaUSD = 0, totalVentaMXN = 0;
+  let totalVentaGTQ = 0, totalVentaUSD = 0, totalVentaMXN = 0, totalVentaBruta = 0;
   productos.forEach((p, i) => {
-    const costoCaja = p._costoCaja || 0;
-    if (!productos[i]._precioVenta && productos[i]._precioVenta !== 0) {
-      productos[i]._precioVenta = +(costoCaja * (1 + margenPct)).toFixed(2);
+    const costoLb = p._costoLb || 0;
+    const lbsTot  = p._lbsTotal || 0;
+    // Precio sugerido si no hay manual
+    if (productos[i]._precioVenta == null) {
+      productos[i]._precioVenta = +(comMode === 'qlb' ? (costoLb + comQlb) : (costoLb * (1 + comPct))).toFixed(2);
     }
-    const precio = productos[i]._precioVenta;
+    const precio = productos[i]._precioVenta; // GTQ por libra
     const sinIVA = precio / (1 + ivaPct);
     const iva    = precio - sinIVA;
     const retIVA = iva * retIvaPct;
     const pronto = precio * prontoPct;
-    const finalNeto = precio - retIVA - pronto;
-    const finalUSD  = tcUSD > 0 ? finalNeto / tcUSD : 0;
-    const finalMXN  = tc > 0 ? finalNeto / tc : 0;
-    const cajas = parseFloat(p.cajas) || 0;
-    totalVentaGTQ += finalNeto * cajas;
-    totalVentaUSD += finalUSD * cajas;
-    totalVentaMXN += finalMXN * cajas;
+    const finalNetoLb = precio - retIVA - pronto;
+    const finalUSDLb  = tcUSD > 0 ? finalNetoLb / tcUSD : 0;
+    const finalMXNLb  = tc > 0 ? finalNetoLb / tc : 0;
+    const ventaProd       = finalNetoLb * lbsTot;
+    const ventaProdBruta  = precio       * lbsTot;
+    totalVentaGTQ   += ventaProd;
+    totalVentaUSD   += finalUSDLb * lbsTot;
+    totalVentaMXN   += finalMXNLb * lbsTot;
+    totalVentaBruta += ventaProdBruta;
     tbV.innerHTML += `
       <tr>
         <td class="bold">${p.nombre || '—'}</td>
@@ -650,13 +756,14 @@ function recalc() {
         <td class="num">${fmtQ(sinIVA)}</td>
         <td class="num" style="color:var(--red)">${fmtQ(retIVA)}</td>
         <td class="num" style="color:var(--red)">${fmtQ(pronto)}</td>
-        <td class="num bold" style="color:var(--green)">${fmtQ(finalNeto)}</td>
-        <td class="num">${fmt$(finalUSD)}</td>
-        <td class="num">$ ${fmt(finalMXN)} MXN</td>
+        <td class="num bold" style="color:var(--green)">${fmtQ(finalNetoLb)}</td>
+        <td class="num">${fmt(lbsTot, 2)}</td>
+        <td class="num bold">${fmtQ(ventaProd)}</td>
       </tr>`;
   });
+  $('ft-lbsTot2').textContent = fmt(totalLbs, 2);
   $('ft-ventaGTQ').textContent = fmtQ(totalVentaGTQ);
-  $('ft-ventaUSD').textContent = fmt$(totalVentaUSD);
+  $('ft-ventaUSD').textContent = fmt$(totalVentaUSD) + ' USD';
   $('ft-ventaMXN').textContent = '$ ' + fmt(totalVentaMXN) + ' MXN';
 
   // KPIs
@@ -672,31 +779,58 @@ function recalc() {
   $('k-margenPct').textContent = costoTotalGlobal > 0 ? ((margen / costoTotalGlobal) * 100).toFixed(1) + '% sobre costo' : '0%';
   const kMargenEl = document.querySelectorAll('.kpi.good')[1];
   if (kMargenEl) {
-    kMargenEl.classList.remove('bad');
-    if (margen < 0) { kMargenEl.classList.add('bad'); kMargenEl.classList.remove('good'); }
-    else            { kMargenEl.classList.add('good'); }
+    kMargenEl.classList.remove('bad', 'good');
+    kMargenEl.classList.add(margen < 0 ? 'bad' : 'good');
   }
 
-  // Reparto entre empresas
-  // Calcular sobre precio venta BRUTO (no neto)
-  let totalVentaBruta = 0;
-  productos.forEach(p => { totalVentaBruta += (p._precioVenta || 0) * (parseFloat(p.cajas) || 0); });
+  // Reparto entre empresas — separado MX vs GT
   const retencionesTotal = totalVentaBruta - totalVentaGTQ;
   const ajuaMargen = totalVentaGTQ - costoTotalGlobal;
+  const subMX = totalSubGTQ + totalGastosMXNenGTQ;
+  const subGT = totalGastosGT + ajuaMargen + retencionesTotal;
   const pct = (n) => totalVentaBruta > 0 ? (n / totalVentaBruta * 100).toFixed(1) + '%' : '0%';
-  $('rep-productor').textContent = fmtQ(totalSubGTQ);
+
+  // México
+  $('rep-productor').textContent    = fmtQ(totalSubGTQ);
   $('rep-productorPct').textContent = pct(totalSubGTQ);
-  $('rep-gastos').textContent = fmtQ(totalGastosGTQ);
-  $('rep-gastosPct').textContent = pct(totalGastosGTQ);
-  $('rep-ajua').textContent = fmtQ(ajuaMargen);
-  $('rep-ajuaPct').textContent = pct(ajuaMargen);
-  $('rep-impuestos').textContent = fmtQ(retencionesTotal);
+  $('rep-gastosMX').textContent     = fmtQ(totalGastosMXNenGTQ);
+  $('rep-gastosMXPct').textContent  = pct(totalGastosMXNenGTQ);
+  $('rep-subMX').textContent        = fmtQ(subMX);
+  $('rep-subMXPct').textContent     = pct(subMX);
+
+  // Guatemala
+  $('rep-gastosGT').textContent     = fmtQ(totalGastosGT);
+  $('rep-gastosGTPct').textContent  = pct(totalGastosGT);
+  $('rep-ajua').textContent         = fmtQ(ajuaMargen);
+  $('rep-ajuaPct').textContent      = pct(ajuaMargen);
+  $('rep-impuestos').textContent    = fmtQ(retencionesTotal);
   $('rep-impuestosPct').textContent = pct(retencionesTotal);
+  $('rep-subGT').textContent        = fmtQ(subGT);
+  $('rep-subGTPct').textContent     = pct(subGT);
+
   $('rep-total').textContent = fmtQ(totalVentaBruta);
+
+  // Sección 08 — Comisión AGROAJUA (resumen final)
+  $('cm-costo').textContent  = fmtQ(costoTotalGlobal);
+  $('cm-venta').textContent  = fmtQ(totalVentaGTQ);
+  $('cm-comision').textContent = fmtQ(ajuaMargen);
+  const promLb = totalLbs > 0 ? ajuaMargen / totalLbs : 0;
+  $('cm-promLb').textContent = fmtQ(promLb) + ' / lb';
+  const costoLbProm = totalLbs > 0 ? costoTotalGlobal / totalLbs : 0;
+  $('cm-promLbPct').textContent = costoLbProm > 0 ? (promLb / costoLbProm * 100).toFixed(1) + '% sobre costo/lb (promedio)' : '—';
+  $('cm-comisionInfo').textContent = comMode === 'qlb'
+    ? `Modo: Q${comQlb.toFixed(2)} fijo por lb × ${fmt(totalLbs, 0)} lbs`
+    : `Modo: ${(comPct * 100).toFixed(1)}% sobre costo`;
 
   // Productor name
   const prodName = $('m-productor').value;
   $('lbl-productor').textContent = prodName ? `Productor — ${prodName}` : 'Productor';
+}
+
+// Forzar recalcular precios sugeridos según comisión (descarta manuales)
+function recalcularPrecios() {
+  productos.forEach(p => { p._precioVenta = null; });
+  recalc();
 }
 
 function setPrecio(i, v) {
@@ -716,8 +850,17 @@ renderProductos();
 renderGastos();
 recalc();
 
+// Toggle entre modo % y Q/lb en sección 08
+function syncComMode() {
+  const m = $('comMode').value;
+  $('cf-pct').style.display = m === 'pct' ? '' : 'none';
+  $('cf-qlb').style.display = m === 'qlb' ? '' : 'none';
+}
+$('comMode').addEventListener('change', () => { syncComMode(); recalcularPrecios(); });
+syncComMode();
+
 // Wire config inputs
-['tcMXN', 'tcUSD', 'margenPct', 'ivaPct', 'retIvaPct', 'prontoPct', 'm-productor'].forEach(id => {
+['tcMXN', 'tcUSD', 'ivaPct', 'retIvaPct', 'prontoPct', 'm-productor', 'comPct', 'comQlb'].forEach(id => {
   $(id).addEventListener('input', () => { renderProductos(); renderGastos(); recalc(); });
 });
 </script>
