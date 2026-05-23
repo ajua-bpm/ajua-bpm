@@ -151,23 +151,9 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
     </div>
   </section>
 
-  <!-- 02 COMISIÓN AGROAJUA -->
+  <!-- 02 GASTOS -->
   <section class="block">
-    <div class="section-num">— 02 / Comisión AGROAJUA</div>
-    <h2 class="section-title">Margen objetivo</h2>
-    <div class="subnote">Definí cuánto querés ganar: porcentaje sobre venta neta, o monto fijo por libra del peso total. Aplica a todos los productos.</div>
-    <div class="cfg commission">
-      <div class="cfg-field"><label>Modo de comisión</label>
-        <select id="comMode"><option value="pct">Porcentaje sobre venta neta (%)</option><option value="qlb">Monto fijo por libra (Q/lb)</option></select>
-      </div>
-      <div class="cfg-field" id="cf-pct"><label>% sobre venta neta</label><input type="number" id="comPct" step="0.1" value="10"><span class="hint">Ej: 10% → AJUA = venta neta × 10%</span></div>
-      <div class="cfg-field" id="cf-qlb" style="display:none;"><label>Q por libra</label><input type="number" id="comQlb" step="0.01" value="1.00"><span class="hint">Ej: Q 1.00/lb × total lbs</span></div>
-    </div>
-  </section>
-
-  <!-- 03 GASTOS -->
-  <section class="block">
-    <div class="section-num">— 03 / Gastos de importación</div>
+    <div class="section-num">— 02 / Gastos de importación</div>
     <h2 class="section-title">Costos asociados al envío</h2>
     <h3 style="font-size:.85rem;color:var(--mxFlag);margin-bottom:6px;font-weight:600;">🇲🇽 Gastos origen — México (MXN)</h3>
     <table class="t" id="t-gastosMX">
@@ -188,9 +174,9 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
 
   <!-- 04 PRODUCTOS + PRECIO VENTA -->
   <section class="block">
-    <div class="section-num">— 04 / Productos y precio de venta</div>
+    <div class="section-num">— 03 / Productos · precio venta · comisión · costo sugerido</div>
     <h2 class="section-title">Negociación por producto — kg / caja / unidad</h2>
-    <div class="subnote">Ingresá <b>precio de venta /u</b> (Q por libra o Q por unidad según el modo). Si ya tenés una <b>propuesta MXN/empaque</b> del productor, ingresala para comparar con el máximo.</div>
+    <div class="subnote">Por cada producto definí: <b>precio de venta /u</b> (Q/lb o Q/unidad), <b>comisión AJUA</b> en Q/libra, y opcionalmente el <b>costo sugerido MXN/empaque</b> (lo que querés pagar al productor) para comparar contra el máximo.</div>
 
     <div class="banner-cnt">
       <span class="lbl">Contenedor</span>
@@ -211,15 +197,16 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
           <th class="num">Total lbs</th>
           <th>Modo venta</th>
           <th class="num">Unid/emp</th>
-          <th class="num">Total unidades</th>
+          <th class="num">Total unid.</th>
           <th class="num">Precio venta /u (Q)</th>
-          <th class="num">Propuesta productor MXN/emp</th>
+          <th class="num">Com AJUA Q/lb</th>
+          <th class="num">Costo sugerido MXN/emp</th>
           <th></th>
         </tr>
       </thead>
       <tbody id="tb-productos"></tbody>
       <tfoot>
-        <tr><td colspan="4">Totales</td><td class="num" id="ft-kgTot">0</td><td class="num" id="ft-lbsTot">0</td><td colspan="2"></td><td class="num" id="ft-unidTot">0</td><td colspan="2"></td><td></td></tr>
+        <tr><td colspan="4">Totales</td><td class="num" id="ft-kgTot">0</td><td class="num" id="ft-lbsTot">0</td><td colspan="2"></td><td class="num" id="ft-unidTot">0</td><td colspan="3"></td><td></td></tr>
       </tfoot>
     </table>
     <button class="add-row" onclick="addProducto()">+ Agregar producto</button>
@@ -227,7 +214,7 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
 
   <!-- 05 ANÁLISIS -->
   <section class="block">
-    <div class="section-num">— 05 / Análisis — Pago máximo al productor</div>
+    <div class="section-num">— 04 / Análisis — Pago máximo al productor</div>
     <h2 class="section-title">¿Cuánto se puede pagar al productor?</h2>
     <div class="subnote">Reversa: Venta − retenciones − gastos − comisión = disponible para productor. Se prorratea por <b>peso (kg)</b>.</div>
     <table class="t" id="t-analisis">
@@ -243,7 +230,7 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
           <th class="num">Disponible GTQ</th>
           <th class="num">Disponible MXN</th>
           <th class="num">Máx MXN/empaque</th>
-          <th class="num">Propuesta vs Máx</th>
+          <th class="num">Sugerido vs Máx</th>
         </tr>
       </thead>
       <tbody id="tb-analisis"></tbody>
@@ -266,7 +253,7 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
 
   <!-- 06 KPIS -->
   <section class="block">
-    <div class="section-num">— 06 / Resumen financiero</div>
+    <div class="section-num">— 05 / Resumen financiero</div>
     <h2 class="section-title">Indicadores clave</h2>
     <div class="kpis">
       <div class="kpi"><div class="lbl">Venta bruta</div><div class="val" id="k-vbruta">Q 0.00</div><div class="sub">Precio al cliente sin descuentos</div></div>
@@ -279,7 +266,7 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
 
   <!-- 07 REPARTO -->
   <section class="block">
-    <div class="section-num">— 07 / Reparto entre empresas</div>
+    <div class="section-num">— 06 / Reparto entre empresas</div>
     <h2 class="section-title">Distribución del precio venta bruto</h2>
 
     <h3 style="font-size:.85rem;color:var(--mxFlag);margin-bottom:6px;font-weight:600;">🇲🇽 México (origen)</h3>
@@ -331,9 +318,9 @@ const today=()=>new Date().toISOString().slice(0,10);
 
 // ── State
 let productos = [
-  { nombre:'Zanahoria', empaque:'bolsa', cantidad:20, kgEmpaque:24, modoVenta:'lb',     unidadesEmpaque:1, precioVentaU:5.50, propuestaMXN:'' },
-  { nombre:'Repollo',   empaque:'caja',  cantidad:20, kgEmpaque:14, modoVenta:'unidad', unidadesEmpaque:8, precioVentaU:7.00, propuestaMXN:'' },
-  { nombre:'Coliflor',  empaque:'caja',  cantidad:15, kgEmpaque:12, modoVenta:'unidad', unidadesEmpaque:6, precioVentaU:8.50, propuestaMXN:'' },
+  { nombre:'Zanahoria', empaque:'bolsa', cantidad:20, kgEmpaque:24, modoVenta:'lb',     unidadesEmpaque:1, precioVentaU:5.50, comQlb:1.00, costoSugeridoMXN:'' },
+  { nombre:'Repollo',   empaque:'caja',  cantidad:20, kgEmpaque:14, modoVenta:'unidad', unidadesEmpaque:8, precioVentaU:7.00, comQlb:1.00, costoSugeridoMXN:'' },
+  { nombre:'Coliflor',  empaque:'caja',  cantidad:15, kgEmpaque:12, modoVenta:'unidad', unidadesEmpaque:6, precioVentaU:8.50, comQlb:1.00, costoSugeridoMXN:'' },
 ];
 let gastosMX = [
   { concepto:'Flete México → frontera', monto:25000 },
@@ -347,7 +334,7 @@ let gastosGT = [
 ];
 
 // ── Add/remove
-function addProducto(){ productos.push({nombre:'Nuevo producto',empaque:'caja',cantidad:0,kgEmpaque:0,modoVenta:'lb',unidadesEmpaque:1,precioVentaU:0,propuestaMXN:''}); renderProductos(); recalc(); }
+function addProducto(){ productos.push({nombre:'Nuevo producto',empaque:'caja',cantidad:0,kgEmpaque:0,modoVenta:'lb',unidadesEmpaque:1,precioVentaU:0,comQlb:1.00,costoSugeridoMXN:''}); renderProductos(); recalc(); }
 function removeProducto(i){ productos.splice(i,1); renderProductos(); recalc(); }
 function addGasto(tipo){ (tipo==='mx'?gastosMX:gastosGT).push({concepto:'Nuevo gasto',monto:0}); renderGastos(); recalc(); }
 function removeGasto(tipo,i){ (tipo==='mx'?gastosMX:gastosGT).splice(i,1); renderGastos(); recalc(); }
@@ -377,7 +364,8 @@ function renderProductos(){
       <td class="num"><input class="num" type="number" step="1" value="${ue}" data-i="${i}" data-f="unidadesEmpaque" ${isU?'':'disabled style="opacity:.35"'}></td>
       <td class="num bold" style="color:${isU?'var(--canopy)':'var(--rule)'};">${isU?fmt(unidTot,0):'—'}</td>
       <td class="num"><input class="num" type="number" step="0.01" value="${p.precioVentaU}" data-i="${i}" data-f="precioVentaU"></td>
-      <td class="num"><input class="num" type="number" step="0.01" value="${p.propuestaMXN||''}" data-i="${i}" data-f="propuestaMXN" placeholder="—"></td>
+      <td class="num"><input class="num" type="number" step="0.01" value="${p.comQlb}" data-i="${i}" data-f="comQlb"></td>
+      <td class="num"><input class="num" type="number" step="0.01" value="${p.costoSugeridoMXN||''}" data-i="${i}" data-f="costoSugeridoMXN" placeholder="—"></td>
       <td><button class="action-btn" onclick="removeProducto(${i})">✕</button></td>
     </tr>`;
   }).join('');
@@ -387,7 +375,7 @@ function renderProductos(){
       if(['nombre','empaque','modoVenta'].includes(f)){
         productos[idx][f]=v;
         if(f==='modoVenta') renderProductos();
-      } else if(f==='propuestaMXN'){
+      } else if(f==='costoSugeridoMXN'){
         productos[idx][f]=v;
       } else {
         productos[idx][f]=parseFloat(v)||0;
@@ -429,9 +417,6 @@ function recalc(){
   const ivaPct=(parseFloat($('ivaPct').value)||0)/100;
   const retIvaPct=(parseFloat($('retIvaPct').value)||0)/100;
   const prontoPct=(parseFloat($('prontoPct').value)||0)/100;
-  const comMode=$('comMode').value;
-  const comPct=(parseFloat($('comPct').value)||0)/100;
-  const comQlb=parseFloat($('comQlb').value)||0;
 
   // Totales productos
   let totalKg=0, totalLbs=0, totalUnid=0, totalCajas=0;
@@ -483,36 +468,33 @@ function recalc(){
     totalRetenciones+= retenciones;
   });
 
-  // Comisión total AGROAJUA
-  let totalComision = comMode==='qlb' ? (comQlb*totalLbs) : (totalVentaNeta*comPct);
-
-  // Pass 2: prorratear gastos y comisión, calcular disponible para productor
+  // Pass 2: prorratear gastos, calcular comisión per producto Q/lb, disponible para productor
   const tbA=$('tb-analisis'); tbA.innerHTML='';
-  let totalDispGTQ=0, totalDispMXN=0, totalGMXprorr=0, totalGGTprorr=0;
+  let totalDispGTQ=0, totalDispMXN=0, totalGMXprorr=0, totalGGTprorr=0, totalComision=0;
   productos.forEach((p,i)=>{
     const c=parseFloat(p.cantidad)||0;
     const pctPeso = totalKg>0 ? p._kgTotal/totalKg : 0;
     const gMXp = gMXgtq * pctPeso;
     const gGTp = gGTgtq * pctPeso;
-    // Comisión per producto
-    let comProd;
-    if(comMode==='qlb') comProd = comQlb * p._lbsTotal;
-    else                comProd = p._ventaNeta * comPct;
+    // Comisión per producto siempre Q/lb (sobre peso real del producto)
+    const comQlbProd = parseFloat(p.comQlb)||0;
+    const comProd = comQlbProd * p._lbsTotal;
+    totalComision += comProd;
 
     const dispGTQ = p._ventaNeta - gMXp - gGTp - comProd;
     const dispMXN = tc>0 ? dispGTQ/tc : 0;
     const maxMXNemp = c>0 ? dispMXN/c : 0;
-    const propuesta = parseFloat(p.propuestaMXN);
-    const tienesPropuesta = Number.isFinite(propuesta) && propuesta>0;
-    const diff = tienesPropuesta ? maxMXNemp - propuesta : null;
+    const sugerido = parseFloat(p.costoSugeridoMXN);
+    const tieneSugerido = Number.isFinite(sugerido) && sugerido>0;
+    const diff = tieneSugerido ? maxMXNemp - sugerido : null;
     const cabe = diff!=null && diff>=0;
 
     p._dispGTQ=dispGTQ; p._dispMXN=dispMXN; p._maxMXNemp=maxMXNemp; p._comProd=comProd; p._gMXp=gMXp; p._gGTp=gGTp;
     totalDispGTQ+=dispGTQ; totalDispMXN+=dispMXN;
     totalGMXprorr+=gMXp; totalGGTprorr+=gGTp;
 
-    const cmp = tienesPropuesta
-      ? `<span class="${cabe?'cmp-ok':'cmp-bad'}">${cabe?'✓':'✗'} ${cabe?'+':''}${fmt(diff,2)} MXN</span>`
+    const cmp = tieneSugerido
+      ? `<span class="${cabe?'cmp-ok':'cmp-bad'}">${cabe?'✓ cabe':'✗ no alcanza'}<br><span style="font-weight:400;font-size:.8rem;">${cabe?'sobra':'falta'} ${fmt(Math.abs(diff),2)} MXN/emp</span></span>`
       : '<span style="color:var(--muted);">—</span>';
 
     tbA.innerHTML += `<tr>
@@ -549,7 +531,8 @@ function recalc(){
   $('k-gastos').textContent=fmtQ(totalGastos);
   $('k-gastosPct').textContent = totalVentaNeta>0 ? (totalGastos/totalVentaNeta*100).toFixed(1)+'% de venta neta' : '—';
   $('k-com').textContent=fmtQ(totalComision);
-  $('k-comInfo').textContent = comMode==='qlb' ? `Q${comQlb.toFixed(2)}/lb × ${fmt(totalLbs,0)} lbs` : `${(comPct*100).toFixed(1)}% sobre venta neta`;
+  const comProm = totalLbs>0 ? (totalComision/totalLbs) : 0;
+  $('k-comInfo').textContent = `Q ${fmt(comProm,2)}/lb promedio (siempre Q/lb por producto)`;
   $('k-prod').textContent=fmtQ(totalDispGTQ);
   $('k-prodMXN').textContent=fmt$(totalDispMXN)+' MXN';
   // Color KPI prod: red if negative
@@ -579,19 +562,11 @@ function copyShareableLink(){ navigator.clipboard.writeText(window.location.href
 $('m-fecha').value=today();
 $('foot-ts').textContent='Última actualización: '+new Date().toLocaleString('es-GT');
 
-function syncComMode(){
-  const m=$('comMode').value;
-  $('cf-pct').style.display = m==='pct'?'':'none';
-  $('cf-qlb').style.display = m==='qlb'?'':'none';
-}
-$('comMode').addEventListener('change',()=>{ syncComMode(); recalc(); });
-syncComMode();
-
 renderProductos();
 renderGastos();
 recalc();
 
-['tcMXN','tcUSD','ivaPct','retIvaPct','prontoPct','m-productor','comPct','comQlb'].forEach(id=>{
+['tcMXN','tcUSD','ivaPct','retIvaPct','prontoPct','m-productor'].forEach(id=>{
   $(id).addEventListener('input',()=>{ renderProductos(); renderGastos(); recalc(); });
 });
 </script>
