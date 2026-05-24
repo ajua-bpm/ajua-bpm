@@ -826,47 +826,65 @@ function recalc(){
 }
 
 function copyShareableLink(){ navigator.clipboard.writeText(window.location.href); alert('Enlace copiado.'); }
-function printDoc(){
+async function printDoc(){
   const actions = document.querySelector('.actions');
   const printNote = actions ? actions.nextElementSibling : null;
   const saveStatus = $('save-status');
-  // Ocultar UI no imprimible durante captura
+  const page = document.querySelector('.page');
+  const btn = event?.target;
+  const origText = btn?.textContent;
+
+  // Esperar fuentes cargadas
+  if(document.fonts && document.fonts.ready) await document.fonts.ready;
+
+  // Ocultar UI + ajustar ancho a tamaño A4 para captura limpia
   if(actions) actions.style.display='none';
   if(printNote) printNote.style.display='none';
   if(saveStatus) saveStatus.style.display='none';
-  // Mostrar loading
-  const btn = event?.target;
-  const origText = btn?.textContent;
+  const origStyles = { maxWidth:page.style.maxWidth, width:page.style.width, padding:page.style.padding };
+  page.style.maxWidth = '780px';
+  page.style.width    = '780px';
+  page.style.padding  = '24px 28px';
   if(btn){ btn.textContent='Generando PDF...'; btn.disabled=true; }
-  // Filename basado en cotización + productor
+
   const numero = $('m-numero').value || 'AGROAJUA';
   const prodName = $('m-productor').value.replace(/[^A-Za-z0-9_-]+/g,'_') || '';
   const filename = `cotizacion-${numero}${prodName?'-'+prodName:''}.pdf`;
-  // Config A4 portrait con márgenes profesionales
-  const opt = {
-    margin: [15, 14, 18, 14],  // mm: top, right, bottom, left
-    filename,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff', windowWidth: 1200 },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true },
-    pagebreak: { mode: ['avoid-all', 'css'], avoid: ['.pc', '.kpi', '#analisis-cards > div', '.banner-cnt', '.cfg', 'table.t > tbody > tr'] }
+
+  const restore = () => {
+    if(actions) actions.style.display='';
+    if(printNote) printNote.style.display='';
+    if(saveStatus) saveStatus.style.display='';
+    page.style.maxWidth = origStyles.maxWidth;
+    page.style.width    = origStyles.width;
+    page.style.padding  = origStyles.padding;
+    if(btn){ btn.textContent=origText; btn.disabled=false; }
   };
-  html2pdf().set(opt).from(document.querySelector('.page')).save()
-    .then(()=>{
-      // Restaurar UI
-      if(actions) actions.style.display='';
-      if(printNote) printNote.style.display='';
-      if(saveStatus) saveStatus.style.display='';
-      if(btn){ btn.textContent=origText; btn.disabled=false; }
-    })
-    .catch(err=>{
-      console.error(err);
-      if(actions) actions.style.display='';
-      if(printNote) printNote.style.display='';
-      if(saveStatus) saveStatus.style.display='';
-      if(btn){ btn.textContent=origText; btn.disabled=false; }
-      alert('Error generando PDF. Refrescá la página y volvé a intentar.');
-    });
+
+  // Esperar un frame para que el reflow al ancho nuevo termine
+  await new Promise(r => setTimeout(r, 100));
+
+  try {
+    await html2pdf().set({
+      margin: 10,
+      filename,
+      image: { type: 'jpeg', quality: 0.95 },
+      html2canvas: {
+        scale: 1.5,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        letterRendering: true,
+        windowWidth: 780,
+      },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true, putOnlyUsedFonts: true },
+      pagebreak: { mode: ['css', 'legacy'], avoid: ['.pc', '.kpi', '#analisis-cards > div'] }
+    }).from(page).save();
+  } catch(err) {
+    console.error(err);
+    alert('Error generando PDF. Revisá la consola.');
+  }
+  restore();
 }
 
 // ── Persistencia en Firestore (colección cotizacionesImport)
