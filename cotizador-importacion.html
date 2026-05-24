@@ -109,11 +109,22 @@ table.t tfoot td.num{text-align:right;font-variant-numeric:tabular-nums;}
 footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule);font-size:.72rem;color:var(--muted);display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;}
 
 @media print{
-  body{background:#fff;}
-  .page{padding:20px;}
-  .actions{display:none;}
-  input,select{border:none !important;background:transparent !important;-webkit-appearance:none;appearance:none;}
-  .add-row,.action-btn{display:none;}
+  @page{size:A4 landscape;margin:14mm;}
+  body{background:#fff;font-size:11px;}
+  .page{padding:0;max-width:none;}
+  .actions, .save-bar{display:none !important;}
+  input,select{border:none !important;background:transparent !important;-webkit-appearance:none;appearance:none;color:#000 !important;}
+  .add-row,.action-btn,#catalog-picker,#catalog-status{display:none !important;}
+  section.block{page-break-inside:avoid;margin-bottom:18px;}
+  h2.section-title{page-break-after:avoid;}
+  table.t thead{display:table-header-group;}
+  footer.doc-foot{position:running(footer);}
+  header.doc-head{page-break-after:avoid;}
+  .banner-cnt{background:#fff !important;color:#000 !important;border:1px solid #000 !important;}
+  .banner-cnt b{color:#000 !important;}
+  table.t thead th{background:#1F3A2C !important;color:#fff !important;}
+  table.t tfoot td{background:#F5F0E4 !important;}
+  .kpi{break-inside:avoid;}
 }
 @media (max-width:780px){.page{padding:24px 18px;}.head-row{flex-direction:column;}.meta{text-align:left;}table.t{font-size:.78rem;}}
 </style>
@@ -126,7 +137,8 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
     <div class="head-row">
       <div>
         <div class="brand">AGROAJUA<span>.</span></div>
-        <div class="doc-title">Cotización de Importación</div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:2px;">NIT 1926272-1 · Guatemala</div>
+        <div class="doc-title" style="margin-top:14px;">Cotización de Importación</div>
         <div class="doc-sub">México → Guatemala — análisis de pago máximo al productor</div>
       </div>
       <div class="meta">
@@ -134,6 +146,8 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
         <div><b>Fecha</b> <input type="date" id="m-fecha"></div>
         <div><b>Productor</b> <input id="m-productor" placeholder="Nombre del productor" size="22"></div>
         <div><b>Ubicación</b> <input id="m-ubic" placeholder="ej: Sinaloa, México" size="22"></div>
+        <div><b>NIT/RFC productor</b> <input id="m-nit" placeholder="RFC productor" size="22"></div>
+        <div><b>Contacto</b> <input id="m-contacto" placeholder="teléfono / email" size="22"></div>
       </div>
     </div>
   </header>
@@ -261,13 +275,16 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
   <!-- 06 KPIS -->
   <section class="block">
     <div class="section-num">— 05 / Resumen financiero</div>
-    <h2 class="section-title">Indicadores clave</h2>
+    <h2 class="section-title">Indicadores clave de la operación</h2>
     <div class="kpis">
-      <div class="kpi"><div class="lbl">Venta bruta</div><div class="val" id="k-vbruta">Q 0.00</div><div class="sub">Precio al cliente sin descuentos</div></div>
-      <div class="kpi"><div class="lbl">Venta neta</div><div class="val" id="k-vneta">Q 0.00</div><div class="sub" id="k-vnetaUSD">$ 0.00 USD</div></div>
-      <div class="kpi"><div class="lbl">Gastos totales</div><div class="val" id="k-gastos">Q 0.00</div><div class="sub" id="k-gastosPct">— de venta neta</div></div>
+      <div class="kpi"><div class="lbl">Venta bruta</div><div class="val" id="k-vbruta">Q 0.00</div><div class="sub" id="k-vbrutaUSD">$ 0.00 USD</div></div>
+      <div class="kpi"><div class="lbl">Venta neta (post retenciones)</div><div class="val" id="k-vneta">Q 0.00</div><div class="sub" id="k-vnetaUSD">$ 0.00 USD</div></div>
+      <div class="kpi"><div class="lbl">Gastos importación</div><div class="val" id="k-gastos">Q 0.00</div><div class="sub" id="k-gastosPct">— de venta neta</div></div>
       <div class="kpi good"><div class="lbl">Comisión AGROAJUA</div><div class="val" id="k-com">Q 0.00</div><div class="sub" id="k-comInfo">—</div></div>
-      <div class="kpi"><div class="lbl">Disponible productor</div><div class="val" id="k-prod">Q 0.00</div><div class="sub" id="k-prodMXN">$ 0.00 MXN</div></div>
+      <div class="kpi"><div class="lbl">Pago disponible al productor</div><div class="val" id="k-prod">Q 0.00</div><div class="sub" id="k-prodMXN">$ 0.00 MXN</div></div>
+      <div class="kpi"><div class="lbl">% al productor de venta bruta</div><div class="val" id="k-prodPct">0%</div><div class="sub">Lo que retorna a origen</div></div>
+      <div class="kpi"><div class="lbl">Q/lb promedio al productor</div><div class="val" id="k-prodQlb">Q 0.00</div><div class="sub" id="k-prodMXNlb">$ 0.00 MXN/lb</div></div>
+      <div class="kpi"><div class="lbl">Contenedor</div><div class="val" id="k-pallets">0</div><div class="sub" id="k-cntInfo">pallets · cajas · kg</div></div>
     </div>
   </section>
 
@@ -275,6 +292,24 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
   <section class="block">
     <div class="section-num">— 06 / Reparto entre empresas</div>
     <h2 class="section-title">Distribución del precio venta bruto</h2>
+
+    <!-- Barra visual -->
+    <div style="margin-bottom:24px;">
+      <div style="display:flex;height:42px;border-radius:8px;overflow:hidden;border:1px solid var(--rule);box-shadow:inset 0 1px 0 rgba(0,0,0,.05);">
+        <div id="bar-prod" style="background:#1F3A2C;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.78rem;transition:width .3s;" title="Productor"></div>
+        <div id="bar-gmx"  style="background:#B4513A;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.78rem;transition:width .3s;" title="Gastos México"></div>
+        <div id="bar-ggt"  style="background:#D88B45;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.78rem;transition:width .3s;" title="Gastos Guatemala"></div>
+        <div id="bar-ajua" style="background:#A8835A;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.78rem;transition:width .3s;" title="AGROAJUA"></div>
+        <div id="bar-imp"  style="background:#6B6B60;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.78rem;transition:width .3s;" title="Retenciones"></div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;font-size:.78rem;">
+        <span style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;background:#1F3A2C;border-radius:2px;display:inline-block;"></span> Productor MX</span>
+        <span style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;background:#B4513A;border-radius:2px;display:inline-block;"></span> Gastos México</span>
+        <span style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;background:#D88B45;border-radius:2px;display:inline-block;"></span> Gastos Guatemala</span>
+        <span style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;background:#A8835A;border-radius:2px;display:inline-block;"></span> AGROAJUA</span>
+        <span style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;background:#6B6B60;border-radius:2px;display:inline-block;"></span> Retenciones fisco GT</span>
+      </div>
+    </div>
 
     <h3 style="font-size:.85rem;color:var(--mxFlag);margin-bottom:6px;font-weight:600;">🇲🇽 México (origen)</h3>
     <div class="reparto-grid" style="margin-bottom:18px;">
@@ -305,9 +340,11 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
   </section>
 
   <div class="actions">
+    <button class="btn btn-secondary" onclick="loadCotizacionPicker()">📂 Cargar cotización</button>
     <button class="btn btn-secondary" onclick="window.print()">📄 Imprimir / PDF</button>
-    <button class="btn btn-print" onclick="copyShareableLink()">🔗 Copiar enlace</button>
+    <button class="btn btn-print" onclick="saveCotizacion()">💾 Guardar cotización</button>
   </div>
+  <div id="save-status" style="text-align:right;padding:4px 8px;font-size:.74rem;color:var(--muted);font-style:italic;min-height:18px;"></div>
 
   <footer class="doc-foot">
     <span>Documento generado por AGROAJUA · contacto@agroajua.com</span>
@@ -610,20 +647,26 @@ function recalc(){
   $('ft-dispGTQ').textContent=fmtQ(totalDispGTQ);
   $('ft-dispMXN').textContent=fmt$(totalDispMXN)+' MXN';
 
-  // KPIs
+  // KPIs ampliados
   $('k-vbruta').textContent=fmtQ(totalVentaBruta);
+  $('k-vbrutaUSD').textContent=fmt$(tcUSD>0?totalVentaBruta/tcUSD:0)+' USD';
   $('k-vneta').textContent=fmtQ(totalVentaNeta);
   $('k-vnetaUSD').textContent=fmt$(tcUSD>0?totalVentaNeta/tcUSD:0)+' USD';
   const totalGastos = gMXgtq + gGTgtq;
   $('k-gastos').textContent=fmtQ(totalGastos);
   $('k-gastosPct').textContent = totalVentaNeta>0 ? (totalGastos/totalVentaNeta*100).toFixed(1)+'% de venta neta' : '—';
   $('k-com').textContent=fmtQ(totalComision);
-  $('k-comInfo').textContent = `Suma por producto (cada uno en su unidad de venta)`;
+  $('k-comInfo').textContent = `Suma por producto (Q/lb o Q/uni)`;
   $('k-prod').textContent=fmtQ(totalDispGTQ);
   $('k-prodMXN').textContent=fmt$(totalDispMXN)+' MXN';
-  // Color KPI prod: red if negative
-  const kProdEl = document.querySelectorAll('.kpi')[4];
-  if(kProdEl){ kProdEl.classList.remove('good','bad'); kProdEl.classList.add(totalDispGTQ<0?'bad':'good'); }
+  $('k-prodPct').textContent = totalVentaBruta>0 ? (totalDispGTQ/totalVentaBruta*100).toFixed(1)+'%' : '0%';
+  const qLbProd = totalLbs>0 ? totalDispGTQ/totalLbs : 0;
+  $('k-prodQlb').textContent = fmtQ(qLbProd) + ' / lb';
+  $('k-prodMXNlb').textContent = '$ ' + fmt(tc>0?qLbProd/tc:0,2) + ' MXN/lb';
+  $('k-pallets').textContent = fmt(totalPallets,0);
+  $('k-cntInfo').textContent = `${fmt(totalCajas,0)} cajas · ${fmt(totalKg,0)} kg · ${fmt(totalLbs,0)} lbs`;
+  // Color KPI prod
+  document.querySelectorAll('.kpi').forEach((el,idx)=>{ if(idx===4){ el.classList.remove('good','bad'); el.classList.add(totalDispGTQ<0?'bad':'good'); } });
 
   // Reparto entre empresas
   const subMX = totalDispGTQ + gMXgtq;     // lo que finalmente va a México (productor + gastos origen)
@@ -638,11 +681,128 @@ function recalc(){
   $('rep-subGT').textContent=fmtQ(subGT);              $('rep-subGTPct').textContent=pct(subGT);
   $('rep-total').textContent=fmtQ(totalVentaBruta);
 
+  // Barra visual de reparto
+  const safePct = (n)=> totalVentaBruta>0 ? Math.max(0, n/totalVentaBruta*100) : 0;
+  const setBar = (id, val) => {
+    const pct = safePct(val);
+    const el = $(id);
+    el.style.width = pct + '%';
+    el.textContent = pct >= 6 ? pct.toFixed(0)+'%' : '';
+  };
+  setBar('bar-prod', Math.max(0, totalDispGTQ));
+  setBar('bar-gmx',  gMXgtq);
+  setBar('bar-ggt',  gGTgtq);
+  setBar('bar-ajua', totalComision);
+  setBar('bar-imp',  totalRetenciones);
+
   const prodName=$('m-productor').value;
   $('lbl-productor').textContent = prodName ? `Productor — ${prodName}` : 'Productor';
 }
 
 function copyShareableLink(){ navigator.clipboard.writeText(window.location.href); alert('Enlace copiado.'); }
+
+// ── Persistencia en Firestore (colección cotizacionesImport)
+const FS_BASE='https://firestore.googleapis.com/v1/projects/ajuabmp/databases/(default)/documents';
+function jsToFS(v){
+  if(v===null||v===undefined||v==='') return {nullValue:null};
+  if(typeof v==='string') return {stringValue:v};
+  if(typeof v==='boolean') return {booleanValue:v};
+  if(typeof v==='number') return Number.isInteger(v)?{integerValue:String(v)}:{doubleValue:v};
+  if(Array.isArray(v)) return {arrayValue:{values:v.map(jsToFS)}};
+  if(typeof v==='object'){const fields={};for(const[k,val]of Object.entries(v)) fields[k]=jsToFS(val);return {mapValue:{fields}};}
+  return {nullValue:null};
+}
+function fsToJs(v){
+  if(!v) return null;
+  if('stringValue' in v) return v.stringValue;
+  if('booleanValue' in v) return v.booleanValue;
+  if('integerValue' in v) return parseInt(v.integerValue,10);
+  if('doubleValue' in v) return v.doubleValue;
+  if('nullValue' in v) return null;
+  if('arrayValue' in v) return (v.arrayValue.values||[]).map(fsToJs);
+  if('mapValue' in v){const r={};for(const[k,val]of Object.entries(v.mapValue.fields||{})) r[k]=fsToJs(val);return r;}
+  return null;
+}
+function getState(){
+  return {
+    meta:{ numero:$('m-numero').value, fecha:$('m-fecha').value, productor:$('m-productor').value, ubicacion:$('m-ubic').value, nit:$('m-nit').value, contacto:$('m-contacto').value },
+    config:{ tcMXN:$('tcMXN').value, tcUSD:$('tcUSD').value, ivaPct:$('ivaPct').value, retIvaPct:$('retIvaPct').value, prontoPct:$('prontoPct').value },
+    productos:productos.map(p=>({nombre:p.nombre,empaque:p.empaque,modoVenta:p.modoVenta,kgCaja:p.kgCaja,uniCaja:p.uniCaja,cajasPorPallet:p.cajasPorPallet,pallets:p.pallets,precioVentaU:p.precioVentaU,comPorU:p.comPorU,costoSugeridoMXN:String(p.costoSugeridoMXN||'')})),
+    gastosMX:gastosMX.map(g=>({concepto:g.concepto,monto:g.monto})),
+    gastosGT:gastosGT.map(g=>({concepto:g.concepto,monto:g.monto})),
+    actualizadoEn:new Date().toISOString(),
+  };
+}
+async function saveCotizacion(){
+  const numero=$('m-numero').value.trim();
+  if(!numero){ alert('Asigna un número de cotización antes de guardar (ej: COT-2026-001).'); $('m-numero').focus(); return; }
+  const st=$('save-status'); st.textContent='guardando…'; st.style.color='var(--muted)';
+  const state=getState();
+  const docId=encodeURIComponent(numero);
+  try {
+    const r=await fetch(`${FS_BASE}/cotizacionesImport/${docId}`,{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({fields:jsToFS(state).mapValue.fields}),
+    });
+    if(!r.ok) throw new Error('error servidor');
+    st.textContent=`✓ Guardada como ${numero} · ${new Date().toLocaleTimeString('es-GT')}`;
+    st.style.color='var(--green)';
+  } catch(e){
+    st.textContent='✗ Error al guardar — verificá conexión';
+    st.style.color='var(--red)';
+  }
+}
+async function loadCotizacionPicker(){
+  try {
+    const r=await fetch(`${FS_BASE}/cotizacionesImport?pageSize=100`);
+    if(!r.ok) throw new Error('error');
+    const data=await r.json();
+    const docs=(data.documents||[]).map(doc=>{
+      const id=doc.name.split('/').pop();
+      const f=doc.fields||{};
+      const meta=fsToJs(f.meta)||{};
+      return { id, numero:meta.numero||id, productor:meta.productor||'', fecha:meta.fecha||'', actualizadoEn:fsToJs(f.actualizadoEn)||'' };
+    });
+    if(docs.length===0){ alert('No hay cotizaciones guardadas todavía.'); return; }
+    docs.sort((a,b)=>(b.actualizadoEn||'').localeCompare(a.actualizadoEn||''));
+    const list=docs.map((d,i)=>`${i+1}. ${d.numero} — ${d.productor||'(sin productor)'} — ${d.fecha||'(sin fecha)'}`).join('\n');
+    const choice=prompt('Cotizaciones guardadas:\n\n'+list+'\n\nEscribe el número (1, 2, ...) para cargar:');
+    if(!choice) return;
+    const idx=parseInt(choice,10)-1;
+    if(isNaN(idx)||idx<0||idx>=docs.length){ alert('Selección inválida.'); return; }
+    await loadCotizacion(docs[idx].id);
+  } catch(e){ alert('Error cargando lista de cotizaciones.'); }
+}
+async function loadCotizacion(docId){
+  const st=$('save-status'); st.textContent='cargando…'; st.style.color='var(--muted)';
+  try {
+    const r=await fetch(`${FS_BASE}/cotizacionesImport/${encodeURIComponent(docId)}`);
+    if(!r.ok) throw new Error('not found');
+    const doc=await r.json();
+    const data=fsToJs({mapValue:{fields:doc.fields}});
+    if(data.meta){
+      $('m-numero').value=data.meta.numero||'';
+      $('m-fecha').value=data.meta.fecha||today();
+      $('m-productor').value=data.meta.productor||'';
+      $('m-ubic').value=data.meta.ubicacion||'';
+      $('m-nit').value=data.meta.nit||'';
+      $('m-contacto').value=data.meta.contacto||'';
+    }
+    if(data.config){
+      for(const[k,v]of Object.entries(data.config)) if($(k)) $(k).value=v;
+    }
+    if(Array.isArray(data.productos)) productos=data.productos.map(p=>({...p,costoSugeridoMXN:p.costoSugeridoMXN==null?'':p.costoSugeridoMXN}));
+    if(Array.isArray(data.gastosMX)) gastosMX=data.gastosMX;
+    if(Array.isArray(data.gastosGT)) gastosGT=data.gastosGT;
+    renderProductos(); renderGastos(); recalc();
+    st.textContent=`✓ Cotización ${data.meta?.numero||docId} cargada`;
+    st.style.color='var(--green)';
+  } catch(e){
+    st.textContent='✗ Error al cargar';
+    st.style.color='var(--red)';
+  }
+}
 
 // ── Catálogo Walmart (jala de Firestore — colección iPresentaciones)
 let walmartCatalog = [];
