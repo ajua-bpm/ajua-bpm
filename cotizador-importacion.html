@@ -180,7 +180,8 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
 
     <div class="banner-cnt">
       <span class="lbl">Contenedor</span>
-      <span><b id="cnt-cajas">0</b> empaques</span>
+      <span><b id="cnt-pallets" style="color:var(--ochre);">0</b> pallets</span>
+      <span><b id="cnt-cajas">0</b> cajas</span>
       <span><b id="cnt-kg">0.00</b> kg</span>
       <span><b id="cnt-lbs">0.00</b> lbs</span>
       <span><b id="cnt-prods">0</b> productos</span>
@@ -191,22 +192,35 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
         <tr>
           <th>Producto</th>
           <th>Empaque</th>
-          <th class="num">Cant</th>
-          <th class="num">kg/emp</th>
-          <th class="num">Total kg</th>
-          <th class="num">Total lbs</th>
-          <th>Modo venta</th>
-          <th class="num">Unid/emp</th>
-          <th class="num">Total unid.</th>
-          <th class="num">Precio venta /u (Q)</th>
-          <th class="num">Com AJUA Q/u</th>
-          <th class="num">Costo sugerido MXN/emp</th>
+          <th>Modo</th>
+          <th class="num">LBS/CJA</th>
+          <th class="num">KG/CJA</th>
+          <th class="num">UNI/CJA</th>
+          <th class="num">CJAS/PALLET</th>
+          <th class="num">KG/PALLET</th>
+          <th class="num">PALLETS</th>
+          <th class="num">TOTAL CJAS</th>
+          <th class="num">KG TOT</th>
+          <th class="num">LBS TOT</th>
+          <th class="num">UNI TOT</th>
+          <th class="num">P.V. (Q/u)</th>
+          <th class="num">Com (Q/u)</th>
+          <th class="num">Sugerido MXN/cja</th>
           <th></th>
         </tr>
       </thead>
       <tbody id="tb-productos"></tbody>
       <tfoot>
-        <tr><td colspan="4">Totales</td><td class="num" id="ft-kgTot">0</td><td class="num" id="ft-lbsTot">0</td><td colspan="2"></td><td class="num" id="ft-unidTot">0</td><td colspan="3"></td><td></td></tr>
+        <tr>
+          <td colspan="6">Totales</td>
+          <td colspan="2"></td>
+          <td class="num" id="ft-pallets">0</td>
+          <td class="num" id="ft-cajasTot">0</td>
+          <td class="num" id="ft-kgTot">0</td>
+          <td class="num" id="ft-lbsTot">0</td>
+          <td class="num" id="ft-unidTot">0</td>
+          <td colspan="4"></td>
+        </tr>
       </tfoot>
     </table>
     <button class="add-row" onclick="addProducto()">+ Agregar producto</button>
@@ -300,14 +314,15 @@ const fmtQ=(n)=>'Q '+fmt(n);
 const fmt$=(n)=>'$ '+fmt(n);
 const today=()=>new Date().toISOString().slice(0,10);
 
-// ── State
-// comPorU: comisión AJUA en la unidad de venta del producto
-//   - Si modoVenta='lb'     → Q por libra
-//   - Si modoVenta='unidad' → Q por unidad
+// ── State (modelo pallet-based)
+// Cada producto: pallets × cajasPorPallet = totalCajas
+// KG/Caja siempre input. LBS/Caja se calcula (kg × 2.20462).
+// modoVenta determina si se vende por libra o por unidad.
+// comPorU: comisión en la unidad de venta (Q/lb o Q/unidad).
 let productos = [
-  { nombre:'Zanahoria', empaque:'bolsa', cantidad:20, kgEmpaque:24, modoVenta:'lb',     unidadesEmpaque:1, precioVentaU:5.50, comPorU:1.00, costoSugeridoMXN:'' },
-  { nombre:'Repollo',   empaque:'caja',  cantidad:20, kgEmpaque:14, modoVenta:'unidad', unidadesEmpaque:8, precioVentaU:7.00, comPorU:1.50, costoSugeridoMXN:'' },
-  { nombre:'Coliflor',  empaque:'caja',  cantidad:15, kgEmpaque:12, modoVenta:'unidad', unidadesEmpaque:6, precioVentaU:8.50, comPorU:1.50, costoSugeridoMXN:'' },
+  { nombre:'Cebolla Super Red', empaque:'caja', modoVenta:'lb', kgCaja:13.61, uniCaja:0, cajasPorPallet:70, pallets:4, precioVentaU:7.00, comPorU:1.00, costoSugeridoMXN:'' },
+  { nombre:'Zanahoria Granel',  empaque:'caja', modoVenta:'lb', kgCaja:9.98,  uniCaja:0, cajasPorPallet:80, pallets:16, precioVentaU:5.00, comPorU:1.00, costoSugeridoMXN:'' },
+  { nombre:'Repollo Unidades',  empaque:'caja', modoVenta:'unidad', kgCaja:8.00, uniCaja:4, cajasPorPallet:100, pallets:8, precioVentaU:11.00, comPorU:1.50, costoSugeridoMXN:'' },
 ];
 let gastosMX = [
   { concepto:'Flete México → frontera', monto:25000 },
@@ -321,44 +336,55 @@ let gastosGT = [
 ];
 
 // ── Add/remove
-function addProducto(){ productos.push({nombre:'Nuevo producto',empaque:'caja',cantidad:0,kgEmpaque:0,modoVenta:'lb',unidadesEmpaque:1,precioVentaU:0,comPorU:1.00,costoSugeridoMXN:''}); renderProductos(); recalc(); }
+function addProducto(){ productos.push({nombre:'Nuevo producto',empaque:'caja',modoVenta:'lb',kgCaja:0,uniCaja:0,cajasPorPallet:0,pallets:0,precioVentaU:0,comPorU:1.00,costoSugeridoMXN:''}); renderProductos(); recalc(); }
 function removeProducto(i){ productos.splice(i,1); renderProductos(); recalc(); }
 function addGasto(tipo){ (tipo==='mx'?gastosMX:gastosGT).push({concepto:'Nuevo gasto',monto:0}); renderGastos(); recalc(); }
 function removeGasto(tipo,i){ (tipo==='mx'?gastosMX:gastosGT).splice(i,1); renderGastos(); recalc(); }
 
-// ── Productos render
+// ── Productos render (pallet-based)
 function renderProductos(){
   const tb=$('tb-productos');
   tb.innerHTML=productos.map((p,i)=>{
-    const c=parseFloat(p.cantidad)||0, kg=parseFloat(p.kgEmpaque)||0;
-    const ue=parseFloat(p.unidadesEmpaque)||1;
+    const kg=parseFloat(p.kgCaja)||0;
+    const lbsCja = kg*2.20462;
+    const ue=parseFloat(p.uniCaja)||0;
+    const cxp=parseFloat(p.cajasPorPallet)||0;
+    const pall=parseFloat(p.pallets)||0;
     const isU=p.modoVenta==='unidad';
-    const kgTot=c*kg, lbsTot=kgTot*2.20462;
-    const unidTot=isU?c*ue:null;
+    const kgPallet = cxp*kg;
+    const totCajas = cxp*pall;
+    const kgTot = totCajas*kg;
+    const lbsTot = kgTot*2.20462;
+    const uniTot = isU ? totCajas*ue : 0;
+    const grayU = isU ? '' : 'opacity:.35;';
     return `<tr>
-      <td><input value="${p.nombre||''}" data-i="${i}" data-f="nombre" placeholder="Producto"></td>
+      <td><input value="${p.nombre||''}" data-i="${i}" data-f="nombre" placeholder="Producto" style="min-width:140px;"></td>
       <td><select data-i="${i}" data-f="empaque">
         ${['caja','bolsa','saco','malla','red','bulto'].map(o=>`<option ${p.empaque===o?'selected':''}>${o}</option>`).join('')}
       </select></td>
-      <td class="num"><input class="num" type="number" step="any" value="${p.cantidad}" data-i="${i}" data-f="cantidad"></td>
-      <td class="num"><input class="num" type="number" step="0.1" value="${p.kgEmpaque}" data-i="${i}" data-f="kgEmpaque"></td>
-      <td class="num">${fmt(kgTot,2)}</td>
-      <td class="num bold">${fmt(lbsTot,2)}</td>
       <td><select data-i="${i}" data-f="modoVenta">
-        <option value="lb" ${!isU?'selected':''}>Por libra</option>
-        <option value="unidad" ${isU?'selected':''}>Por unidad</option>
+        <option value="lb" ${!isU?'selected':''}>LBS</option>
+        <option value="unidad" ${isU?'selected':''}>UNI</option>
       </select></td>
-      <td class="num"><input class="num" type="number" step="1" value="${ue}" data-i="${i}" data-f="unidadesEmpaque" ${isU?'':'disabled style="opacity:.35"'}></td>
-      <td class="num bold" style="color:${isU?'var(--canopy)':'var(--rule)'};">${isU?fmt(unidTot,0):'—'}</td>
+      <td class="num">${fmt(lbsCja,2)}</td>
+      <td class="num"><input class="num" type="number" step="0.01" value="${p.kgCaja}" data-i="${i}" data-f="kgCaja" style="width:65px;"></td>
+      <td class="num"><input class="num" type="number" step="1" value="${ue}" data-i="${i}" data-f="uniCaja" style="width:55px;${grayU}" ${isU?'':'disabled'}></td>
+      <td class="num"><input class="num" type="number" step="1" value="${cxp}" data-i="${i}" data-f="cajasPorPallet" style="width:60px;"></td>
+      <td class="num">${fmt(kgPallet,2)}</td>
+      <td class="num"><input class="num" type="number" step="1" value="${pall}" data-i="${i}" data-f="pallets" style="width:55px;"></td>
+      <td class="num bold">${fmt(totCajas,0)}</td>
+      <td class="num bold">${fmt(kgTot,2)}</td>
+      <td class="num bold">${fmt(lbsTot,2)}</td>
+      <td class="num bold" style="color:${isU?'var(--canopy)':'var(--rule)'};">${isU?fmt(uniTot,0):'—'}</td>
       <td class="num">
-        <input class="num" type="number" step="0.01" value="${p.precioVentaU}" data-i="${i}" data-f="precioVentaU">
-        <div style="font-size:.66rem;color:var(--muted);">Q/${isU?'unidad':'lb'}</div>
+        <input class="num" type="number" step="0.01" value="${p.precioVentaU}" data-i="${i}" data-f="precioVentaU" style="width:65px;">
+        <div style="font-size:.66rem;color:var(--muted);">Q/${isU?'uni':'lb'}</div>
       </td>
       <td class="num">
-        <input class="num" type="number" step="0.01" value="${p.comPorU}" data-i="${i}" data-f="comPorU">
-        <div style="font-size:.66rem;color:var(--muted);">Q/${isU?'unidad':'lb'}</div>
+        <input class="num" type="number" step="0.01" value="${p.comPorU}" data-i="${i}" data-f="comPorU" style="width:65px;">
+        <div style="font-size:.66rem;color:var(--muted);">Q/${isU?'uni':'lb'}</div>
       </td>
-      <td class="num"><input class="num" type="number" step="0.01" value="${p.costoSugeridoMXN||''}" data-i="${i}" data-f="costoSugeridoMXN" placeholder="—"></td>
+      <td class="num"><input class="num" type="number" step="0.01" value="${p.costoSugeridoMXN||''}" data-i="${i}" data-f="costoSugeridoMXN" placeholder="—" style="width:80px;"></td>
       <td><button class="action-btn" onclick="removeProducto(${i})">✕</button></td>
     </tr>`;
   }).join('');
@@ -411,20 +437,27 @@ function recalc(){
   const retIvaPct=(parseFloat($('retIvaPct').value)||0)/100;
   const prontoPct=(parseFloat($('prontoPct').value)||0)/100;
 
-  // Totales productos
-  let totalKg=0, totalLbs=0, totalUnid=0, totalCajas=0;
+  // Totales productos (pallet-based)
+  let totalKg=0, totalLbs=0, totalUnid=0, totalCajas=0, totalPallets=0;
   productos.forEach(p=>{
-    const c=parseFloat(p.cantidad)||0, kg=parseFloat(p.kgEmpaque)||0;
-    const ue=parseFloat(p.unidadesEmpaque)||1;
-    totalKg += c*kg;
-    totalLbs += c*kg*2.20462;
-    totalCajas += c;
-    if(p.modoVenta==='unidad') totalUnid += c*ue;
+    const kg=parseFloat(p.kgCaja)||0;
+    const ue=parseFloat(p.uniCaja)||0;
+    const cxp=parseFloat(p.cajasPorPallet)||0;
+    const pall=parseFloat(p.pallets)||0;
+    const cajas = cxp*pall;
+    totalKg     += cajas*kg;
+    totalLbs    += cajas*kg*2.20462;
+    totalCajas  += cajas;
+    totalPallets+= pall;
+    if(p.modoVenta==='unidad') totalUnid += cajas*ue;
   });
+  $('cnt-pallets').textContent=fmt(totalPallets,0);
   $('cnt-cajas').textContent=fmt(totalCajas,0);
   $('cnt-kg').textContent=fmt(totalKg,2);
   $('cnt-lbs').textContent=fmt(totalLbs,2);
   $('cnt-prods').textContent=productos.length;
+  $('ft-pallets').textContent=fmt(totalPallets,0);
+  $('ft-cajasTot').textContent=fmt(totalCajas,0);
   $('ft-kgTot').textContent=fmt(totalKg,2);
   $('ft-lbsTot').textContent=fmt(totalLbs,2);
   $('ft-unidTot').textContent=fmt(totalUnid,0);
@@ -438,13 +471,16 @@ function recalc(){
   $('ft-gastosMX-gtq').textContent=fmtQ(gMXgtq);
   $('ft-gastosGT').textContent=fmtQ(gGTgtq);
 
-  // Pass 1: per producto venta y comisión
+  // Pass 1: per producto venta y comisión (pallet-based)
   let totalVentaBruta=0, totalVentaNeta=0, totalRetenciones=0;
   productos.forEach(p=>{
-    const c=parseFloat(p.cantidad)||0, kg=parseFloat(p.kgEmpaque)||0;
-    const ue=parseFloat(p.unidadesEmpaque)||1;
+    const kg=parseFloat(p.kgCaja)||0;
+    const ue=parseFloat(p.uniCaja)||0;
+    const cxp=parseFloat(p.cajasPorPallet)||0;
+    const pall=parseFloat(p.pallets)||0;
+    const totCajas = cxp*pall;
     const isU=p.modoVenta==='unidad';
-    const cantVenta = isU ? c*ue : c*kg*2.20462; // unidades o lbs
+    const cantVenta = isU ? totCajas*ue : totCajas*kg*2.20462;
     const precio=parseFloat(p.precioVentaU)||0;
     const ventaBruta = precio*cantVenta;
     const sinIVA = ventaBruta/(1+ivaPct);
@@ -453,11 +489,12 @@ function recalc(){
     const pronto = ventaBruta*prontoPct;
     const retenciones = retIVA+pronto;
     const ventaNeta = ventaBruta - retenciones;
+    p._totCajas = totCajas;
     p._cantVenta = cantVenta;
     p._ventaBruta=ventaBruta; p._ventaNeta=ventaNeta; p._retenciones=retenciones;
-    p._lbsTotal = c*kg*2.20462;
-    p._kgTotal  = c*kg;
-    p._unidTotal = isU ? c*ue : 0;
+    p._lbsTotal = totCajas*kg*2.20462;
+    p._kgTotal  = totCajas*kg;
+    p._unidTotal = isU ? totCajas*ue : 0;
     totalVentaBruta += ventaBruta;
     totalVentaNeta  += ventaNeta;
     totalRetenciones+= retenciones;
@@ -467,7 +504,7 @@ function recalc(){
   const cardsHost=$('analisis-cards'); cardsHost.innerHTML='';
   let totalDispGTQ=0, totalDispMXN=0, totalGMXprorr=0, totalGGTprorr=0, totalComision=0;
   productos.forEach((p,i)=>{
-    const c=parseFloat(p.cantidad)||0;
+    const c = p._totCajas || 0; // total cajas para dividir disponible MXN
     const isU=p.modoVenta==='unidad';
     const pctPeso = totalKg>0 ? p._kgTotal/totalKg : 0;
     const gMXp = gMXgtq * pctPeso;
