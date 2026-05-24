@@ -387,23 +387,13 @@ function removeProducto(i){ productos.splice(i,1); renderProductos(); recalc(); 
 function addGasto(tipo){ (tipo==='mx'?gastosMX:gastosGT).push({concepto:'Nuevo gasto',monto:0}); renderGastos(); recalc(); }
 function removeGasto(tipo,i){ (tipo==='mx'?gastosMX:gastosGT).splice(i,1); renderGastos(); recalc(); }
 
-// ── Productos render (pallet-based)
+// ── Productos render (pallet-based) — celdas calculadas con IDs para actualizar en recalc
 function renderProductos(){
   const tb=$('tb-productos');
   tb.innerHTML=productos.map((p,i)=>{
-    const kg=parseFloat(p.kgCaja)||0;
-    const lbsCja = kg*2.20462;
-    const ue=parseFloat(p.uniCaja)||0;
-    const cxp=parseFloat(p.cajasPorPallet)||0;
-    const pall=parseFloat(p.pallets)||0;
     const isU=p.modoVenta==='unidad';
-    const kgPallet = cxp*kg;
-    const totCajas = cxp*pall;
-    const kgTot = totCajas*kg;
-    const lbsTot = kgTot*2.20462;
-    const uniTot = isU ? totCajas*ue : 0;
     const grayU = isU ? '' : 'opacity:.35;';
-    return `<tr>
+    return `<tr data-idx="${i}">
       <td><input value="${p.nombre||''}" data-i="${i}" data-f="nombre" placeholder="Producto" style="min-width:140px;"></td>
       <td><select data-i="${i}" data-f="empaque">
         ${['caja','bolsa','saco','malla','red','bulto'].map(o=>`<option ${p.empaque===o?'selected':''}>${o}</option>`).join('')}
@@ -412,16 +402,16 @@ function renderProductos(){
         <option value="lb" ${!isU?'selected':''}>LBS</option>
         <option value="unidad" ${isU?'selected':''}>UNI</option>
       </select></td>
-      <td class="num">${fmt(lbsCja,2)}</td>
+      <td class="num" id="c${i}-lbsCja">—</td>
       <td class="num"><input class="num" type="number" step="0.01" value="${p.kgCaja}" data-i="${i}" data-f="kgCaja" style="width:65px;"></td>
-      <td class="num"><input class="num" type="number" step="1" value="${ue}" data-i="${i}" data-f="uniCaja" style="width:55px;${grayU}" ${isU?'':'disabled'}></td>
-      <td class="num"><input class="num" type="number" step="1" value="${cxp}" data-i="${i}" data-f="cajasPorPallet" style="width:60px;"></td>
-      <td class="num">${fmt(kgPallet,2)}</td>
-      <td class="num"><input class="num" type="number" step="1" value="${pall}" data-i="${i}" data-f="pallets" style="width:55px;"></td>
-      <td class="num bold">${fmt(totCajas,0)}</td>
-      <td class="num bold">${fmt(kgTot,2)}</td>
-      <td class="num bold">${fmt(lbsTot,2)}</td>
-      <td class="num bold" style="color:${isU?'var(--canopy)':'var(--rule)'};">${isU?fmt(uniTot,0):'—'}</td>
+      <td class="num"><input class="num" type="number" step="1" value="${p.uniCaja||0}" data-i="${i}" data-f="uniCaja" style="width:55px;${grayU}" ${isU?'':'disabled'}></td>
+      <td class="num"><input class="num" type="number" step="1" value="${p.cajasPorPallet||0}" data-i="${i}" data-f="cajasPorPallet" style="width:60px;"></td>
+      <td class="num" id="c${i}-kgPallet">—</td>
+      <td class="num"><input class="num" type="number" step="1" value="${p.pallets||0}" data-i="${i}" data-f="pallets" style="width:55px;"></td>
+      <td class="num bold" id="c${i}-totCajas">—</td>
+      <td class="num bold" id="c${i}-kgTot">—</td>
+      <td class="num bold" id="c${i}-lbsTot">—</td>
+      <td class="num bold" id="c${i}-uniTot" style="color:${isU?'var(--canopy)':'var(--rule)'};">—</td>
       <td class="num">
         <input class="num" type="number" step="0.01" value="${p.precioVentaU}" data-i="${i}" data-f="precioVentaU" style="width:65px;">
         <div style="font-size:.66rem;color:var(--muted);">Q/${isU?'uni':'lb'}</div>
@@ -430,7 +420,10 @@ function renderProductos(){
         <input class="num" type="number" step="0.01" value="${p.comPorU}" data-i="${i}" data-f="comPorU" style="width:65px;">
         <div style="font-size:.66rem;color:var(--muted);">Q/${isU?'uni':'lb'}</div>
       </td>
-      <td class="num"><input class="num" type="number" step="0.01" value="${p.costoSugeridoMXN||''}" data-i="${i}" data-f="costoSugeridoMXN" placeholder="—" style="width:80px;"></td>
+      <td class="num">
+        <input class="num" type="number" step="0.01" value="${p.costoSugeridoMXN||''}" data-i="${i}" data-f="costoSugeridoMXN" placeholder="—" style="width:80px;">
+        <div style="font-size:.66rem;color:var(--muted);" id="c${i}-sugInfo"></div>
+      </td>
       <td><button class="action-btn" onclick="removeProducto(${i})">✕</button></td>
     </tr>`;
   }).join('');
@@ -447,6 +440,41 @@ function renderProductos(){
       }
       recalc();
     });
+  });
+}
+
+// Actualiza las celdas calculadas de cada fila (se llama desde recalc)
+function updateRowCells(){
+  productos.forEach((p,i)=>{
+    const kg=parseFloat(p.kgCaja)||0;
+    const ue=parseFloat(p.uniCaja)||0;
+    const cxp=parseFloat(p.cajasPorPallet)||0;
+    const pall=parseFloat(p.pallets)||0;
+    const isU=p.modoVenta==='unidad';
+    const kgPallet=cxp*kg;
+    const totCajas=cxp*pall;
+    const kgTot=totCajas*kg;
+    const lbsTot=kgTot*2.20462;
+    const uniTot=isU?totCajas*ue:0;
+    const lbsCja=kg*2.20462;
+    const elL=$(`c${i}-lbsCja`);   if(elL) elL.textContent=fmt(lbsCja,2);
+    const elP=$(`c${i}-kgPallet`); if(elP) elP.textContent=fmt(kgPallet,2);
+    const elT=$(`c${i}-totCajas`); if(elT) elT.textContent=fmt(totCajas,0);
+    const elK=$(`c${i}-kgTot`);    if(elK) elK.textContent=fmt(kgTot,2);
+    const elB=$(`c${i}-lbsTot`);   if(elB) elB.textContent=fmt(lbsTot,2);
+    const elU=$(`c${i}-uniTot`);   if(elU) elU.textContent=isU?fmt(uniTot,0):'—';
+    // Sugerido sub-info: MXN/kg y total MXN
+    const elSug=$(`c${i}-sugInfo`);
+    if(elSug){
+      const sug=parseFloat(p.costoSugeridoMXN);
+      if(Number.isFinite(sug) && sug>0 && kg>0){
+        const mxnKg = sug/kg;
+        const totMXN = sug * totCajas;
+        elSug.innerHTML = `${fmt(mxnKg,2)} MXN/kg · total $${fmt(totMXN,0)}`;
+      } else {
+        elSug.textContent = 'MXN por caja';
+      }
+    }
   });
 }
 
@@ -482,6 +510,9 @@ function recalc(){
   const ivaPct=(parseFloat($('ivaPct').value)||0)/100;
   const retIvaPct=(parseFloat($('retIvaPct').value)||0)/100;
   const prontoPct=(parseFloat($('prontoPct').value)||0)/100;
+
+  // Actualiza celdas calculadas en cada fila
+  updateRowCells();
 
   // Totales productos (pallet-based)
   let totalKg=0, totalLbs=0, totalUnid=0, totalCajas=0, totalPallets=0;
