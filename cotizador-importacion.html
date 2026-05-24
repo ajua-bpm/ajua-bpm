@@ -263,8 +263,8 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
         <div><span style="color:var(--muted);">Gastos MX:</span> <b style="color:var(--red);" id="ft-gMX">Q 0.00</b></div>
         <div><span style="color:var(--muted);">Gastos GT:</span> <b style="color:var(--red);" id="ft-gGT">Q 0.00</b></div>
         <div><span style="color:var(--muted);">Comisión AJUA:</span> <b style="color:var(--red);" id="ft-comision">Q 0.00</b></div>
-        <div><span style="color:var(--muted);">Disponible GTQ:</span> <b style="color:var(--green);" id="ft-dispGTQ">Q 0.00</b></div>
-        <div><span style="color:var(--muted);">Disponible MXN:</span> <b style="color:var(--green);" id="ft-dispMXN">$ 0.00</b></div>
+        <div><span style="color:var(--muted);">Pago productor GTQ:</span> <b style="color:var(--green);" id="ft-dispGTQ">Q 0.00</b></div>
+        <div><span style="color:var(--muted);">Pago productor MXN:</span> <b style="color:var(--green);" id="ft-dispMXN">$ 0.00</b></div>
       </div>
     </div>
   </section>
@@ -278,7 +278,7 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
       <div class="kpi"><div class="lbl">Venta neta (post retenciones)</div><div class="val" id="k-vneta">Q 0.00</div><div class="sub" id="k-vnetaUSD">$ 0.00 USD</div></div>
       <div class="kpi"><div class="lbl">Gastos importación</div><div class="val" id="k-gastos">Q 0.00</div><div class="sub" id="k-gastosPct">— de venta neta</div></div>
       <div class="kpi good"><div class="lbl">Comisión AGROAJUA</div><div class="val" id="k-com">Q 0.00</div><div class="sub" id="k-comInfo">—</div></div>
-      <div class="kpi"><div class="lbl">Pago disponible al productor</div><div class="val" id="k-prod">Q 0.00</div><div class="sub" id="k-prodMXN">$ 0.00 MXN</div></div>
+      <div class="kpi"><div class="lbl">Pago al productor</div><div class="val" id="k-prod">Q 0.00</div><div class="sub" id="k-prodMXN">$ 0.00 MXN</div></div>
       <div class="kpi"><div class="lbl">% al productor de venta bruta</div><div class="val" id="k-prodPct">0%</div><div class="sub">Lo que retorna a origen</div></div>
       <div class="kpi"><div class="lbl">Q/lb promedio al productor</div><div class="val" id="k-prodQlb">Q 0.00</div><div class="sub" id="k-prodMXNlb">$ 0.00 MXN/lb</div></div>
       <div class="kpi"><div class="lbl">Contenedor</div><div class="val" id="k-pallets">0</div><div class="sub" id="k-cntInfo">pallets · cajas · kg</div></div>
@@ -363,19 +363,17 @@ const today=()=>new Date().toISOString().slice(0,10);
 // modoVenta determina si se vende por libra o por unidad.
 // comPorU: comisión en la unidad de venta (Q/lb o Q/unidad).
 let productos = [
-  { nombre:'Cebolla Super Red', empaque:'caja', modoVenta:'lb', kgCaja:13.61, uniCaja:0, cajasPorPallet:70, pallets:4, precioVentaU:7.00, comPorU:1.00, costoSugeridoMXN:'' },
-  { nombre:'Zanahoria Granel',  empaque:'caja', modoVenta:'lb', kgCaja:9.98,  uniCaja:0, cajasPorPallet:80, pallets:16, precioVentaU:5.00, comPorU:1.00, costoSugeridoMXN:'' },
-  { nombre:'Repollo Unidades',  empaque:'caja', modoVenta:'unidad', kgCaja:8.00, uniCaja:4, cajasPorPallet:100, pallets:8, precioVentaU:11.00, comPorU:1.50, costoSugeridoMXN:'' },
+  { nombre:'Zanahoria Granel', empaque:'caja', modoVenta:'lb',     kgCaja:9.98, uniCaja:0, cajasPorPallet:80,  pallets:16, precioVentaU:5.00,  comPorU:1.00, costoSugeridoMXN:'' },
+  { nombre:'Repollo Unidades', empaque:'caja', modoVenta:'unidad', kgCaja:8.00, uniCaja:4, cajasPorPallet:100, pallets:8,  precioVentaU:11.00, comPorU:1.50, costoSugeridoMXN:'' },
 ];
 let gastosMX = [
-  { concepto:'Flete México → frontera', monto:25000 },
-  { concepto:'Empaque y carga',         monto:5000 },
-  { concepto:'Documentación origen',    monto:2000 },
+  { concepto:'Flete México',           monto:0 },
+  { concepto:'Gastos Frontera México', monto:0 },
 ];
 let gastosGT = [
-  { concepto:'Aduana / impuestos',      monto:8000 },
-  { concepto:'Transporte interno GT',   monto:3500 },
-  { concepto:'Almacenamiento temporal', monto:1200 },
+  { concepto:'Flete Guatemala',         monto:0 },
+  { concepto:'Impuestos Importación',   monto:0 },
+  { concepto:'Gastos Aduana Guatemala', monto:0 },
 ];
 
 // ── Add/remove
@@ -694,7 +692,7 @@ function recalc(){
           <span style="color:var(--red);">− Comisión AJUA (Q ${fmt(comPorU,2)}/${uLbl} × ${cantStr})</span>
           <span style="color:var(--red);">${fmtQ(comProd)}</span>
 
-          <span style="color:var(--green);font-weight:700;border-top:1px solid var(--rule);padding-top:6px;">Disponible para productor</span>
+          <span style="color:var(--green);font-weight:700;border-top:1px solid var(--rule);padding-top:6px;">Pago al productor</span>
           <b style="color:var(--green);border-top:1px solid var(--rule);padding-top:6px;">${fmtQ(dispGTQ)}</b>
 
           <span style="color:var(--muted);font-size:.78rem;">  ÷ TC ${fmt(tc,4)} = MXN total</span>
