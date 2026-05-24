@@ -6,7 +6,6 @@
 <title>Cotización de Importación — México → Guatemala</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=Inter+Tight:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
 <style>
 :root {
   --bone:#F8F3E9;--paper:#FFFFFF;--ink:#1A1A18;--forest:#1F3A2C;--canopy:#2D6645;--ochre:#A8835A;
@@ -395,7 +394,7 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
     <button class="btn btn-print" onclick="saveCotizacion()">Guardar cotización</button>
   </div>
   <div style="text-align:right;padding:4px 8px;font-size:.7rem;color:var(--muted);font-style:italic;">
-    PDF se genera automáticamente con márgenes y colores correctos
+    Al imprimir: Márgenes "Predeterminado" + Más opciones → "Gráficos en segundo plano"
   </div>
   <div id="save-status" style="text-align:right;padding:4px 8px;font-size:.74rem;color:var(--muted);font-style:italic;min-height:18px;"></div>
 
@@ -827,64 +826,9 @@ function recalc(){
 
 function copyShareableLink(){ navigator.clipboard.writeText(window.location.href); alert('Enlace copiado.'); }
 async function printDoc(){
-  const actions = document.querySelector('.actions');
-  const printNote = actions ? actions.nextElementSibling : null;
-  const saveStatus = $('save-status');
-  const page = document.querySelector('.page');
-  const btn = event?.target;
-  const origText = btn?.textContent;
-
-  // Esperar fuentes cargadas
-  if(document.fonts && document.fonts.ready) await document.fonts.ready;
-
-  // Ocultar UI + ajustar ancho a tamaño A4 para captura limpia
-  if(actions) actions.style.display='none';
-  if(printNote) printNote.style.display='none';
-  if(saveStatus) saveStatus.style.display='none';
-  const origStyles = { maxWidth:page.style.maxWidth, width:page.style.width, padding:page.style.padding };
-  page.style.maxWidth = '780px';
-  page.style.width    = '780px';
-  page.style.padding  = '24px 28px';
-  if(btn){ btn.textContent='Generando PDF...'; btn.disabled=true; }
-
-  const numero = $('m-numero').value || 'AGROAJUA';
-  const prodName = $('m-productor').value.replace(/[^A-Za-z0-9_-]+/g,'_') || '';
-  const filename = `cotizacion-${numero}${prodName?'-'+prodName:''}.pdf`;
-
-  const restore = () => {
-    if(actions) actions.style.display='';
-    if(printNote) printNote.style.display='';
-    if(saveStatus) saveStatus.style.display='';
-    page.style.maxWidth = origStyles.maxWidth;
-    page.style.width    = origStyles.width;
-    page.style.padding  = origStyles.padding;
-    if(btn){ btn.textContent=origText; btn.disabled=false; }
-  };
-
-  // Esperar un frame para que el reflow al ancho nuevo termine
-  await new Promise(r => setTimeout(r, 100));
-
-  try {
-    await html2pdf().set({
-      margin: 10,
-      filename,
-      image: { type: 'jpeg', quality: 0.95 },
-      html2canvas: {
-        scale: 1.5,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-        letterRendering: true,
-        windowWidth: 780,
-      },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true, putOnlyUsedFonts: true },
-      pagebreak: { mode: ['css', 'legacy'], avoid: ['.pc', '.kpi', '#analisis-cards > div'] }
-    }).from(page).save();
-  } catch(err) {
-    console.error(err);
-    alert('Error generando PDF. Revisá la consola.');
-  }
-  restore();
+  // html2pdf rompe con layouts complejos — uso window.print() con instrucción clara
+  alert('Para guardar como PDF profesional:\n\n1. Se abrirá el diálogo de impresión\n2. Destino: "Guardar como PDF"\n3. Márgenes: "Predeterminado"\n4. Más opciones → activá "Gráficos en segundo plano"\n5. Guardar\n\nChrome recuerda estos ajustes la próxima vez.');
+  setTimeout(()=>window.print(), 200);
 }
 
 // ── Persistencia en Firestore (colección cotizacionesImport)
