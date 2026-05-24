@@ -190,7 +190,7 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
   <section class="block">
     <div class="section-num">— 03 / Productos · precio venta · comisión · costo sugerido</div>
     <h2 class="section-title">Negociación por producto — kg / caja / unidad</h2>
-    <div class="subnote">Por cada producto definí: <b>precio de venta /u</b> (Q/lb o Q/unidad), <b>comisión AJUA</b> en Q/libra, y opcionalmente el <b>costo sugerido MXN/empaque</b> (lo que querés pagar al productor) para comparar contra el máximo.</div>
+    <div class="subnote">Por cada producto definí: <b>precio venta /u</b> (Q/lb o Q/uni), <b>comisión AJUA</b> en Q/u, y el <b>costo sugerido</b> en <b>MXN/kg</b> (productos por libra) o <b>MXN/unidad</b> (productos por unidad). Se compara contra el máximo disponible.</div>
 
     <div class="banner-cnt">
       <span class="lbl">Contenedor</span>
@@ -219,7 +219,7 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
           <th class="num">UNI TOT</th>
           <th class="num">P.V. (Q/u)</th>
           <th class="num">Com (Q/u)</th>
-          <th class="num">Sugerido MXN/cja</th>
+          <th class="num">Sugerido MXN /kg o /uni</th>
           <th></th>
         </tr>
       </thead>
@@ -421,8 +421,8 @@ function renderProductos(){
         <div style="font-size:.66rem;color:var(--muted);">Q/${isU?'uni':'lb'}</div>
       </td>
       <td class="num">
-        <input class="num" type="number" step="0.01" value="${p.costoSugeridoMXN||''}" data-i="${i}" data-f="costoSugeridoMXN" placeholder="—" style="width:80px;">
-        <div style="font-size:.66rem;color:var(--muted);" id="c${i}-sugInfo"></div>
+        <input class="num" type="number" step="0.01" value="${p.costoSugeridoMXN||''}" data-i="${i}" data-f="costoSugeridoMXN" placeholder="ej: 28" style="width:80px;">
+        <div style="font-size:.66rem;color:var(--muted);" id="c${i}-sugInfo">MXN/${isU?'unidad':'kg'}</div>
       </td>
       <td><button class="action-btn" onclick="removeProducto(${i})">✕</button></td>
     </tr>`;
@@ -463,16 +463,23 @@ function updateRowCells(){
     const elK=$(`c${i}-kgTot`);    if(elK) elK.textContent=fmt(kgTot,2);
     const elB=$(`c${i}-lbsTot`);   if(elB) elB.textContent=fmt(lbsTot,2);
     const elU=$(`c${i}-uniTot`);   if(elU) elU.textContent=isU?fmt(uniTot,0):'—';
-    // Sugerido sub-info: MXN/kg y total MXN
+    // Sugerido sub-info: muestra equivalentes y total
     const elSug=$(`c${i}-sugInfo`);
     if(elSug){
       const sug=parseFloat(p.costoSugeridoMXN);
-      if(Number.isFinite(sug) && sug>0 && kg>0){
-        const mxnKg = sug/kg;
-        const totMXN = sug * totCajas;
-        elSug.innerHTML = `${fmt(mxnKg,2)} MXN/kg · total $${fmt(totMXN,0)}`;
+      if(Number.isFinite(sug) && sug>0){
+        if(isU){
+          // Sugerido es MXN/unidad
+          const totMXN = sug * uniTot;
+          elSug.innerHTML = `MXN/unidad · total $${fmt(totMXN,0)} MXN`;
+        } else {
+          // Sugerido es MXN/kg
+          const mxnCaja = sug * kg;
+          const totMXN  = sug * kgTot;
+          elSug.innerHTML = `MXN/kg · ${fmt(mxnCaja,2)}/caja · total $${fmt(totMXN,0)} MXN`;
+        }
       } else {
-        elSug.textContent = 'MXN por caja';
+        elSug.textContent = `MXN/${isU?'unidad':'kg'}`;
       }
     }
   });
@@ -593,11 +600,17 @@ function recalc(){
 
     const dispGTQ = p._ventaNeta - gMXp - gGTp - comProd;
     const dispMXN = tc>0 ? dispGTQ/tc : 0;
-    const maxMXNemp = c>0 ? dispMXN/c : 0;
-    const sugerido = parseFloat(p.costoSugeridoMXN);
+    // Máximo según unidad de negociación: MXN/kg (lb mode) o MXN/unidad (unidad mode)
+    const cantNeg = isU ? p._unidTotal : p._kgTotal; // unidades para uni mode, kg para lb mode
+    const maxMXNu = cantNeg>0 ? dispMXN/cantNeg : 0;
+    const maxMXNemp = c>0 ? dispMXN/c : 0; // mantiene por caja para referencia
+    const sugerido = parseFloat(p.costoSugeridoMXN); // MXN/kg o MXN/unidad
     const tieneSugerido = Number.isFinite(sugerido) && sugerido>0;
-    const diff = tieneSugerido ? maxMXNemp - sugerido : null;
+    const diff = tieneSugerido ? maxMXNu - sugerido : null;
     const cabe = diff!=null && diff>=0;
+    const uNegLbl = isU ? 'unidad' : 'kg';
+    const totalSugMXN = tieneSugerido ? sugerido * cantNeg : 0;
+    const totalMaxMXN = maxMXNu * cantNeg;
 
     p._dispGTQ=dispGTQ; p._dispMXN=dispMXN; p._maxMXNemp=maxMXNemp; p._comProd=comProd; p._gMXp=gMXp; p._gGTp=gGTp;
     totalDispGTQ+=dispGTQ; totalDispMXN+=dispMXN;
@@ -610,19 +623,23 @@ function recalc(){
       <div style="margin-top:10px;padding:10px 12px;border-radius:6px;background:${cabe?'rgba(46,125,50,.08)':'rgba(198,40,40,.08)'};">
         <div style="display:flex;justify-content:space-between;align-items:baseline;">
           <span style="font-size:.78rem;color:var(--muted);">Costo sugerido al productor:</span>
-          <b>$ ${fmt(sugerido,2)} MXN/emp</b>
+          <b>$ ${fmt(sugerido,2)} MXN/${uNegLbl}</b>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:4px;">
           <span style="font-size:.78rem;color:var(--muted);">Máximo posible:</span>
-          <b style="color:var(--canopy);">$ ${fmt(maxMXNemp,2)} MXN/emp</b>
+          <b style="color:var(--canopy);">$ ${fmt(maxMXNu,2)} MXN/${uNegLbl}</b>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:4px;font-size:.76rem;color:var(--muted);">
+          <span>Total sugerido:</span>
+          <span>$ ${fmt(totalSugMXN,0)} MXN  ·  máx: $ ${fmt(totalMaxMXN,0)} MXN</span>
         </div>
         <div style="margin-top:8px;padding-top:8px;border-top:1px dashed ${cabe?'var(--green)':'var(--red)'};display:flex;justify-content:space-between;align-items:baseline;">
           <b style="color:${cabe?'var(--green)':'var(--red)'};">${cabe?'✓ Cabe el sugerido':'✗ No alcanza'}</b>
-          <b style="color:${cabe?'var(--green)':'var(--red)'};">${cabe?'sobran':'faltan'} $ ${fmt(Math.abs(diff),2)} MXN/emp</b>
+          <b style="color:${cabe?'var(--green)':'var(--red)'};">${cabe?'sobran':'faltan'} $ ${fmt(Math.abs(diff),2)} MXN/${uNegLbl}</b>
         </div>
       </div>` : `
       <div style="margin-top:10px;padding:8px 12px;border-radius:6px;background:var(--bone);font-size:.78rem;color:var(--muted);text-align:center;font-style:italic;">
-        Ingresá el costo sugerido en la sección 03 para comparar
+        Ingresá el costo sugerido (MXN/${uNegLbl}) en la sección 03 para comparar
       </div>`;
 
     cardsHost.innerHTML += `
@@ -662,8 +679,11 @@ function recalc(){
           <span style="color:var(--muted);font-size:.78rem;">  ÷ TC ${fmt(tc,4)} = MXN total</span>
           <span style="font-size:.78rem;color:var(--muted);">$ ${fmt(dispMXN,2)} MXN</span>
 
-          <span style="color:var(--canopy);font-weight:700;">  ÷ ${c} empaques = Máx MXN/empaque</span>
-          <b style="color:var(--canopy);font-size:1rem;">$ ${fmt(maxMXNemp,2)} MXN</b>
+          <span style="color:var(--canopy);font-weight:700;">  ÷ ${fmt(cantNeg, isU?0:2)} ${isU?'unidades':'kg'} = Máx MXN/${uNegLbl}</span>
+          <b style="color:var(--canopy);font-size:1rem;">$ ${fmt(maxMXNu,2)} MXN/${uNegLbl}</b>
+
+          <span style="color:var(--muted);font-size:.76rem;">  · equivalente</span>
+          <span style="font-size:.76rem;color:var(--muted);">$ ${fmt(maxMXNemp,2)} MXN/caja</span>
         </div>
 
         ${cmpBlock}
