@@ -223,7 +223,16 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
         </tr>
       </tfoot>
     </table>
-    <button class="add-row" onclick="addProducto()">+ Agregar producto</button>
+    <div style="display:flex;gap:14px;margin-top:8px;flex-wrap:wrap;align-items:center;">
+      <button class="add-row" onclick="addProducto()">+ Agregar producto manual</button>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <select id="catalog-picker" onchange="addFromCatalog(this.value)"
+          style="font-family:inherit;font-size:.85rem;padding:7px 12px;border:1.5px solid var(--ochre);border-radius:4px;background:#FFFBEF;cursor:pointer;min-width:300px;color:var(--forest);font-weight:500;">
+          <option value="">🛒 Cargar del catálogo cliente (Walmart)…</option>
+        </select>
+        <span id="catalog-status" style="font-size:.74rem;color:var(--muted);font-style:italic;">cargando catálogo…</span>
+      </div>
+    </div>
   </section>
 
   <!-- 05 ANÁLISIS -->
@@ -635,6 +644,78 @@ function recalc(){
 
 function copyShareableLink(){ navigator.clipboard.writeText(window.location.href); alert('Enlace copiado.'); }
 
+// ── Catálogo Walmart (jala de Firestore — colección iPresentaciones)
+let walmartCatalog = [];
+function parseFS(v){
+  if(!v) return null;
+  if('stringValue' in v) return v.stringValue;
+  if('integerValue' in v) return parseInt(v.integerValue,10);
+  if('doubleValue' in v) return v.doubleValue;
+  if('booleanValue' in v) return v.booleanValue;
+  return null;
+}
+async function loadCatalog(){
+  const st=$('catalog-status');
+  try {
+    const url='https://firestore.googleapis.com/v1/projects/ajuabmp/databases/(default)/documents/iPresentaciones?pageSize=500';
+    const r=await fetch(url);
+    if(!r.ok) throw new Error('catálogo no disponible');
+    const data=await r.json();
+    walmartCatalog=(data.documents||[]).map(doc=>{
+      const f=doc.fields||{};
+      return {
+        id:doc.name.split('/').pop(),
+        nombre:parseFS(f.nombre)||parseFS(f.descripcion)||'(sin nombre)',
+        codigoSAP:parseFS(f.codigoSAP)||parseFS(f.codigo)||'',
+        canal:parseFS(f.canal)||'',
+        tipoContenido:parseFS(f.tipoContenido)||'granel',
+        cantidadCaja:parseFloat(parseFS(f.cantidadCaja))||0,
+        lbsUnidad:parseFloat(parseFS(f.lbsUnidad))||0,
+        totalLbsCaja:parseFloat(parseFS(f.totalLbsCaja))||0,
+        precioBase:parseFloat(parseFS(f.precioBase))||0,
+        activo:parseFS(f.activo)!==false,
+      };
+    }).filter(p=>p.activo && (p.canal||'').toLowerCase().includes('walmart'));
+    walmartCatalog.sort((a,b)=>a.nombre.localeCompare(b.nombre));
+    const sel=$('catalog-picker');
+    walmartCatalog.forEach((p,i)=>{
+      const opt=document.createElement('option');
+      opt.value=i;
+      const tipoLbl = p.tipoContenido==='unidades' ? `${p.cantidadCaja} uni/cja` : `${fmt(p.totalLbsCaja,1)} lbs/cja`;
+      opt.textContent = `${p.nombre} · ${tipoLbl} · Q${fmt(p.precioBase,2)}`;
+      sel.appendChild(opt);
+    });
+    st.textContent = walmartCatalog.length>0 ? `${walmartCatalog.length} productos disponibles` : 'sin productos en catálogo';
+    st.style.color = walmartCatalog.length>0 ? 'var(--green)' : 'var(--muted)';
+  } catch(e) {
+    st.textContent = 'no se pudo cargar catálogo';
+    st.style.color = 'var(--red)';
+  }
+}
+function addFromCatalog(idx){
+  if(idx==='' || idx==null) return;
+  const p = walmartCatalog[parseInt(idx)];
+  if(!p) return;
+  const isU = p.tipoContenido==='unidades';
+  const totalLbsCja = isU ? (p.lbsUnidad * p.cantidadCaja) : p.totalLbsCaja;
+  const kgCja = totalLbsCja > 0 ? (totalLbsCja / 2.20462) : 0;
+  productos.push({
+    nombre: p.nombre,
+    empaque: 'caja',
+    modoVenta: isU ? 'unidad' : 'lb',
+    kgCaja: +kgCja.toFixed(2),
+    uniCaja: isU ? p.cantidadCaja : 0,
+    cajasPorPallet: 0,
+    pallets: 0,
+    precioVentaU: p.precioBase,
+    comPorU: 1.00,
+    costoSugeridoMXN: '',
+  });
+  renderProductos();
+  recalc();
+  $('catalog-picker').value='';
+}
+
 // ── Init
 $('m-fecha').value=today();
 $('foot-ts').textContent='Última actualización: '+new Date().toLocaleString('es-GT');
@@ -642,6 +723,7 @@ $('foot-ts').textContent='Última actualización: '+new Date().toLocaleString('e
 renderProductos();
 renderGastos();
 recalc();
+loadCatalog();
 
 ['tcMXN','tcUSD','ivaPct','retIvaPct','prontoPct','m-productor'].forEach(id=>{
   $(id).addEventListener('input',()=>{ renderProductos(); renderGastos(); recalc(); });
