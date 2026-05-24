@@ -142,11 +142,8 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
 @media (max-width:520px){.products-grid{grid-template-columns:1fr;}.pc-row{grid-template-columns:1fr;gap:4px;}.pc-label{font-size:.7rem;}}
 
 @media print{
-  @page{size:A4 portrait;margin:20mm 16mm 22mm 16mm;
-    @top-left{content:"AGROAJUA · Cotización de Importación";font-family:'Inter Tight',sans-serif;font-size:7.5pt;color:#666;letter-spacing:.08em;}
-    @bottom-right{content:"Página "counter(page)" de "counter(pages);font-family:'Inter Tight',sans-serif;font-size:7.5pt;color:#666;}
-    @bottom-left{content:"Documento confidencial · válida 7 días";font-family:'Inter Tight',sans-serif;font-size:7.5pt;color:#666;font-style:italic;}
-  }
+  @page{size:A4 portrait;margin:15mm 14mm;}
+  html, body, *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important;}
   body{background:#fff !important;font-size:9.5pt;color:#1a1a18;line-height:1.45;}
   .page{padding:0 !important;max-width:none !important;}
 
@@ -392,8 +389,11 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
 
   <div class="actions">
     <button class="btn btn-secondary" onclick="loadCotizacionPicker()">Cargar cotización</button>
-    <button class="btn btn-secondary" onclick="window.print()">Imprimir / PDF</button>
+    <button class="btn btn-secondary" onclick="printDoc()">Imprimir / PDF</button>
     <button class="btn btn-print" onclick="saveCotizacion()">Guardar cotización</button>
+  </div>
+  <div style="text-align:right;padding:4px 8px;font-size:.7rem;color:var(--muted);font-style:italic;">
+    Para PDF con colores: en el diálogo de impresión, expandí <b>Más opciones</b> → activá <b>Gráficos en segundo plano</b>
   </div>
   <div id="save-status" style="text-align:right;padding:4px 8px;font-size:.74rem;color:var(--muted);font-style:italic;min-height:18px;"></div>
 
@@ -824,6 +824,14 @@ function recalc(){
 }
 
 function copyShareableLink(){ navigator.clipboard.writeText(window.location.href); alert('Enlace copiado.'); }
+function printDoc(){
+  // Recordatorio una sola vez por sesión
+  if(!sessionStorage.getItem('printHint')){
+    alert('Para que el PDF mantenga los colores:\n\n1. Cuando se abra el diálogo, click en "Más opciones"\n2. Activá "Gráficos en segundo plano" / "Background graphics"\n3. Guardar como PDF\n\nEn Chrome y Edge funciona perfecto.');
+    sessionStorage.setItem('printHint','1');
+  }
+  setTimeout(()=>window.print(), 100);
+}
 
 // ── Persistencia en Firestore (colección cotizacionesImport)
 const FS_BASE='https://firestore.googleapis.com/v1/projects/ajuabmp/databases/(default)/documents';
