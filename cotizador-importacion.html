@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cotización de Importación — México → Guatemala</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
   --bone:#F8F3E9;--paper:#FFFFFF;--ink:#1A1A18;--forest:#1F3A2C;--canopy:#2D6645;--ochre:#A8835A;
@@ -14,16 +14,17 @@
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 html{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-body{font-family:'Inter',system-ui,sans-serif;background:var(--bone);color:var(--ink);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bone);color:var(--ink);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;}
+.brand,h2.section-title,.pc-name,.kpi .val,.pc-totals .v{font-weight:600;letter-spacing:-.005em;}
 
 .page{max-width:1180px;margin:0 auto;padding:40px 48px 60px;background:var(--paper);min-height:100vh;}
 
 /* HEADER */
 header.doc-head{border-bottom:2px solid var(--forest);padding-bottom:24px;margin-bottom:32px;}
 .head-row{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap;}
-.brand{font-family:'Fraunces',serif;font-size:1.7rem;font-weight:900;color:var(--forest);letter-spacing:.02em;}
+.brand{font-family:'Cormorant Garamond','Times New Roman',serif;font-size:1.7rem;font-weight:900;color:var(--forest);letter-spacing:.02em;}
 .brand span{color:var(--ochre);}
-.doc-title{font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700;color:var(--ink);margin-top:4px;}
+.doc-title{font-family:'Cormorant Garamond','Times New Roman',serif;font-size:1.3rem;font-weight:700;color:var(--ink);margin-top:4px;}
 .doc-sub{font-size:.82rem;color:var(--muted);margin-top:2px;}
 .meta{text-align:right;font-size:.78rem;color:var(--muted);display:flex;flex-direction:column;gap:3px;}
 .meta b{color:var(--ink);font-weight:600;}
@@ -32,7 +33,7 @@ header.doc-head{border-bottom:2px solid var(--forest);padding-bottom:24px;margin
 /* SECTIONS */
 section.block{margin-bottom:36px;page-break-inside:avoid;}
 .section-num{font-size:.68rem;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:var(--ochre);margin-bottom:10px;}
-h2.section-title{font-family:'Fraunces',serif;font-size:1.35rem;font-weight:700;color:var(--forest);letter-spacing:-.005em;margin-bottom:16px;}
+h2.section-title{font-family:'Cormorant Garamond','Times New Roman',serif;font-size:1.35rem;font-weight:700;color:var(--forest);letter-spacing:-.005em;margin-bottom:16px;}
 .subnote{font-size:.78rem;color:var(--muted);margin-bottom:8px;font-style:italic;}
 
 /* INPUTS */
@@ -72,14 +73,14 @@ table.t tfoot td.num{text-align:right;font-variant-numeric:tabular-nums;}
 
 /* CONTAINER BANNER */
 .banner-cnt{padding:12px 18px;background:var(--forest);color:var(--bone);border-radius:6px;margin-bottom:12px;display:flex;gap:24px;flex-wrap:wrap;align-items:center;font-size:.86rem;}
-.banner-cnt .lbl{font-family:'Fraunces',serif;font-weight:700;font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;opacity:.75;}
+.banner-cnt .lbl{font-family:'Cormorant Garamond','Times New Roman',serif;font-weight:700;font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;opacity:.75;}
 .banner-cnt b{color:var(--ochre);}
 
 /* KPIs */
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;}
 .kpi{padding:16px 18px;background:var(--bone);border-left:3px solid var(--ochre);border-radius:0 6px 6px 0;}
 .kpi .lbl{font-size:.66rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
-.kpi .val{font-family:'Fraunces',serif;font-size:1.45rem;font-weight:700;color:var(--forest);font-variant-numeric:tabular-nums;line-height:1.1;}
+.kpi .val{font-family:'Inter',sans-serif;font-size:1.5rem;font-weight:700;color:var(--forest);font-variant-numeric:tabular-nums;line-height:1.1;letter-spacing:-.015em;}
 .kpi .sub{font-size:.76rem;color:var(--muted);margin-top:4px;}
 .kpi.good{border-left-color:var(--green);}.kpi.good .val{color:var(--green);}
 .kpi.bad{border-left-color:var(--red);}.kpi.bad .val{color:var(--red);}
@@ -112,7 +113,7 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
 .products-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:16px;margin-top:14px;}
 .pc{background:#fff;border:1px solid var(--rule);border-radius:10px;padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
 .pc-head{display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--rule);margin-bottom:12px;}
-.pc-name{flex:1;font-family:'Fraunces',serif;font-size:1.15rem;font-weight:700;color:var(--forest);border:none;border-bottom:1px dashed var(--rule);padding:2px 0;background:transparent;}
+.pc-name{flex:1;font-family:'Cormorant Garamond','Times New Roman',serif;font-size:1.15rem;font-weight:700;color:var(--forest);border:none;border-bottom:1px dashed var(--rule);padding:2px 0;background:transparent;}
 .pc-name:hover{background:var(--highlight);}
 .pc-name:focus{border-bottom-color:var(--canopy);border-bottom-style:solid;}
 .pc-mode-pill{padding:3px 12px;border-radius:14px;font-size:.7rem;font-weight:800;letter-spacing:.06em;border:1.5px solid;background:transparent;cursor:pointer;font-family:inherit;}
@@ -133,7 +134,7 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
 .pc-input-grp .ccy{font-size:.78rem;color:var(--muted);font-weight:600;}
 .pc-input-grp .unit{font-size:.74rem;color:var(--muted);}
 .pc-totals{padding:10px 14px;margin:12px 0 4px;background:var(--bone);border-radius:6px;display:flex;gap:18px;flex-wrap:wrap;justify-content:center;font-size:.88rem;color:var(--ink);align-items:baseline;}
-.pc-totals .v{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:700;color:var(--forest);margin-right:4px;}
+.pc-totals .v{font-family:'Inter',sans-serif;font-size:1.05rem;font-weight:700;color:var(--forest);margin-right:4px;letter-spacing:-.01em;}
 .pc-totals .unit{font-size:.76rem;color:var(--muted);}
 .pc-sug-info{margin-top:6px;padding:8px 12px;background:rgba(168,131,90,.08);border-left:3px solid var(--ochre);border-radius:0 4px 4px 0;font-size:.78rem;color:var(--canopy);font-weight:500;}
 .pc-sug-info.empty{background:var(--bone);border-left-color:var(--rule);color:var(--muted);font-style:italic;}
@@ -141,22 +142,58 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
 @media (max-width:520px){.products-grid{grid-template-columns:1fr;}.pc-row{grid-template-columns:1fr;gap:4px;}.pc-label{font-size:.7rem;}}
 
 @media print{
-  @page{size:A4 landscape;margin:14mm;}
-  body{background:#fff;font-size:11px;}
-  .page{padding:0;max-width:none;}
-  .actions, .save-bar{display:none !important;}
-  input,select{border:none !important;background:transparent !important;-webkit-appearance:none;appearance:none;color:#000 !important;}
-  .add-row,.action-btn,#catalog-picker,#catalog-status{display:none !important;}
-  section.block{page-break-inside:avoid;margin-bottom:18px;}
-  h2.section-title{page-break-after:avoid;}
-  table.t thead{display:table-header-group;}
-  footer.doc-foot{position:running(footer);}
+  @page{size:A4 portrait;margin:12mm 10mm;}
+  body{background:#fff !important;font-size:10pt;color:#000;}
+  .page{padding:0 !important;max-width:none !important;}
+
+  /* Hide UI */
+  .actions,#save-status,.add-row,.action-btn,#catalog-picker,#catalog-status,.btn{display:none !important;}
+
+  /* Inputs as plain text */
+  input,select,textarea{border:none !important;background:transparent !important;
+    -webkit-appearance:none !important;appearance:none !important;color:#000 !important;
+    padding:0 !important;font-size:inherit !important;font-weight:inherit !important;}
+  select{padding-right:0 !important;}
+
+  /* Section breaks */
+  section.block{page-break-inside:auto;margin-bottom:14px;}
+  h2.section-title{page-break-after:avoid;font-size:14pt;}
   header.doc-head{page-break-after:avoid;}
-  .banner-cnt{background:#fff !important;color:#000 !important;border:1px solid #000 !important;}
-  .banner-cnt b{color:#000 !important;}
-  table.t thead th{background:#1F3A2C !important;color:#fff !important;}
-  table.t tfoot td{background:#F5F0E4 !important;}
-  .kpi{break-inside:avoid;}
+  .section-num{page-break-after:avoid;}
+
+  /* CARDS — no se rompen entre páginas */
+  .pc, .kpi, #analisis-cards > div, .reparto-grid{break-inside:avoid !important;page-break-inside:avoid !important;}
+  .products-grid{display:grid !important;grid-template-columns:1fr 1fr !important;gap:8px !important;}
+  #analisis-cards{display:grid !important;grid-template-columns:1fr 1fr !important;gap:8px !important;}
+  .kpis{display:grid !important;grid-template-columns:repeat(4,1fr) !important;gap:6px !important;}
+
+  /* Cards compactas */
+  .pc{padding:10px 12px !important;font-size:9.5pt !important;}
+  .pc-head{padding-bottom:6px !important;margin-bottom:6px !important;}
+  .pc-name{font-size:11pt !important;}
+  .pc-row{padding:2px 0 !important;}
+  .pc-totals{padding:6px 8px !important;margin:6px 0 !important;font-size:9pt !important;}
+  .pc-section-title{margin:8px 0 4px !important;padding-top:4px !important;}
+  .kpi{padding:8px 10px !important;}
+  .kpi .val{font-size:13pt !important;}
+  #analisis-cards > div{padding:10px 12px !important;font-size:9pt !important;}
+
+  /* Tablas (gastos) */
+  table.t thead{display:table-header-group;}
+  table.t thead th{background:#1F3A2C !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:8pt !important;}
+  table.t tfoot td{background:#F5F0E4 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  table.t tbody td{padding:5px 8px !important;font-size:9pt !important;}
+
+  /* Banner contenedor */
+  .banner-cnt{background:#1F3A2C !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .banner-cnt b{color:#A8835A !important;}
+
+  /* Configuración */
+  .cfg{background:#F5F0E4 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:10px 14px !important;}
+  .cfg-field input{font-size:11pt !important;}
+
+  /* Forzar tabular-nums en todo */
+  *{font-variant-numeric:tabular-nums !important;}
 }
 @media (max-width:780px){.page{padding:24px 18px;}.head-row{flex-direction:column;}.meta{text-align:left;}table.t{font-size:.78rem;}}
 </style>
@@ -285,33 +322,21 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
     </div>
   </section>
 
-  <!-- 07 REPARTO -->
-  <section class="block">
+  <!-- 06 REPARTO (oculto - innecesario, mantengo elementos calc en script) -->
+  <section class="block" style="display:none;">
     <div class="section-num">— 06 / Reparto entre empresas</div>
     <h2 class="section-title">Distribución del precio venta bruto</h2>
-
-    <!-- Barra visual -->
     <div style="margin-bottom:24px;">
-      <div style="display:flex;height:42px;border-radius:8px;overflow:hidden;border:1px solid var(--rule);box-shadow:inset 0 1px 0 rgba(0,0,0,.05);">
-        <div id="bar-prod" style="background:#1F3A2C;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.78rem;transition:width .3s;" title="Productor"></div>
-        <div id="bar-gmx"  style="background:#B4513A;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.78rem;transition:width .3s;" title="Gastos México"></div>
-        <div id="bar-ggt"  style="background:#D88B45;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.78rem;transition:width .3s;" title="Gastos Guatemala"></div>
-        <div id="bar-ajua" style="background:#A8835A;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.78rem;transition:width .3s;" title="AGROAJUA"></div>
-        <div id="bar-imp"  style="background:#6B6B60;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.78rem;transition:width .3s;" title="Retenciones"></div>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;font-size:.78rem;">
-        <span style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;background:#1F3A2C;border-radius:2px;display:inline-block;"></span> Productor MX</span>
-        <span style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;background:#B4513A;border-radius:2px;display:inline-block;"></span> Gastos México</span>
-        <span style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;background:#D88B45;border-radius:2px;display:inline-block;"></span> Gastos Guatemala</span>
-        <span style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;background:#A8835A;border-radius:2px;display:inline-block;"></span> AGROAJUA</span>
-        <span style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;background:#6B6B60;border-radius:2px;display:inline-block;"></span> Retenciones fisco GT</span>
+      <div style="display:flex;height:42px;border-radius:8px;overflow:hidden;border:1px solid var(--rule);">
+        <div id="bar-prod"></div>
+        <div id="bar-gmx"></div>
+        <div id="bar-ggt"></div>
+        <div id="bar-ajua"></div>
+        <div id="bar-imp"></div>
       </div>
     </div>
-
-    <h3 style="font-size:.85rem;color:var(--mxFlag);margin-bottom:6px;font-weight:600;">🇲🇽 México (origen)</h3>
     <div class="reparto-grid" style="margin-bottom:18px;">
-      <div class="h">Empresa / concepto</div><div class="h num">Monto GTQ</div><div class="h num">% venta bruta</div>
-      <div><b id="lbl-productor">Productor</b><br><span style="font-size:.74rem;color:var(--muted);">Disponible máximo (después de descuentos)</span></div>
+      <div><b id="lbl-productor">Productor</b></div>
       <div class="num" id="rep-productor">Q 0.00</div><div class="num" id="rep-productorPct">0%</div>
       <div><b>Gastos México</b><br><span style="font-size:.74rem;color:var(--muted);">Flete origen, empaque, documentación</span></div>
       <div class="num" id="rep-gastosMX">Q 0.00</div><div class="num" id="rep-gastosMXPct">0%</div>
@@ -331,8 +356,8 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
     </div>
 
     <div style="margin-top:14px;padding:14px 18px;background:var(--bone);border-radius:6px;display:flex;justify-content:space-between;align-items:center;border-left:3px solid var(--forest);">
-      <span style="font-family:'Fraunces',serif;font-weight:700;color:var(--forest);font-size:1.05rem;">Precio venta bruto al cliente</span>
-      <span style="font-family:'Fraunces',serif;font-weight:700;color:var(--forest);font-size:1.3rem;" id="rep-total">Q 0.00</span>
+      <span style="font-family:'Cormorant Garamond','Times New Roman',serif;font-weight:700;color:var(--forest);font-size:1.05rem;">Precio venta bruto al cliente</span>
+      <span style="font-family:'Cormorant Garamond','Times New Roman',serif;font-weight:700;color:var(--forest);font-size:1.3rem;" id="rep-total">Q 0.00</span>
     </div>
   </section>
 
@@ -665,7 +690,7 @@ function recalc(){
       <div style="background:#fff;border:1.5px solid ${borderColor};border-left:4px solid ${borderColor};border-radius:8px;padding:16px 18px;">
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;border-bottom:1px solid var(--rule);padding-bottom:10px;">
           <div>
-            <div style="font-family:'Fraunces',serif;font-weight:700;font-size:1.15rem;color:var(--forest);">${p.nombre||'—'}</div>
+            <div style="font-family:'Cormorant Garamond','Times New Roman',serif;font-weight:700;font-size:1.15rem;color:var(--forest);">${p.nombre||'—'}</div>
             <div style="font-size:.74rem;color:var(--muted);margin-top:2px;">
               <span class="pill ${isU?'unid':'lb'}">${isU?'unidad':'libra'}</span>
               · ${c} ${p.empaque || 'empaque'}${c===1?'':'s'} · ${cantStr}
