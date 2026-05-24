@@ -142,10 +142,11 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
 @media (max-width:520px){.products-grid{grid-template-columns:1fr;}.pc-row{grid-template-columns:1fr;gap:4px;}.pc-label{font-size:.7rem;}}
 
 @media print{
-  @page{size:A4 portrait;margin:15mm 14mm;}
+  /* @page margin define márgenes de PÁGINA (todas las páginas, no solo la primera) */
+  @page{size:A4 portrait;margin:18mm 16mm 22mm 16mm !important;}
   html, body, *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important;}
-  body{background:#fff !important;font-size:9.5pt;color:#1a1a18;line-height:1.45;}
-  .page{padding:0 !important;max-width:none !important;}
+  body{background:#fff !important;font-size:9.5pt;color:#1a1a18;line-height:1.45;margin:0 !important;}
+  .page{padding:0 !important;max-width:none !important;margin:0 !important;}
 
   /* Hide UI */
   .actions,#save-status,.add-row,.action-btn,#catalog-picker,#catalog-status,.btn{display:none !important;}
@@ -393,7 +394,7 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
     <button class="btn btn-print" onclick="saveCotizacion()">Guardar cotización</button>
   </div>
   <div style="text-align:right;padding:4px 8px;font-size:.7rem;color:var(--muted);font-style:italic;">
-    Para PDF con colores: en el diálogo de impresión, expandí <b>Más opciones</b> → activá <b>Gráficos en segundo plano</b>
+    En el diálogo de impresión: <b>Márgenes</b> → Predeterminado · <b>Más opciones</b> → activá <b>Gráficos en segundo plano</b>
   </div>
   <div id="save-status" style="text-align:right;padding:4px 8px;font-size:.74rem;color:var(--muted);font-style:italic;min-height:18px;"></div>
 
@@ -825,11 +826,7 @@ function recalc(){
 
 function copyShareableLink(){ navigator.clipboard.writeText(window.location.href); alert('Enlace copiado.'); }
 function printDoc(){
-  // Recordatorio una sola vez por sesión
-  if(!sessionStorage.getItem('printHint')){
-    alert('Para que el PDF mantenga los colores:\n\n1. Cuando se abra el diálogo, click en "Más opciones"\n2. Activá "Gráficos en segundo plano" / "Background graphics"\n3. Guardar como PDF\n\nEn Chrome y Edge funciona perfecto.');
-    sessionStorage.setItem('printHint','1');
-  }
+  alert('Para un PDF profesional:\n\n• Márgenes: seleccioná "Predeterminado" (NO "Ninguno")\n• Más opciones → activá "Gráficos en segundo plano"\n• Destino: Guardar como PDF\n\nEn Chrome y Edge funciona perfecto.');
   setTimeout(()=>window.print(), 100);
 }
 
