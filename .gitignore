@@ -1,0 +1,9 @@
+.claude/
+.vercel/
+node_modules/
+.DS_Store
+*.log
+.env
+.env.local
+dist/
+UsersPCAppDataLocalTempfb_backup_meta.json
