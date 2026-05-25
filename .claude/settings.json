@@ -1,0 +1,53 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --check src/modules/reportes/descarga-excel.js)",
+      "Bash(node --check src/modules/reportes/descarga-excel-gc.js)",
+      "Bash(node --check src/modules/backup-auto/backup-auto.js)",
+      "Bash(node --check src/modules/walmart-import/walmart-import.js)",
+      "Bash(node --check src/modules/storage-migrate/storage-migrate.js)",
+      "Bash(node --check c:/Users/PC/Documents/ajua-bpm/src/modules/storage-migrate/storage-migrate.js)",
+      "Bash(node --check c:/Users/PC/Documents/ajua-bpm/bpm.html)",
+      "Bash(node --check c:/Users/PC/Documents/ajua-bpm/src/modules/reportes/descarga-excel-completo.js)",
+      "Bash(node --check c:/Users/PC/Documents/ajua-bpm/src/modules/gd-migrate/gd-migrate.js)",
+      "Bash(node --check src/modules/gd-migrate/gd-migrate.js)",
+      "Bash(node --check src/modules/guatecompras/guatecompras.js)",
+      "Bash(git -C /c/Users/PC/Documents/ajua-bpm log --oneline -5)",
+      "Bash(node --check /c/Users/PC/Documents/ajua-bpm/bpm.html)",
+      "Read(///.*save/|toast/|_fbLoaded/**)",
+      "Bash(node --check \"c:\\\\Users\\\\PC\\\\Documents\\\\ajua-bpm\\\\src\\\\modules\\\\reportes\\\\descarga-excel-completo.js\")",
+      "Read(//c/Users/PC/Documents/**)",
+      "Bash(node --check src/modules/reportes/descarga-excel-completo.js)",
+      "Bash(npm create:*)",
+      "Bash(npm install:*)",
+      "Bash(curl -s http://localhost:5173/src/main.jsx)",
+      "Bash(npm run:*)",
+      "Bash(gh auth:*)",
+      "Bash(gh repo:*)",
+      "Bash(npx netlify-cli:*)",
+      "Bash(netlify sites:list)",
+      "Bash(netlify --version)",
+      "Bash(npx --yes netlify-cli sites:list)",
+      "Bash(node_modules/.bin/netlify sites:list)",
+      "Read(//c/Users/PC/AppData/Roaming/npm/**)",
+      "Bash(/c/Users/PC/AppData/Roaming/npm/netlify.cmd sites:list)",
+      "Bash(netlify sites:create --name \"ajua-bpm-app\")",
+      "Bash(netlify api:*)",
+      "Bash(netlify deploy:*)",
+      "Read(//c/Users/PC/Documents/ajua-react/$APPDATA/netlify/**)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(list\\(d.get\\(''''users'''',{}\\).values\\(\\)\\)[0].get\\(''''auth'''',{}\\).get\\(''''token'''',''''no token''''\\)\\)\")",
+      "Read(//c/Users/PC/Documents/ajua-react/$HOME/.netlify/**)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(list\\(d.get\\(''''users'''',{}\\).values\\(\\)\\)[0].get\\(''''auth'''',{}\\).get\\(''''token'''',''''''''\\)\\)\")",
+      "Read(//c/Users/PC/Documents/ajua-react/$APPDATA/**)",
+      "Read(//c/Users/PC/**)",
+      "Bash(powershell -Command \"[System.Net.CredentialCache]::DefaultNetworkCredentials\")",
+      "Bash(powershell -Command \"Get-StoredCredential -Target ''''*netlify*'''' 2>$null\")",
+      "Bash(gh run:*)",
+      "Bash(curl -s -o /dev/null -w \"https://precios.maga.gob.gt/diarios/export — HTTP %{http_code}\\\\n\" https://precios.maga.gob.gt/diarios/export)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\PC\\Downloads",
+      "C:\\Users\\PC\\Documents"
+    ]
+  }
+}
