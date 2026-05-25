@@ -1,7 +1,0 @@
-[build]
-  publish = "."
-
-[[redirects]]
-  from = "/*"
-  to = "/bpm.html"
-  status = 200
