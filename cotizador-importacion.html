@@ -259,6 +259,7 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
         <div><b>Cotización</b> <input id="m-numero" placeholder="ej: COT-2026-001" size="14"></div>
         <div><b>Fecha</b> <input type="date" id="m-fecha"></div>
         <div><b>Productor</b> <input id="m-productor" placeholder="Nombre del productor" size="22"></div>
+        <div><b>Email portal</b> <input id="m-productorEmail" placeholder="email@productor.com" size="22" type="email"></div>
         <div><b>Ubicación</b> <input id="m-ubic" placeholder="ej: Sinaloa, México" size="22"></div>
         <div><b>NIT/RFC productor</b> <input id="m-nit" placeholder="RFC productor" size="22"></div>
         <div><b>Contacto</b> <input id="m-contacto" placeholder="teléfono / email" size="22"></div>
@@ -409,7 +410,8 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
   <div class="actions">
     <button class="btn btn-secondary" onclick="loadCotizacionPicker()">Cargar cotización</button>
     <button class="btn btn-secondary" onclick="printDoc()">Imprimir / PDF</button>
-    <button class="btn btn-print" onclick="saveCotizacion()">Guardar cotización</button>
+    <button class="btn btn-secondary" onclick="saveCotizacion()">Guardar cotización</button>
+    <button class="btn btn-print" onclick="enviarAportal()" title="Asigna email del productor + envía la cotización al portal proveedores.agroajua.com">Enviar al portal del productor</button>
   </div>
   <div class="print-hint" style="text-align:right;padding:4px 8px;font-size:.7rem;color:var(--muted);font-style:italic;">
     Al imprimir: Márgenes "Predeterminado" + Más opciones → "Gráficos en segundo plano"
@@ -704,7 +706,7 @@ function recalc(){
     const totalSugMXN = tieneSugerido ? sugerido * cantNeg : 0;
     const totalMaxMXN = maxMXNu * cantNeg;
 
-    p._dispGTQ=dispGTQ; p._dispMXN=dispMXN; p._maxMXNemp=maxMXNemp; p._comProd=comProd; p._gMXp=gMXp; p._gGTp=gGTp;
+    p._dispGTQ=dispGTQ; p._dispMXN=dispMXN; p._maxMXNu=maxMXNu; p._maxMXNemp=maxMXNemp; p._comProd=comProd; p._gMXp=gMXp; p._gGTp=gGTp;
     totalDispGTQ+=dispGTQ; totalDispMXN+=dispMXN;
     totalGMXprorr+=gMXp; totalGGTprorr+=gGTp;
 
@@ -872,20 +874,29 @@ function fsToJs(v){
   return null;
 }
 function getState(){
+  const productorEmail=($('m-productorEmail').value||'').trim().toLowerCase();
   return {
-    meta:{ numero:$('m-numero').value, fecha:$('m-fecha').value, productor:$('m-productor').value, ubicacion:$('m-ubic').value, nit:$('m-nit').value, contacto:$('m-contacto').value },
+    meta:{ numero:$('m-numero').value, fecha:$('m-fecha').value, productor:$('m-productor').value, productorEmail, ubicacion:$('m-ubic').value, nit:$('m-nit').value, contacto:$('m-contacto').value },
+    productorEmail,
     config:{ tcMXN:$('tcMXN').value, tcUSD:$('tcUSD').value, ivaPct:$('ivaPct').value, retIvaPct:$('retIvaPct').value, prontoPct:$('prontoPct').value },
-    productos:productos.map(p=>({nombre:p.nombre,empaque:p.empaque,modoVenta:p.modoVenta,kgCaja:p.kgCaja,uniCaja:p.uniCaja,cajasPorPallet:p.cajasPorPallet,pallets:p.pallets,precioVentaU:p.precioVentaU,comPorU:p.comPorU,costoSugeridoMXN:String(p.costoSugeridoMXN||'')})),
+    productos:productos.map(p=>({
+      nombre:p.nombre,empaque:p.empaque,modoVenta:p.modoVenta,
+      kgCaja:p.kgCaja,uniCaja:p.uniCaja,cajasPorPallet:p.cajasPorPallet,pallets:p.pallets,
+      precioVentaU:p.precioVentaU,comPorU:p.comPorU,
+      costoSugeridoMXN:String(p.costoSugeridoMXN||''),
+      maxMXNu: Number.isFinite(p._maxMXNu) ? +(+p._maxMXNu).toFixed(4) : 0,
+      propuestaProductor: p.propuestaProductor || '',
+    })),
     gastosMX:gastosMX.map(g=>({concepto:g.concepto,monto:g.monto})),
     gastosGT:gastosGT.map(g=>({concepto:g.concepto,monto:g.monto})),
     actualizadoEn:new Date().toISOString(),
   };
 }
-async function saveCotizacion(){
+async function saveCotizacion(extraFields){
   const numero=$('m-numero').value.trim();
-  if(!numero){ alert('Asigna un número de cotización antes de guardar (ej: COT-2026-001).'); $('m-numero').focus(); return; }
+  if(!numero){ alert('Asigna un número de cotización antes de guardar (ej: COT-2026-001).'); $('m-numero').focus(); return false; }
   const st=$('save-status'); st.textContent='guardando…'; st.style.color='var(--muted)';
-  const state=getState();
+  const state=Object.assign(getState(), extraFields||{});
   const docId=encodeURIComponent(numero);
   try {
     const r=await fetch(`${FS_BASE}/cotizacionesImport/${docId}`,{
@@ -896,9 +907,34 @@ async function saveCotizacion(){
     if(!r.ok) throw new Error('error servidor');
     st.textContent=`✓ Guardada como ${numero} · ${new Date().toLocaleTimeString('es-GT')}`;
     st.style.color='var(--green)';
+    return true;
   } catch(e){
     st.textContent='✗ Error al guardar — verificá conexión';
     st.style.color='var(--red)';
+    return false;
+  }
+}
+async function enviarAportal(){
+  const numero=$('m-numero').value.trim();
+  const email=($('m-productorEmail').value||'').trim().toLowerCase();
+  if(!numero){ alert('Asigna un número de cotización antes de enviar.'); $('m-numero').focus(); return; }
+  if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    alert('Ingresá un email válido del productor en el campo "Email portal".');
+    $('m-productorEmail').focus();
+    return;
+  }
+  // Verificar que cada producto tenga maxMXNu>0
+  recalc();
+  const sinMax = productos.filter(p=>!(p._maxMXNu>0));
+  if(sinMax.length){
+    if(!confirm(`Hay ${sinMax.length} producto(s) sin máximo MXN/u calculado. ¿Enviar de todas formas?`)) return;
+  }
+  if(!confirm(`Enviar esta cotización a ${email}?\n\nEl productor podrá verla en proveedores.agroajua.com con su login.`)) return;
+  const ok = await saveCotizacion({ estado:'borrador', enviadoEn:new Date().toISOString() });
+  if(ok){
+    const st=$('save-status');
+    st.textContent=`✓ Cotización ${numero} enviada al portal de ${email}`;
+    st.style.color='var(--green)';
   }
 }
 async function loadCotizacionPicker(){
@@ -933,6 +969,7 @@ async function loadCotizacion(docId){
       $('m-numero').value=data.meta.numero||'';
       $('m-fecha').value=data.meta.fecha||today();
       $('m-productor').value=data.meta.productor||'';
+      $('m-productorEmail').value=data.meta.productorEmail||data.productorEmail||'';
       $('m-ubic').value=data.meta.ubicacion||'';
       $('m-nit').value=data.meta.nit||'';
       $('m-contacto').value=data.meta.contacto||'';
