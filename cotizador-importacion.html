@@ -221,6 +221,24 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
 
   /* Forzar tabular-nums en todo */
   *{font-variant-numeric:tabular-nums !important;}
+
+  /* Ocultar placeholders en print (inputs vacíos no muestran texto) */
+  input::placeholder, textarea::placeholder, select::placeholder { color:transparent !important; opacity:0 !important; }
+  input::-webkit-input-placeholder, textarea::-webkit-input-placeholder { color:transparent !important; opacity:0 !important; }
+  input::-moz-placeholder, textarea::-moz-placeholder { color:transparent !important; opacity:0 !important; }
+
+  /* Ocultar nota de print hint (es solo para usuario antes de imprimir) */
+  .print-hint { display:none !important; }
+
+  /* Tablas no se rompen entre páginas */
+  table.t { page-break-inside:avoid !important; break-inside:avoid !important; }
+  table.t tbody tr { page-break-inside:avoid !important; break-inside:avoid !important; }
+
+  /* Headers de sección no se separan de su contenido */
+  h2.section-title, .section-num, h3 { page-break-after:avoid !important; break-after:avoid !important; }
+
+  /* Banner contenedor no se rompe */
+  .banner-cnt { page-break-inside:avoid !important; break-inside:avoid !important; }
 }
 @media (max-width:780px){.page{padding:24px 18px;}.head-row{flex-direction:column;}.meta{text-align:left;}table.t{font-size:.78rem;}}
 </style>
@@ -393,7 +411,7 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
     <button class="btn btn-secondary" onclick="printDoc()">Imprimir / PDF</button>
     <button class="btn btn-print" onclick="saveCotizacion()">Guardar cotización</button>
   </div>
-  <div style="text-align:right;padding:4px 8px;font-size:.7rem;color:var(--muted);font-style:italic;">
+  <div class="print-hint" style="text-align:right;padding:4px 8px;font-size:.7rem;color:var(--muted);font-style:italic;">
     Al imprimir: Márgenes "Predeterminado" + Más opciones → "Gráficos en segundo plano"
   </div>
   <div id="save-status" style="text-align:right;padding:4px 8px;font-size:.74rem;color:var(--muted);font-style:italic;min-height:18px;"></div>
