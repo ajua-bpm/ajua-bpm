@@ -1070,9 +1070,18 @@ renderGastos();
 recalc();
 loadCatalog();
 
-['tcMXN','tcUSD','ivaPct','retIvaPct','prontoPct','m-productor'].forEach(id=>{
+['tcMXN','tcUSD','ivaPct','retIvaPct','prontoPct','m-productor','m-productorEmail'].forEach(id=>{
   $(id).addEventListener('input',()=>{ renderProductos(); renderGastos(); recalc(); });
 });
+
+// Auto-cargar cotización si viene ?load=ID en URL (desde lista en app.agroajua.com)
+(function(){
+  const params=new URLSearchParams(window.location.search);
+  const loadId=params.get('load');
+  if(loadId){
+    setTimeout(()=>loadCotizacion(loadId), 100);
+  }
+})();
 </script>
 </body>
 </html>
