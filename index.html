@@ -3,9 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Agrosis — Plataforma de gestión de campo y empaque</title>
-<meta name="description" content="Plataforma de inocuidad, trazabilidad y gestión operativa para productores, empacadores y compradores agrícolas.">
+<title>AJUA — Cumplimiento agroindustrial centroamericano</title>
+<meta name="description" content="¡AJUUUAAA, ya cumplo! Plataforma SaaS de cumplimiento PrimusGFS, BPM, MAGA y Agrequima para fincas y empacadoras. Empezá gratis, sin tarjeta.">
 <link rel="icon" href="/favicon-32.png">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://agroajua.com/">
+<meta property="og:title" content="AJUA — ¡AJUUUAAA, ya cumplo!">
+<meta property="og:description" content="Cumplimiento agroindustrial centroamericano. PrimusGFS · BPM · MAGA. Empezá gratis, sin tarjeta. Pagás cuando crece tu finca.">
+<meta property="og:image" content="https://sis.agroajua.com/marketing/01-hero.png">
+<meta property="og:image:width" content="1440">
+<meta property="og:image:height" content="900">
+<meta property="og:locale" content="es_GT">
+<meta property="og:site_name" content="AJUA">
+
+<!-- Twitter / X -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AJUA — ¡AJUUUAAA, ya cumplo!">
+<meta name="twitter:description" content="Cumplimiento agroindustrial centroamericano. Empezá gratis, sin tarjeta.">
+<meta name="twitter:image" content="https://sis.agroajua.com/marketing/01-hero.png">
+
+<meta name="theme-color" content="#1F3A2C">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,400;1,9..144,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -31,6 +50,43 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
+
+/* ── Sticky banner global ── */
+.banner-pro {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 60;
+  background: var(--forest);
+  color: var(--bone);
+  padding: 10px 28px;
+  font-family: 'Inter', sans-serif;
+  font-size: .82rem;
+  font-weight: 500;
+  letter-spacing: .01em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  border-bottom: 1px solid rgba(168,131,90,.35);
+}
+.banner-pro a {
+  color: var(--bone);
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: .92rem;
+  border-bottom: 1px solid var(--ochre);
+  padding-bottom: 1px;
+}
+.banner-pro a:hover { color: var(--ochre); }
+.banner-close {
+  position: absolute; right: 18px; top: 50%; transform: translateY(-50%);
+  background: transparent; border: none; color: var(--bone); cursor: pointer;
+  font-size: 1.1rem; opacity: .6; padding: 4px 8px; line-height: 1;
+}
+.banner-close:hover { opacity: 1; }
+@media (max-width: 540px) {
+  .banner-pro { font-size: .74rem; padding: 8px 36px 8px 16px; gap: 8px; flex-direction: column; }
+  .banner-pro a { font-size: .82rem; }
+}
 ::selection { background: var(--ochre); color: var(--bone); }
 a { color: inherit; text-decoration: none; }
 
@@ -50,7 +106,7 @@ a { color: inherit; text-decoration: none; }
 
 /* ── Top bar ── */
 header {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+  position: fixed; top: 40px; left: 0; right: 0; z-index: 50;
   display: flex; align-items: baseline; justify-content: space-between;
   padding: 22px 56px;
   background: rgba(248,243,233,.84);
@@ -60,7 +116,7 @@ header {
   transition: border-color .25s;
 }
 header.lined { border-bottom-color: var(--rule); }
-header nav { font-size: .82rem; color: var(--muted); }
+header nav { font-size: .82rem; color: var(--muted); display: flex; gap: 22px; align-items: baseline; }
 header nav a {
   font-family: 'Fraunces', serif;
   font-style: italic;
@@ -70,8 +126,25 @@ header nav a {
   border-bottom: 1px solid var(--ochre);
   padding-bottom: 1px;
 }
+header nav a.cta {
+  font-style: normal;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: .82rem;
+  letter-spacing: .04em;
+  padding: 7px 14px;
+  color: var(--bone);
+  background: var(--forest);
+  border: 1px solid var(--forest);
+  border-bottom: 1px solid var(--forest);
+  border-radius: 2px;
+}
+header nav a.cta:hover { background: transparent; color: var(--forest); }
+body.banner-closed header { top: 0; }
+body.banner-closed { /* nada extra */ }
 @media (max-width: 720px) {
-  header { padding: 16px 22px; }
+  header { padding: 16px 22px; top: 56px; }
+  header nav { gap: 14px; }
 }
 
 /* ── Layout ── */
@@ -381,6 +454,210 @@ h2 em { font-style: italic; font-weight: 400; color: var(--ochre); }
   line-height: 1.6;
 }
 
+/* ── Hero image (AJUA Pro screenshot) ── */
+.hero-shot {
+  margin-top: 56px;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px -28px rgba(31,58,44,.32);
+  background: #fff;
+}
+.hero-shot img { display: block; width: 100%; height: auto; }
+
+/* ── Botones CTA ── */
+.btn-primary {
+  display: inline-block;
+  padding: 14px 28px;
+  background: var(--forest);
+  color: var(--bone);
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: .94rem;
+  letter-spacing: .02em;
+  border: 1.5px solid var(--forest);
+  border-radius: 2px;
+  transition: background .15s, color .15s;
+}
+.btn-primary:hover { background: var(--canopy, #2D6645); border-color: var(--canopy, #2D6645); }
+.btn-ghost {
+  display: inline-block;
+  padding: 14px 24px;
+  background: transparent;
+  color: var(--forest);
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: .94rem;
+  letter-spacing: .02em;
+  border: 1.5px solid var(--forest);
+  border-radius: 2px;
+  transition: background .15s, color .15s;
+}
+.btn-ghost:hover { background: var(--forest); color: var(--bone); }
+
+/* ── Section — Pantallazos del sistema ── */
+.shots {
+  padding: 130px 56px;
+  background: var(--sand);
+  border-top: 1px solid var(--rule);
+}
+.shots .head { max-width: 1080px; margin: 0 auto 60px; }
+.shots-grid {
+  max-width: 1180px; margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 28px;
+}
+@media (max-width: 720px) {
+  .shots { padding: 80px 22px; }
+  .shots-grid { grid-template-columns: 1fr; gap: 18px; }
+}
+.shot {
+  background: var(--bone);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  box-shadow: 0 8px 24px -16px rgba(31,58,44,.18);
+}
+.shot img {
+  display: block; width: 100%; height: auto;
+  border-bottom: 1px solid var(--rule);
+}
+.shot-caption {
+  padding: 18px 22px 22px;
+}
+.shot-num {
+  font-family: 'Inter', sans-serif;
+  font-size: .68rem; font-weight: 600;
+  letter-spacing: .22em; text-transform: uppercase;
+  color: var(--ochre);
+  margin-bottom: 8px;
+}
+.shot-title {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 1.15rem;
+  color: var(--forest);
+  margin-bottom: 6px;
+  letter-spacing: -.005em;
+}
+.shot-desc {
+  font-size: .86rem;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+/* ── Section — Pricing ── */
+.pricing {
+  padding: 130px 56px;
+  border-top: 1px solid var(--rule);
+}
+.pricing .head { max-width: 1080px; margin: 0 auto 60px; }
+.pricing-tagline {
+  max-width: 1080px; margin: 0 auto 50px;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 1.15rem;
+  color: var(--forest);
+  line-height: 1.5;
+}
+.pricing-tagline span { color: var(--ochre); }
+.plans {
+  max-width: 1180px; margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+@media (max-width: 980px) { .plans { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 540px) { .plans { grid-template-columns: 1fr; } .pricing { padding: 80px 22px; } }
+.plan {
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-top: 3px solid var(--rule);
+  padding: 28px 24px 32px;
+  display: flex; flex-direction: column;
+  position: relative;
+}
+.plan.featured {
+  border-top-color: var(--ochre);
+  box-shadow: 0 24px 50px -22px rgba(168,131,90,.45);
+  transform: translateY(-6px);
+}
+.plan-rec {
+  position: absolute; top: -12px; left: 24px;
+  background: var(--ochre); color: var(--bone);
+  padding: 4px 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: .64rem; font-weight: 700;
+  letter-spacing: .2em; text-transform: uppercase;
+}
+.plan-name {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 1.3rem;
+  color: var(--forest);
+  margin-bottom: 4px;
+}
+.plan-pitch {
+  font-size: .82rem; color: var(--muted);
+  margin-bottom: 18px;
+  min-height: 38px;
+}
+.plan-price {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 2rem;
+  color: var(--ink);
+  letter-spacing: -.02em;
+  display: flex; align-items: baseline; gap: 4px;
+  margin-bottom: 6px;
+}
+.plan-price em {
+  font-style: normal;
+  font-size: .86rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+.plan-commission {
+  font-size: .76rem;
+  color: var(--muted);
+  font-style: italic;
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  border-bottom: 1px dotted rgba(26,26,24,.18);
+}
+.plan-feats {
+  list-style: none; padding: 0; margin: 0 0 24px;
+  font-size: .86rem;
+  color: var(--ink);
+  line-height: 1.6;
+}
+.plan-feats li {
+  padding: 4px 0;
+}
+.plan-feats li::before {
+  content: '·'; color: var(--ochre); margin-right: 8px; font-weight: 700;
+}
+.plan-cta {
+  margin-top: auto;
+  text-align: center;
+  padding: 10px 16px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: .82rem;
+  letter-spacing: .02em;
+  border: 1.5px solid var(--forest);
+  color: var(--forest);
+  background: transparent;
+  transition: background .15s, color .15s;
+}
+.plan.featured .plan-cta {
+  background: var(--forest); color: var(--bone);
+}
+.plan-cta:hover { background: var(--forest); color: var(--bone); }
+.plan.featured .plan-cta:hover { background: var(--canopy, #2D6645); border-color: var(--canopy, #2D6645); }
+
 /* ── Section 05 — form ── */
 .contacto {
   padding: 130px 56px 80px;
@@ -497,25 +774,39 @@ footer {
 </head>
 <body>
 
+<!-- ── BANNER STICKY ── -->
+<div class="banner-pro" id="banner-pro">
+  <span>🌱 ¿Tu finca lista para PrimusGFS, BPM o MAGA?</span>
+  <a href="https://sis.agroajua.com/marketing">Conocé AJUA Pro →</a>
+  <button class="banner-close" id="banner-close" aria-label="Cerrar banner">×</button>
+</div>
+
 <header id="top">
-  <a href="#" class="mark">Agros<em>i</em>s</a>
-  <nav><a href="#contacto">Solicitar acceso</a></nav>
+  <a href="#" class="mark">AJUA</a>
+  <nav>
+    <a href="#precios">Planes</a>
+    <a href="https://sis.agroajua.com/login" class="cta">Entrar</a>
+  </nav>
 </header>
 
 <!-- ── HERO ── -->
 <section class="hero">
-  <div class="stamp">Plataforma agrícola — 2026</div>
+  <div class="stamp">Cumplimiento agroindustrial — 2026</div>
   <h1>
-    Una operación agrícola se mide en <em>registros,</em> no en intenciones.
+    ¡<em>AJUUUAAA,</em> ya cumplo!
   </h1>
   <p class="sub">
-    Agrosis es la plataforma donde productores, empacadores y compradores
-    documentan, supervisan y demuestran el cuidado de cada lote — desde
-    el campo hasta el cliente final.
+    La plataforma chapina para que tu finca o empacadora deje de pelearse con Excel
+    y tenga PrimusGFS, BPM, MAGA y Agrequima en regla — con bitácoras digitales,
+    binder PDF para el auditor y trazabilidad lote a lote.
   </p>
   <div class="row">
-    <a href="#contacto" class="link-arrow">Solicitar acceso</a>
-    <span class="aside">Implementación guiada en una semana</span>
+    <a href="https://sis.agroajua.com/registro" class="btn-primary">Crear empresa gratis →</a>
+    <a href="https://sis.agroajua.com/login" class="btn-ghost">Probar demo</a>
+    <span class="aside">Sin tarjeta · empezás en 2 minutos</span>
+  </div>
+  <div class="hero-shot">
+    <img src="https://sis.agroajua.com/marketing/01-hero.png" alt="Dashboard AJUA Pro — Listo para auditoría" loading="eager">
   </div>
 </section>
 
@@ -526,7 +817,7 @@ footer {
     <h2>Tres perfiles, <em>una misma</em> plataforma.</h2>
     <p class="lead">
       No importa si tu rol está en el campo, en la línea de empaque o en la mesa de compras —
-      Agrosis se ajusta a cómo trabajás vos.
+      AJUA se ajusta a cómo trabajás vos.
     </p>
   </div>
 
@@ -695,7 +986,7 @@ footer {
 <!-- ── 04 — DIFERENCIADORES ── -->
 <section class="dif">
   <div class="head">
-    <div class="section-num">— Sección 04 / Por qué Agrosis</div>
+    <div class="section-num">— Sección 04 / Por qué AJUA</div>
     <h2>Hecho en operación, <em>no en presentaciones.</em></h2>
   </div>
 
@@ -745,14 +1036,146 @@ footer {
   </div>
 </section>
 
-<!-- ── 05 — CONTACTO ── -->
+<!-- ── PANTALLAZOS ── -->
+<section class="shots" id="pantallazos">
+  <div class="head">
+    <div class="section-num">— Sección 05 / Pantallazos del sistema</div>
+    <h2>Esto es lo que <em>vas a usar</em> todos los días.</h2>
+    <p class="lead">
+      Capturas reales de AJUA Pro en producción — no maquetas. Dashboard, binder PrimusGFS,
+      mock-recall, capacitaciones y triple lavado de envases.
+    </p>
+  </div>
+
+  <div class="shots-grid">
+    <div class="shot">
+      <img src="https://sis.agroajua.com/marketing/04-listo-auditoria.png" alt="Dashboard Listo para auditoría" loading="lazy">
+      <div class="shot-caption">
+        <div class="shot-num">01 · Dashboard</div>
+        <div class="shot-title">Listo para auditoría</div>
+        <div class="shot-desc">Score global de cumplimiento por sección — agua, calibración, capacitaciones, agroquímicos, triple lavado. Sabés exactamente qué falta.</div>
+      </div>
+    </div>
+    <div class="shot">
+      <img src="https://sis.agroajua.com/marketing/05-binder-pdf.png" alt="Binder PrimusGFS PDF" loading="lazy">
+      <div class="shot-caption">
+        <div class="shot-num">02 · Auditor</div>
+        <div class="shot-title">Binder PrimusGFS en PDF</div>
+        <div class="shot-desc">Expediente completo de cumplimiento — 9 secciones, tablas profesionales, listo para entregar al auditor sin armar nada a mano.</div>
+      </div>
+    </div>
+    <div class="shot">
+      <img src="https://sis.agroajua.com/marketing/06-mock-recall.png" alt="Mock recall trazabilidad" loading="lazy">
+      <div class="shot-caption">
+        <div class="shot-num">03 · Trazabilidad</div>
+        <div class="shot-title">Mock-recall · simulacro de retiro</div>
+        <div class="shot-desc">Simulacro de recall con historial — duración y % de recuperación de lote. PrimusGFS exige uno al año; con AJUA lo corrés en 5 minutos.</div>
+      </div>
+    </div>
+    <div class="shot">
+      <img src="https://sis.agroajua.com/marketing/07-capacitacion.png" alt="Capacitaciones personal" loading="lazy">
+      <div class="shot-caption">
+        <div class="shot-num">04 · Personal</div>
+        <div class="shot-title">Capacitaciones con firma digital</div>
+        <div class="shot-desc">Examen de 5 preguntas pre-cargado por tema (PrimusGFS 1.06.05) + firma del trabajador. Sin papeles, sin perderse.</div>
+      </div>
+    </div>
+    <div class="shot">
+      <img src="https://sis.agroajua.com/marketing/08-triple-lavado.png" alt="Triple lavado de envases" loading="lazy">
+      <div class="shot-caption">
+        <div class="shot-num">05 · MAGA</div>
+        <div class="shot-title">Triple lavado de envases</div>
+        <div class="shot-desc">Bitácora según Acuerdo Gubernativo 377-90 MAGA + protocolo Agrequima — 3 lavados, perforado y foto. Pensado para Guatemala.</div>
+      </div>
+    </div>
+    <div class="shot">
+      <img src="https://sis.agroajua.com/marketing/10-registro.png" alt="Registro empresa" loading="lazy">
+      <div class="shot-caption">
+        <div class="shot-num">06 · Empezar</div>
+        <div class="shot-title">Registro en 2 minutos</div>
+        <div class="shot-desc">Productor, empacadora, integrado o comercializadora. Tu empresa tiene subdomain propio (ej. finca-sanlucas.pro.agroajua.com) desde el primer login.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── PRECIOS ── -->
+<section class="pricing" id="precios">
+  <div class="head">
+    <div class="section-num">— Sección 06 / Planes</div>
+    <h2>Pagás cuando <em>crece</em> tu finca.</h2>
+  </div>
+  <div class="pricing-tagline">
+    Empezá <span>GRATIS</span>. Sin tarjeta. Cobramos <span>3% solo si vendés</span> por el marketplace.<br>
+    El plan mensual desde <span>Q199</span> — y bajás a 1% de comisión en AJUA Pro.
+  </div>
+  <div class="plans">
+    <div class="plan">
+      <div class="plan-name">AJUA Probador</div>
+      <div class="plan-pitch">Para conocer la plataforma antes de comprometerte.</div>
+      <div class="plan-price">Gratis<em>/mes</em></div>
+      <div class="plan-commission">Comisión marketplace: 3%</div>
+      <ul class="plan-feats">
+        <li>1 finca o empacadora</li>
+        <li>Hasta 3 usuarios</li>
+        <li>Bitácoras básicas BPM</li>
+        <li>Soporte por email</li>
+      </ul>
+      <a href="https://sis.agroajua.com/registro" class="plan-cta">Empezar gratis</a>
+    </div>
+    <div class="plan">
+      <div class="plan-name">AJUA Básico</div>
+      <div class="plan-pitch">Para fincas pequeñas que ya operan y necesitan registros formales.</div>
+      <div class="plan-price">Q199<em>/mes</em></div>
+      <div class="plan-commission">Comisión marketplace: 3%</div>
+      <ul class="plan-feats">
+        <li>Hasta 10 usuarios</li>
+        <li>BPM + bitácoras + reportes Excel</li>
+        <li>Capacitaciones con firma</li>
+        <li>Soporte WhatsApp</li>
+      </ul>
+      <a href="https://sis.agroajua.com/upgrade" class="plan-cta">Ver plan</a>
+    </div>
+    <div class="plan featured">
+      <span class="plan-rec">Recomendado</span>
+      <div class="plan-name">AJUA Cumple</div>
+      <div class="plan-pitch">Para fincas que van por PrimusGFS o ya tienen auditorías al año.</div>
+      <div class="plan-price">Q499<em>/mes</em></div>
+      <div class="plan-commission">Comisión marketplace: 3%</div>
+      <ul class="plan-feats">
+        <li>Usuarios ilimitados</li>
+        <li>Binder PrimusGFS PDF</li>
+        <li>Mock-recall · trazabilidad lote</li>
+        <li>Triple lavado MAGA · Agrequima</li>
+        <li>Soporte prioritario</li>
+      </ul>
+      <a href="https://sis.agroajua.com/upgrade" class="plan-cta">Ver plan</a>
+    </div>
+    <div class="plan">
+      <div class="plan-name">AJUA Pro</div>
+      <div class="plan-pitch">Para empacadoras grandes y comercializadoras multi-finca.</div>
+      <div class="plan-price">Q899<em>/mes</em></div>
+      <div class="plan-commission">Comisión marketplace: 1%</div>
+      <ul class="plan-feats">
+        <li>Todo lo de Cumple</li>
+        <li>Multi-finca consolidado</li>
+        <li>API + integración compradores</li>
+        <li>Onboarding dedicado</li>
+        <li>Comisión marketplace reducida</li>
+      </ul>
+      <a href="https://sis.agroajua.com/upgrade" class="plan-cta">Ver plan</a>
+    </div>
+  </div>
+</section>
+
+<!-- ── 07 — CONTACTO ── -->
 <section class="contacto" id="contacto">
   <div class="head">
-    <div class="section-num" style="text-align: center;">— Sección 05 / Empezar</div>
-    <h2>Pedí <em>acceso.</em></h2>
+    <div class="section-num" style="text-align: center;">— Sección 07 / Hablanos</div>
+    <h2>¿Querés una <em>demo guiada</em>?</h2>
     <p class="lead">
-      Completá el formulario. Te respondemos en menos de 24 horas para mostrarte la
-      plataforma en una sesión corta.
+      Si preferís que te mostremos AJUA Pro antes de registrarte, escribinos.
+      Te respondemos en menos de 24 horas.
     </p>
   </div>
 
@@ -801,14 +1224,15 @@ footer {
 <footer>
   <div class="foot-access">
     <span class="access-label">Accesos</span>
+    <a href="https://sis.agroajua.com/marketing"><b>AJUA Pro · Cumplimiento</b></a>
     <a href="https://app.agroajua.com">Sistema interno</a>
     <a href="https://mari.agroajua.com">MARI</a>
     <a href="https://tienda.agroajua.com">Tienda</a>
   </div>
   <div class="foot-meta">
-    <span class="mark">Agros<em>i</em>s</span>
+    <span class="mark">AJUA</span>
     <span><a href="mailto:contacto@agroajua.com">contacto@agroajua.com</a></span>
-    <span class="copy">© 2026</span>
+    <span class="copy">© 2026 · ¡AJUUUAAA, ya cumplo!</span>
   </div>
 </footer>
 
@@ -817,6 +1241,22 @@ const header = document.getElementById('top');
 window.addEventListener('scroll', () => {
   header.classList.toggle('lined', window.scrollY > 30);
 });
+
+// Banner sticky — cerrar y recordar 30 días
+const bannerEl = document.getElementById('banner-pro');
+const bannerCloseBtn = document.getElementById('banner-close');
+function dismissBanner() {
+  bannerEl.style.display = 'none';
+  document.body.classList.add('banner-closed');
+  try { localStorage.setItem('ajua_banner_dismissed', Date.now().toString()); } catch (e) {}
+}
+try {
+  const last = parseInt(localStorage.getItem('ajua_banner_dismissed') || '0', 10);
+  if (last && (Date.now() - last) < 30 * 86400 * 1000) {
+    dismissBanner();
+  }
+} catch (e) {}
+bannerCloseBtn.addEventListener('click', dismissBanner);
 
 const form = document.getElementById('lead-form');
 const btn  = document.getElementById('f-submit');
@@ -837,7 +1277,7 @@ form.addEventListener('submit', async (e) => {
     tipo:     { stringValue: data.tipo || '' },
     mensaje:  { stringValue: data.mensaje || '' },
     creadoEn: { stringValue: new Date().toISOString() },
-    origen:   { stringValue: 'landing-agrosis' },
+    origen:   { stringValue: 'landing-ajua' },
     estado:   { stringValue: 'nuevo' },
   };
 
