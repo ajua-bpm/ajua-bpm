@@ -3,37 +3,41 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AJUA — Cumplimiento agroindustrial centroamericano</title>
-<meta name="description" content="¡AJUUUAAA, ya cumplo! Plataforma SaaS de cumplimiento PrimusGFS, BPM, MAGA y Agrequima para fincas y empacadoras. Empezá gratis, sin tarjeta.">
+<title>AJUA — Vegetales y frutas frescas + sistema digital para tu finca</title>
+<meta name="description" content="Del campo guatemalteco al mundo. Vendemos, importamos y exportamos vegetal y fruta fresca entre Guatemala, México y Estados Unidos. Y el sistema digital gratis para tu finca.">
 <link rel="icon" href="/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://images.unsplash.com" crossorigin>
+<link rel="preconnect" href="https://loremflickr.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,400;1,9..144,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <!-- Open Graph -->
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://agroajua.com/">
-<meta property="og:title" content="AJUA — ¡AJUUUAAA, ya cumplo!">
-<meta property="og:description" content="Cumplimiento agroindustrial centroamericano. PrimusGFS · BPM · MAGA. Empezá gratis, sin tarjeta. Pagás cuando crece tu finca.">
+<meta property="og:title" content="AJUA — Del campo guatemalteco al mundo">
+<meta property="og:description" content="Vegetal y fruta fresca de altura entre Guatemala, México y USA. Más el sistema digital gratis para tu finca.">
 <meta property="og:image" content="https://sis.agroajua.com/marketing/01-hero.png">
 <meta property="og:image:width" content="1440">
 <meta property="og:image:height" content="900">
 <meta property="og:locale" content="es_GT">
 <meta property="og:site_name" content="AJUA">
 
-<!-- Twitter / X -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="AJUA — ¡AJUUUAAA, ya cumplo!">
-<meta name="twitter:description" content="Cumplimiento agroindustrial centroamericano. Empezá gratis, sin tarjeta.">
+<meta name="twitter:title" content="AJUA — Del campo guatemalteco al mundo">
+<meta name="twitter:description" content="Vegetal y fruta fresca + sistema digital para tu finca.">
 <meta name="twitter:image" content="https://sis.agroajua.com/marketing/01-hero.png">
 
 <meta name="theme-color" content="#1F3A2C">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,400;1,9..144,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
 <style>
 :root {
   --bone:   #F8F3E9;
   --ink:    #1A1A18;
   --forest: #1F3A2C;
+  --canopy: #2D6645;
   --ochre:  #A8835A;
+  --moss:   #74C69D;
   --muted:  #6B6B60;
   --sand:   #E7DDC9;
   --rule:   rgba(26,26,24,.10);
@@ -50,30 +54,21 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
+::selection { background: var(--ochre); color: var(--bone); }
+a { color: inherit; text-decoration: none; }
+img { max-width: 100%; display: block; }
 
-/* ── Sticky banner global ── */
+/* ── Banner sticky global ── */
 .banner-pro {
   position: fixed; top: 0; left: 0; right: 0; z-index: 60;
-  background: var(--forest);
-  color: var(--bone);
-  padding: 10px 28px;
-  font-family: 'Inter', sans-serif;
-  font-size: .82rem;
-  font-weight: 500;
-  letter-spacing: .01em;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 18px;
-  border-bottom: 1px solid rgba(168,131,90,.35);
+  background: var(--forest); color: var(--bone);
+  padding: 10px 56px; font-size: .82rem; font-weight: 500;
+  display: flex; align-items: center; justify-content: center;
+  gap: 18px; border-bottom: 1px solid rgba(168,131,90,.35);
 }
 .banner-pro a {
-  color: var(--bone);
-  font-family: 'Fraunces', serif;
-  font-style: italic;
-  font-weight: 500;
-  font-size: .92rem;
-  border-bottom: 1px solid var(--ochre);
+  color: var(--bone); font-family: 'Fraunces', serif; font-style: italic;
+  font-weight: 500; font-size: .92rem; border-bottom: 1px solid var(--ochre);
   padding-bottom: 1px;
 }
 .banner-pro a:hover { color: var(--ochre); }
@@ -83,1166 +78,988 @@ body {
   font-size: 1.1rem; opacity: .6; padding: 4px 8px; line-height: 1;
 }
 .banner-close:hover { opacity: 1; }
-@media (max-width: 540px) {
-  .banner-pro { font-size: .74rem; padding: 8px 36px 8px 16px; gap: 8px; flex-direction: column; }
+@media (max-width: 640px) {
+  .banner-pro { font-size: .76rem; padding: 8px 38px 8px 16px; gap: 8px; flex-direction: column; }
   .banner-pro a { font-size: .82rem; }
-}
-::selection { background: var(--ochre); color: var(--bone); }
-a { color: inherit; text-decoration: none; }
-
-/* ── Mark ── */
-.mark {
-  font-family: 'Fraunces', serif;
-  font-weight: 600;
-  font-size: 1.05rem;
-  letter-spacing: -.01em;
-  color: var(--forest);
-}
-.mark em {
-  font-style: italic;
-  color: var(--ochre);
-  font-weight: 400;
 }
 
 /* ── Top bar ── */
-header {
-  position: fixed; top: 40px; left: 0; right: 0; z-index: 50;
-  display: flex; align-items: baseline; justify-content: space-between;
-  padding: 22px 56px;
-  background: rgba(248,243,233,.84);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-bottom: 1px solid transparent;
-  transition: border-color .25s;
+header.top {
+  position: fixed; top: 42px; left: 0; right: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 56px;
+  background: rgba(248,243,233,.92);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid transparent; transition: border-color .25s, padding .25s;
 }
-header.lined { border-bottom-color: var(--rule); }
-header nav { font-size: .82rem; color: var(--muted); display: flex; gap: 22px; align-items: baseline; }
-header nav a {
+header.top.lined { border-bottom-color: var(--rule); padding: 12px 56px; }
+body.banner-closed header.top { top: 0; }
+.brand {
   font-family: 'Fraunces', serif;
-  font-style: italic;
-  font-weight: 400;
-  font-size: .95rem;
-  color: var(--forest);
-  border-bottom: 1px solid var(--ochre);
-  padding-bottom: 1px;
+  font-weight: 700; font-size: 1.25rem;
+  letter-spacing: .01em; color: var(--forest);
 }
-header nav a.cta {
-  font-style: normal;
-  font-family: 'Inter', sans-serif;
-  font-weight: 600;
-  font-size: .82rem;
-  letter-spacing: .04em;
-  padding: 7px 14px;
-  color: var(--bone);
-  background: var(--forest);
-  border: 1px solid var(--forest);
-  border-bottom: 1px solid var(--forest);
-  border-radius: 2px;
+.brand em { font-style: italic; color: var(--ochre); font-weight: 500; }
+header.top nav { display: flex; gap: 28px; align-items: center; }
+header.top nav a {
+  font-family: 'Inter', sans-serif; font-weight: 500;
+  font-size: .9rem; color: var(--ink);
 }
-header nav a.cta:hover { background: transparent; color: var(--forest); }
-body.banner-closed header { top: 0; }
-body.banner-closed { /* nada extra */ }
+header.top nav a:hover { color: var(--ochre); }
+header.top nav a.cta {
+  padding: 9px 18px; background: var(--forest); color: var(--bone);
+  border: 1.5px solid var(--forest); border-radius: 2px;
+  font-weight: 600; font-size: .82rem; letter-spacing: .02em;
+  transition: background .15s;
+}
+header.top nav a.cta:hover { background: var(--canopy); color: var(--bone); }
 @media (max-width: 720px) {
-  header { padding: 16px 22px; top: 56px; }
-  header nav { gap: 14px; }
+  header.top { padding: 14px 22px; top: 60px; }
+  header.top.lined { padding: 10px 22px; }
+  header.top nav { gap: 12px; }
+  header.top nav a:not(.cta) { display: none; }
 }
 
-/* ── Layout ── */
-.wrap {
-  max-width: 1080px;
-  margin: 0 auto;
-  padding: 0 56px;
-}
+/* ── Wrap ── */
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 56px; }
 @media (max-width: 720px) { .wrap { padding: 0 22px; } }
 
-.section-num {
+/* ── Eyebrow + h2 reutilizables ── */
+.eyebrow {
   font-family: 'Inter', sans-serif;
-  font-size: .72rem;
-  font-weight: 600;
-  letter-spacing: .26em;
-  text-transform: uppercase;
-  color: var(--ochre);
-  margin-bottom: 22px;
+  font-size: .7rem; font-weight: 700;
+  letter-spacing: .26em; text-transform: uppercase;
+  color: var(--ochre); margin-bottom: 18px;
 }
-
-h2 {
+h2.h-section {
   font-family: 'Fraunces', serif;
-  font-weight: 600;
-  font-size: clamp(2.1rem, 4vw, 3.1rem);
-  line-height: 1.08;
-  letter-spacing: -.015em;
+  font-weight: 600; font-size: clamp(2.1rem, 4.2vw, 3.2rem);
+  line-height: 1.06; letter-spacing: -.015em;
   color: var(--forest);
-  max-width: 14ch;
 }
-h2 em { font-style: italic; font-weight: 400; color: var(--ochre); }
-
+h2.h-section em { font-style: italic; font-weight: 400; color: var(--ochre); }
 .lead {
   font-family: 'Inter', sans-serif;
-  font-size: 1.04rem;
-  line-height: 1.62;
-  color: var(--muted);
-  max-width: 56ch;
-  margin-top: 24px;
+  font-size: 1.04rem; line-height: 1.62;
+  color: var(--muted); max-width: 60ch;
+  margin-top: 22px;
 }
 
+/* ── Botones ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 14px 26px; border-radius: 2px;
+  font-family: 'Inter', sans-serif; font-weight: 600;
+  font-size: .94rem; letter-spacing: .02em;
+  border: 1.5px solid transparent; cursor: pointer;
+  transition: transform .15s, background .15s, color .15s, border-color .15s;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn-forest { background: var(--forest); color: var(--bone); border-color: var(--forest); }
+.btn-forest:hover { background: var(--canopy); border-color: var(--canopy); }
+.btn-ghost { background: transparent; color: var(--forest); border-color: var(--forest); }
+.btn-ghost:hover { background: var(--forest); color: var(--bone); }
+.btn-moss { background: var(--moss); color: var(--ink); border-color: var(--moss); }
+.btn-moss:hover { background: #5DB587; border-color: #5DB587; }
+.btn-ochre-ghost-light { background: transparent; color: var(--bone); border-color: var(--ochre); }
+.btn-ochre-ghost-light:hover { background: var(--ochre); color: var(--ink); border-color: var(--ochre); }
+.btn-block { width: 100%; justify-content: center; }
+
 /* ── HERO ── */
-.hero {
-  padding: 200px 56px 160px;
-  max-width: 1180px;
-  margin: 0 auto;
+.hero { padding: 180px 0 100px; }
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 64px;
+  align-items: center;
 }
-.hero .stamp {
-  font-family: 'Inter', sans-serif;
-  font-size: .76rem;
-  font-weight: 500;
-  color: var(--muted);
-  letter-spacing: .22em;
-  text-transform: uppercase;
-  margin-bottom: 36px;
+.hero-text .stamp {
+  font-family: 'Inter', sans-serif; font-size: .72rem; font-weight: 600;
+  color: var(--muted); letter-spacing: .24em; text-transform: uppercase;
+  margin-bottom: 30px;
 }
-.hero .stamp::before {
+.hero-text .stamp::before {
   content: ''; display: inline-block; width: 28px; height: 1px;
   background: var(--ochre); vertical-align: middle; margin-right: 14px;
 }
 .hero h1 {
-  font-family: 'Fraunces', serif;
-  font-weight: 400;
-  font-size: clamp(2.8rem, 7.5vw, 5.6rem);
-  line-height: 1.02;
-  letter-spacing: -.025em;
-  color: var(--ink);
-  max-width: 18ch;
-  margin-bottom: 36px;
+  font-family: 'Fraunces', serif; font-weight: 400;
+  font-size: clamp(2.6rem, 6vw, 4.6rem);
+  line-height: 1.02; letter-spacing: -.025em;
+  color: var(--ink); max-width: 18ch; margin-bottom: 26px;
 }
-.hero h1 em {
-  font-style: italic;
-  font-weight: 600;
-  color: var(--forest);
+.hero h1 em { font-style: italic; font-weight: 600; color: var(--forest); }
+.hero-sub {
+  font-size: 1.13rem; line-height: 1.55; color: var(--muted);
+  max-width: 52ch; margin-bottom: 36px; font-weight: 400;
 }
-.hero .sub {
-  font-size: 1.18rem;
-  line-height: 1.55;
-  color: var(--muted);
-  max-width: 58ch;
-  margin-bottom: 48px;
-  font-weight: 300;
+.hero-actions { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 22px; }
+.hero-trust {
+  font-size: .82rem; color: var(--muted); font-style: italic;
+  padding-top: 18px; border-top: 1px solid var(--rule);
+  max-width: 48ch;
 }
-.hero .row {
-  display: flex; align-items: center; gap: 28px; flex-wrap: wrap;
+.hero-img {
+  position: relative;
+  aspect-ratio: 4/5;
+  border-radius: 6px; overflow: hidden;
+  box-shadow: 0 24px 60px -28px rgba(31,58,44,.42);
+  background: var(--sand);
 }
-.link-arrow {
-  font-family: 'Fraunces', serif;
-  font-style: italic;
-  font-weight: 500;
-  font-size: 1.05rem;
-  color: var(--forest);
-  border-bottom: 1px solid var(--forest);
-  padding-bottom: 2px;
-  transition: color .15s, border-color .15s;
+.hero-img img { width: 100%; height: 100%; object-fit: cover; }
+.hero-img::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 50%, rgba(31,58,44,.15) 100%);
+  pointer-events: none;
 }
-.link-arrow:hover { color: var(--ochre); border-bottom-color: var(--ochre); }
-.aside {
-  font-size: .82rem;
-  color: var(--muted);
-  font-weight: 400;
+.hero-img-tag {
+  position: absolute; bottom: 16px; left: 16px;
+  background: rgba(248,243,233,.94); color: var(--ink);
+  padding: 8px 14px; border-radius: 3px;
+  font-family: 'Fraunces', serif; font-style: italic; font-size: .82rem;
+  border-left: 3px solid var(--ochre);
 }
-.aside::before {
-  content: '·'; margin-right: 14px; color: var(--ochre);
-}
-@media (max-width: 720px) {
-  .hero { padding: 140px 22px 100px; }
+@media (max-width: 880px) {
+  .hero { padding: 140px 0 70px; }
+  .hero-grid { grid-template-columns: 1fr; gap: 36px; }
+  .hero-img { aspect-ratio: 5/4; order: -1; }
 }
 
-/* ── Section 01 — audiencias ── */
-.audiencias {
-  padding: 120px 56px;
+/* ── Sección Sistema — 2 puertas ── */
+.sistema {
+  padding: 120px 0;
   border-top: 1px solid var(--rule);
+  background: var(--bone);
 }
-.audiencias .head {
-  max-width: 1080px; margin: 0 auto 80px;
+.sistema .head { max-width: 720px; margin-bottom: 56px; }
+.puertas {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 22px;
 }
-.aud-list {
-  max-width: 1080px; margin: 0 auto;
+@media (max-width: 880px) {
+  .sistema { padding: 80px 0; }
+  .puertas { grid-template-columns: 1fr; gap: 18px; }
 }
-.aud-row {
-  display: grid;
-  grid-template-columns: 80px 1fr 2fr;
-  gap: 36px;
-  padding: 44px 0;
-  border-top: 1px solid var(--rule);
-  align-items: baseline;
+.puerta {
+  position: relative;
+  padding: 36px 32px 32px;
+  border-radius: 4px;
+  display: flex; flex-direction: column;
+  transition: transform .2s, box-shadow .2s;
 }
-.aud-row:last-child { border-bottom: 1px solid var(--rule); }
-.aud-num {
-  font-family: 'Fraunces', serif;
-  font-style: italic;
-  font-weight: 400;
-  font-size: 1.5rem;
-  color: var(--ochre);
+.puerta:hover { transform: translateY(-3px); box-shadow: 0 20px 40px -22px rgba(31,58,44,.28); }
+.puerta-campo {
+  background: var(--bone);
+  border: 1px solid var(--rule);
+  border-top: 4px solid var(--moss);
 }
-.aud-title {
-  font-family: 'Fraunces', serif;
-  font-weight: 600;
-  font-size: 1.85rem;
-  letter-spacing: -.01em;
-  color: var(--forest);
-  line-height: 1.05;
-}
-.aud-body {
-  font-family: 'Inter', sans-serif;
-  font-size: 1.02rem;
-  line-height: 1.65;
-  color: var(--ink);
-  font-weight: 400;
-}
-.aud-body span {
-  display: block;
-  font-size: .85rem;
-  color: var(--muted);
-  margin-top: 14px;
-  line-height: 1.55;
-}
-@media (max-width: 820px) {
-  .audiencias { padding: 80px 22px; }
-  .aud-row { grid-template-columns: 1fr; gap: 12px; padding: 32px 0; }
-  .aud-num { font-size: 1.2rem; }
-  .aud-title { font-size: 1.5rem; }
-}
-
-/* ── Section 02 — módulos ── */
-.modulos {
-  padding: 120px 56px;
-  background: linear-gradient(180deg, var(--bone) 0%, var(--sand) 100%);
-  border-top: 1px solid var(--rule);
-}
-.modulos .head { max-width: 1080px; margin: 0 auto 70px; }
-.mod-groups { max-width: 1080px; margin: 0 auto; }
-.mod-group { padding: 36px 0; border-top: 1px solid var(--rule); }
-.mod-group:last-child { border-bottom: 1px solid var(--rule); }
-.mod-group-label {
-  font-family: 'Inter', sans-serif;
-  font-size: .72rem;
-  font-weight: 600;
-  letter-spacing: .22em;
-  text-transform: uppercase;
-  color: var(--ochre);
-  margin-bottom: 28px;
-}
-.mod-items {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  column-gap: 60px;
-  row-gap: 20px;
-}
-@media (max-width: 720px) {
-  .modulos { padding: 80px 22px; }
-  .mod-items { grid-template-columns: 1fr; }
-}
-.mod-item {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: baseline;
-  padding-bottom: 14px;
-  border-bottom: 1px dotted rgba(26,26,24,.18);
-}
-.mod-item-name {
-  font-family: 'Fraunces', serif;
-  font-weight: 600;
-  font-size: 1.08rem;
-  color: var(--forest);
-  letter-spacing: -.005em;
-}
-.mod-item-desc {
-  font-family: 'Inter', sans-serif;
-  font-size: .86rem;
-  color: var(--muted);
-  margin-top: 4px;
-  line-height: 1.5;
-  grid-column: 1 / -1;
-}
-
-/* ── Section 03 — proceso ── */
-.proceso {
-  padding: 140px 56px;
+.puerta-pro {
   background: var(--ink);
   color: var(--bone);
+  border: 1px solid var(--ink);
+  border-top: 4px solid var(--ochre);
 }
-.proceso .head { max-width: 1080px; margin: 0 auto 90px; }
-.proceso h2 { color: var(--bone); }
-.proceso h2 em { color: var(--ochre); }
-.proceso .lead { color: rgba(248,243,233,.62); }
-.proc-steps { max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: 60px; }
-.proc-step {
-  display: grid;
-  grid-template-columns: 180px 1fr;
-  gap: 40px;
-  align-items: baseline;
-  padding-bottom: 48px;
-  border-bottom: 1px solid rgba(248,243,233,.10);
+.puerta-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 22px;
 }
-.proc-step:last-child { border-bottom: none; padding-bottom: 0; }
-.proc-num {
-  font-family: 'Fraunces', serif;
+.puerta-icon { font-size: 2.2rem; line-height: 1; }
+.puerta-badge {
+  padding: 4px 12px; border-radius: 2px;
+  font-family: 'Inter', sans-serif; font-size: .64rem; font-weight: 700;
+  letter-spacing: .2em; text-transform: uppercase;
+}
+.puerta-campo .puerta-badge { background: var(--ochre); color: var(--bone); }
+.puerta-pro .puerta-badge { background: var(--ochre); color: var(--ink); }
+.puerta h3 {
+  font-family: 'Fraunces', serif; font-weight: 600;
+  font-size: 1.7rem; letter-spacing: -.005em;
+  margin-bottom: 12px;
+}
+.puerta-campo h3 { color: var(--forest); }
+.puerta-pro h3 { color: var(--bone); }
+.puerta-pitch {
+  font-size: 1rem; line-height: 1.6; margin-bottom: 20px;
+}
+.puerta-campo .puerta-pitch { color: var(--ink); }
+.puerta-pro .puerta-pitch { color: rgba(248,243,233,.82); }
+.puerta-bullets {
+  list-style: none; padding: 0; margin: 0 0 28px;
+  font-size: .92rem; line-height: 1.85;
+}
+.puerta-bullets li::before {
+  content: '·  '; color: var(--ochre); font-weight: 700;
+}
+.puerta-campo .puerta-bullets li { color: var(--ink); }
+.puerta-pro .puerta-bullets li { color: rgba(248,243,233,.78); }
+.puerta-cta-block { margin-top: auto; }
+.puerta-foot {
+  font-size: .78rem; margin-top: 12px; text-align: center;
   font-style: italic;
-  font-weight: 300;
-  font-size: 7rem;
-  line-height: 1;
-  color: var(--ochre);
-  letter-spacing: -.04em;
 }
-.proc-title {
-  font-family: 'Fraunces', serif;
-  font-weight: 600;
-  font-size: 1.7rem;
-  letter-spacing: -.01em;
-  color: var(--bone);
-  margin-bottom: 14px;
-}
-.proc-body {
-  font-size: 1rem; line-height: 1.65;
-  color: rgba(248,243,233,.72);
-  max-width: 50ch;
-}
-@media (max-width: 720px) {
-  .proceso { padding: 90px 22px; }
-  .proc-step { grid-template-columns: 1fr; gap: 14px; padding-bottom: 36px; }
-  .proc-num { font-size: 4rem; }
-  .proc-title { font-size: 1.3rem; }
-}
+.puerta-campo .puerta-foot { color: var(--muted); }
+.puerta-pro .puerta-foot { color: rgba(248,243,233,.55); }
 
-/* ── Section 04 — diferenciadores ── */
-.dif {
-  padding: 120px 56px;
+.sistema-bottom {
+  margin-top: 42px; padding-top: 28px; border-top: 1px solid var(--rule);
+  text-align: center;
+  font-family: 'Inter', sans-serif; font-size: .9rem; color: var(--muted);
 }
-.dif .head { max-width: 1080px; margin: 0 auto 60px; }
-.dif-list {
-  max-width: 1080px; margin: 0 auto;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  column-gap: 80px;
-  row-gap: 44px;
+.sistema-bottom a {
+  color: var(--forest); font-family: 'Fraunces', serif;
+  font-style: italic; font-weight: 500;
+  border-bottom: 1px solid var(--ochre); padding-bottom: 1px;
+  margin: 0 12px;
 }
-@media (max-width: 720px) {
-  .dif { padding: 80px 22px; }
-  .dif-list { grid-template-columns: 1fr; row-gap: 32px; }
-}
-.dif-item {
-  display: grid;
-  grid-template-columns: 40px 1fr;
-  gap: 20px;
-  align-items: baseline;
-}
-.dif-mark {
-  font-family: 'Fraunces', serif;
-  font-style: italic;
-  font-weight: 400;
-  font-size: 1.15rem;
-  color: var(--ochre);
-}
-.dif-text strong {
-  font-family: 'Fraunces', serif;
-  font-weight: 600;
-  font-size: 1.18rem;
-  color: var(--forest);
-  display: block;
-  margin-bottom: 6px;
-  letter-spacing: -.005em;
-}
-.dif-text p {
-  font-size: .94rem;
-  color: var(--muted);
-  line-height: 1.6;
-}
+.sistema-bottom a:hover { color: var(--ochre); }
 
-/* ── Hero image (AJUA Pro screenshot) ── */
-.hero-shot {
-  margin-top: 56px;
-  border: 1px solid var(--rule);
-  border-radius: 6px;
-  overflow: hidden;
-  box-shadow: 0 24px 60px -28px rgba(31,58,44,.32);
-  background: #fff;
-}
-.hero-shot img { display: block; width: 100%; height: auto; }
-
-/* ── Botones CTA ── */
-.btn-primary {
-  display: inline-block;
-  padding: 14px 28px;
+/* ── Sección Import/Export — dark ── */
+.export {
+  padding: 130px 0;
   background: var(--forest);
   color: var(--bone);
-  font-family: 'Inter', sans-serif;
-  font-weight: 600;
-  font-size: .94rem;
-  letter-spacing: .02em;
-  border: 1.5px solid var(--forest);
-  border-radius: 2px;
-  transition: background .15s, color .15s;
 }
-.btn-primary:hover { background: var(--canopy, #2D6645); border-color: var(--canopy, #2D6645); }
-.btn-ghost {
-  display: inline-block;
-  padding: 14px 24px;
-  background: transparent;
-  color: var(--forest);
-  font-family: 'Inter', sans-serif;
-  font-weight: 500;
-  font-size: .94rem;
-  letter-spacing: .02em;
-  border: 1.5px solid var(--forest);
-  border-radius: 2px;
-  transition: background .15s, color .15s;
-}
-.btn-ghost:hover { background: var(--forest); color: var(--bone); }
+.export .head { max-width: 760px; margin-bottom: 60px; }
+.export h2.h-section { color: var(--bone); }
+.export h2.h-section em { color: var(--ochre); }
+.export .lead { color: rgba(248,243,233,.72); max-width: 56ch; }
+.export .eyebrow { color: var(--ochre); }
 
-/* ── Section — Pantallazos del sistema ── */
-.shots {
-  padding: 130px 56px;
+.flags-line {
+  display: inline-flex; gap: 12px; align-items: center;
+  margin-top: 26px; padding: 10px 18px;
+  background: rgba(168,131,90,.15);
+  border: 1px solid rgba(168,131,90,.35);
+  border-radius: 2px;
+  font-family: 'Inter', sans-serif; font-size: .82rem;
+  color: var(--bone); font-weight: 500; letter-spacing: .04em;
+}
+.flags-line span { font-size: 1.15rem; }
+
+.valores-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 18px; margin-bottom: 70px;
+}
+@media (max-width: 880px) {
+  .export { padding: 80px 0; }
+  .valores-grid { grid-template-columns: 1fr; gap: 14px; margin-bottom: 50px; }
+}
+.valor-card {
+  padding: 28px 26px;
+  background: rgba(168,131,90,.06);
+  border: 1px solid rgba(168,131,90,.18);
+  border-radius: 4px;
+}
+.valor-icon {
+  width: 48px; height: 48px;
+  border-radius: 50%; background: rgba(168,131,90,.22);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; margin-bottom: 16px;
+}
+.valor-card h3 {
+  font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.32rem;
+  color: var(--bone); margin-bottom: 10px;
+}
+.valor-card p { font-size: .92rem; color: rgba(248,243,233,.76); line-height: 1.6; }
+
+/* Catálogo de productos */
+.cat-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 24px; flex-wrap: wrap; gap: 14px;
+}
+.cat-head h3 {
+  font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.7rem;
+  color: var(--bone);
+}
+.cat-head h3 em { font-style: italic; color: var(--ochre); }
+.cat-tag {
+  font-family: 'Inter', sans-serif; font-size: .72rem; font-weight: 600;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--ochre);
+}
+
+.cat-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 14px; margin-bottom: 48px;
+}
+@media (max-width: 980px) { .cat-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 640px) { .cat-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
+
+.cat-card {
+  background: rgba(248,243,233,.04);
+  border: 1px solid rgba(168,131,90,.18);
+  border-radius: 4px; overflow: hidden;
+  transition: transform .2s, border-color .2s;
+}
+.cat-card:hover { transform: translateY(-2px); border-color: var(--ochre); }
+.cat-card-img {
+  aspect-ratio: 4/3;
+  background: rgba(168,131,90,.12);
+  overflow: hidden;
+}
+.cat-card-img img {
+  width: 100%; height: 100%; object-fit: cover;
+  transition: transform .35s, filter .35s;
+}
+.cat-card:hover .cat-card-img img { transform: scale(1.04); filter: saturate(1.15); }
+.cat-card-body {
+  padding: 14px 16px 16px;
+  border-top: 1px solid rgba(168,131,90,.18);
+}
+.cat-card-name {
+  font-family: 'Fraunces', serif; font-weight: 600;
+  font-size: 1rem; color: var(--bone); margin-bottom: 2px;
+}
+.cat-card-kind {
+  font-family: 'Inter', sans-serif; font-size: .68rem;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ochre); font-weight: 600;
+}
+
+.cat-footer-note {
+  margin-top: -32px; margin-bottom: 56px;
+  font-family: 'Fraunces', serif; font-style: italic;
+  color: rgba(248,243,233,.62); font-size: .92rem;
+}
+
+/* Bloque importación */
+.import-block {
+  padding: 28px 32px;
+  background: rgba(248,243,233,.05);
+  border: 1px solid rgba(168,131,90,.22);
+  border-left: 3px solid var(--ochre);
+  border-radius: 4px;
+  margin-bottom: 60px;
+}
+.import-block h3 {
+  font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.35rem;
+  color: var(--bone); margin-bottom: 8px;
+}
+.import-block p { font-size: .94rem; color: rgba(248,243,233,.78); line-height: 1.65; max-width: 62ch; }
+
+/* CTA cierre export */
+.export-cta {
+  display: flex; gap: 16px; flex-wrap: wrap; align-items: center;
+  padding-top: 28px; border-top: 1px solid rgba(168,131,90,.25);
+}
+.mari-pill {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 6px 14px 6px 6px;
+  background: rgba(168,131,90,.12);
+  border-radius: 999px;
+  font-size: .82rem; color: rgba(248,243,233,.78);
+}
+.mari-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--ochre); color: var(--ink);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: 'Fraunces', serif; font-weight: 700; font-size: .82rem;
+}
+.mari-pill b { color: var(--bone); font-weight: 600; }
+
+/* ── Trust ── */
+.trust {
+  padding: 120px 0;
+  border-top: 1px solid var(--rule);
+}
+.trust .head { max-width: 720px; margin-bottom: 56px; }
+.trust-list { max-width: 980px; }
+.trust-row {
+  display: grid; grid-template-columns: 100px 1fr;
+  gap: 30px; padding: 38px 0;
+  border-top: 1px solid var(--rule);
+  align-items: baseline;
+}
+.trust-row:last-child { border-bottom: 1px solid var(--rule); }
+.trust-num {
+  font-family: 'Fraunces', serif; font-style: italic;
+  font-weight: 400; font-size: 2.4rem; color: var(--ochre);
+  line-height: 1;
+}
+.trust-row h3 {
+  font-family: 'Fraunces', serif; font-weight: 600;
+  font-size: 1.55rem; color: var(--forest); margin-bottom: 8px;
+  letter-spacing: -.005em;
+}
+.trust-row p { font-size: 1rem; color: var(--ink); line-height: 1.65; max-width: 60ch; }
+
+.trust-strip {
+  margin-top: 56px; padding: 26px 0;
+  border-top: 2px solid var(--forest);
+  display: flex; gap: 40px; flex-wrap: wrap;
+  font-family: 'Inter', sans-serif;
+}
+.trust-strip .stat {
+  font-family: 'Fraunces', serif; font-weight: 600;
+  font-size: 1.85rem; color: var(--forest); letter-spacing: -.01em;
+}
+.trust-strip .stat span {
+  display: block; font-family: 'Inter', sans-serif;
+  font-size: .72rem; font-weight: 600;
+  color: var(--muted); letter-spacing: .18em; text-transform: uppercase;
+  margin-top: 2px;
+}
+@media (max-width: 720px) {
+  .trust { padding: 80px 0; }
+  .trust-row { grid-template-columns: 1fr; gap: 8px; padding: 28px 0; }
+  .trust-num { font-size: 1.6rem; }
+  .trust-row h3 { font-size: 1.3rem; }
+  .trust-strip { gap: 24px; margin-top: 42px; }
+  .trust-strip .stat { font-size: 1.4rem; }
+}
+
+/* ── Contacto ── */
+.contacto {
+  padding: 120px 0;
   background: var(--sand);
   border-top: 1px solid var(--rule);
 }
-.shots .head { max-width: 1080px; margin: 0 auto 60px; }
-.shots-grid {
-  max-width: 1180px; margin: 0 auto;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 28px;
+.contacto .head { max-width: 720px; margin-bottom: 50px; }
+.contacto-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 36px;
 }
-@media (max-width: 720px) {
-  .shots { padding: 80px 22px; }
-  .shots-grid { grid-template-columns: 1fr; gap: 18px; }
+@media (max-width: 880px) {
+  .contacto { padding: 80px 0; }
+  .contacto-grid { grid-template-columns: 1fr; gap: 24px; }
 }
-.shot {
+.mari-card {
   background: var(--bone);
+  padding: 36px 32px;
   border: 1px solid var(--rule);
-  border-radius: 6px;
-  overflow: hidden;
-  display: flex; flex-direction: column;
-  box-shadow: 0 8px 24px -16px rgba(31,58,44,.18);
+  border-left: 4px solid var(--moss);
+  border-radius: 4px;
 }
-.shot img {
-  display: block; width: 100%; height: auto;
-  border-bottom: 1px solid var(--rule);
+.mari-card-head { display: flex; align-items: center; gap: 16px; margin-bottom: 22px; }
+.mari-avatar-lg {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: var(--ochre); color: var(--ink);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: 'Fraunces', serif; font-weight: 700; font-size: 1.4rem;
+  flex-shrink: 0;
 }
-.shot-caption {
-  padding: 18px 22px 22px;
+.mari-card-name {
+  font-family: 'Fraunces', serif; font-weight: 600;
+  font-size: 1.25rem; color: var(--forest); margin-bottom: 2px;
 }
-.shot-num {
-  font-family: 'Inter', sans-serif;
-  font-size: .68rem; font-weight: 600;
-  letter-spacing: .22em; text-transform: uppercase;
-  color: var(--ochre);
-  margin-bottom: 8px;
+.mari-card-role {
+  font-size: .78rem; color: var(--muted); letter-spacing: .08em;
+  text-transform: uppercase; font-weight: 600;
 }
-.shot-title {
-  font-family: 'Fraunces', serif;
-  font-weight: 600;
-  font-size: 1.15rem;
-  color: var(--forest);
-  margin-bottom: 6px;
-  letter-spacing: -.005em;
-}
-.shot-desc {
-  font-size: .86rem;
-  color: var(--muted);
-  line-height: 1.55;
+.mari-card p { font-size: .94rem; color: var(--ink); line-height: 1.6; margin-bottom: 22px; }
+.mari-phone {
+  margin-top: 14px; font-family: 'Inter', sans-serif;
+  font-size: .86rem; color: var(--muted); text-align: center;
 }
 
-/* ── Section — Pricing ── */
-.pricing {
-  padding: 130px 56px;
-  border-top: 1px solid var(--rule);
-}
-.pricing .head { max-width: 1080px; margin: 0 auto 60px; }
-.pricing-tagline {
-  max-width: 1080px; margin: 0 auto 50px;
-  font-family: 'Fraunces', serif;
-  font-style: italic;
-  font-size: 1.15rem;
-  color: var(--forest);
-  line-height: 1.5;
-}
-.pricing-tagline span { color: var(--ochre); }
-.plans {
-  max-width: 1180px; margin: 0 auto;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 18px;
-}
-@media (max-width: 980px) { .plans { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 540px) { .plans { grid-template-columns: 1fr; } .pricing { padding: 80px 22px; } }
-.plan {
-  background: #fff;
-  border: 1px solid var(--rule);
-  border-top: 3px solid var(--rule);
-  padding: 28px 24px 32px;
-  display: flex; flex-direction: column;
-  position: relative;
-}
-.plan.featured {
-  border-top-color: var(--ochre);
-  box-shadow: 0 24px 50px -22px rgba(168,131,90,.45);
-  transform: translateY(-6px);
-}
-.plan-rec {
-  position: absolute; top: -12px; left: 24px;
-  background: var(--ochre); color: var(--bone);
-  padding: 4px 12px;
-  font-family: 'Inter', sans-serif;
-  font-size: .64rem; font-weight: 700;
-  letter-spacing: .2em; text-transform: uppercase;
-}
-.plan-name {
-  font-family: 'Fraunces', serif;
-  font-weight: 600;
-  font-size: 1.3rem;
-  color: var(--forest);
-  margin-bottom: 4px;
-}
-.plan-pitch {
-  font-size: .82rem; color: var(--muted);
-  margin-bottom: 18px;
-  min-height: 38px;
-}
-.plan-price {
-  font-family: 'Fraunces', serif;
-  font-weight: 600;
-  font-size: 2rem;
-  color: var(--ink);
-  letter-spacing: -.02em;
-  display: flex; align-items: baseline; gap: 4px;
-  margin-bottom: 6px;
-}
-.plan-price em {
-  font-style: normal;
-  font-size: .86rem;
-  font-weight: 400;
-  color: var(--muted);
-}
-.plan-commission {
-  font-size: .76rem;
-  color: var(--muted);
-  font-style: italic;
-  margin-bottom: 22px;
-  padding-bottom: 18px;
-  border-bottom: 1px dotted rgba(26,26,24,.18);
-}
-.plan-feats {
-  list-style: none; padding: 0; margin: 0 0 24px;
-  font-size: .86rem;
-  color: var(--ink);
-  line-height: 1.6;
-}
-.plan-feats li {
-  padding: 4px 0;
-}
-.plan-feats li::before {
-  content: '·'; color: var(--ochre); margin-right: 8px; font-weight: 700;
-}
-.plan-cta {
-  margin-top: auto;
-  text-align: center;
-  padding: 10px 16px;
-  font-family: 'Inter', sans-serif;
-  font-weight: 600;
-  font-size: .82rem;
-  letter-spacing: .02em;
-  border: 1.5px solid var(--forest);
-  color: var(--forest);
-  background: transparent;
-  transition: background .15s, color .15s;
-}
-.plan.featured .plan-cta {
-  background: var(--forest); color: var(--bone);
-}
-.plan-cta:hover { background: var(--forest); color: var(--bone); }
-.plan.featured .plan-cta:hover { background: var(--canopy, #2D6645); border-color: var(--canopy, #2D6645); }
-
-/* ── Section 05 — form ── */
-.contacto {
-  padding: 130px 56px 80px;
-  border-top: 1px solid var(--rule);
+.form-card {
   background: var(--bone);
+  padding: 36px 32px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
 }
-.contacto .head { max-width: 720px; margin: 0 auto 60px; text-align: center; }
-.contacto h2 { max-width: 20ch; margin: 0 auto; }
-.contacto .lead { margin-left: auto; margin-right: auto; }
-.form {
-  max-width: 560px; margin: 0 auto;
-  display: flex; flex-direction: column; gap: 28px;
+.form-card h3 {
+  font-family: 'Fraunces', serif; font-weight: 600;
+  font-size: 1.25rem; color: var(--forest); margin-bottom: 6px;
 }
-.field { display: flex; flex-direction: column; gap: 8px; }
+.form-card .h-sub {
+  font-size: .86rem; color: var(--muted); margin-bottom: 22px;
+}
+.form { display: flex; flex-direction: column; gap: 18px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
 .field label {
-  font-family: 'Inter', sans-serif;
-  font-size: .7rem;
-  font-weight: 600;
-  letter-spacing: .18em;
-  text-transform: uppercase;
-  color: var(--ochre);
+  font-family: 'Inter', sans-serif; font-size: .68rem; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--ochre);
 }
-.field input,
-.field select,
-.field textarea {
-  width: 100%;
-  padding: 12px 0;
-  border: none;
-  border-bottom: 1px solid var(--rule);
-  background: transparent;
-  font-family: 'Inter', sans-serif;
-  font-size: 1.02rem;
-  color: var(--ink);
-  outline: none;
+.field input, .field select, .field textarea {
+  width: 100%; padding: 10px 0;
+  border: none; border-bottom: 1px solid var(--rule);
+  background: transparent; font-family: 'Inter', sans-serif;
+  font-size: .98rem; color: var(--ink); outline: none;
   transition: border-color .15s;
 }
-.field input::placeholder,
-.field textarea::placeholder { color: rgba(26,26,24,.32); font-style: italic; }
-.field input:focus,
-.field select:focus,
-.field textarea:focus { border-bottom-color: var(--forest); }
-.field select { appearance: none; background-image: none; cursor: pointer; }
-.field textarea { resize: vertical; min-height: 60px; padding: 12px 0; }
-.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
-@media (max-width: 540px) { .row2 { grid-template-columns: 1fr; } }
+.field input:focus, .field select:focus, .field textarea:focus { border-bottom-color: var(--forest); }
+.field input::placeholder, .field textarea::placeholder { color: rgba(26,26,24,.34); font-style: italic; }
+.field select { appearance: none; cursor: pointer; }
+.field textarea { resize: vertical; min-height: 50px; }
 .submit {
-  margin-top: 16px;
-  align-self: flex-start;
-  padding: 0 0 4px;
-  background: transparent;
-  border: none;
-  border-bottom: 1.5px solid var(--forest);
-  font-family: 'Fraunces', serif;
-  font-style: italic;
-  font-weight: 500;
-  font-size: 1.18rem;
-  color: var(--forest);
-  cursor: pointer;
-  letter-spacing: -.005em;
-  transition: color .15s, border-color .15s;
+  align-self: flex-start; margin-top: 6px;
+  padding: 11px 22px; background: var(--forest); color: var(--bone);
+  border: 1.5px solid var(--forest); border-radius: 2px;
+  font-family: 'Inter', sans-serif; font-weight: 600;
+  font-size: .86rem; letter-spacing: .04em; cursor: pointer;
+  transition: background .15s;
 }
-.submit:hover:not(:disabled) { color: var(--ochre); border-bottom-color: var(--ochre); }
-.submit:disabled { color: var(--muted); border-bottom-color: var(--muted); cursor: not-allowed; }
+.submit:hover:not(:disabled) { background: var(--canopy); border-color: var(--canopy); }
+.submit:disabled { opacity: .5; cursor: not-allowed; }
 .msg {
-  font-family: 'Fraunces', serif;
-  font-style: italic;
-  font-size: 1rem;
-  padding-top: 4px;
-  display: none;
+  font-family: 'Fraunces', serif; font-style: italic;
+  font-size: .94rem; padding-top: 6px; display: none;
 }
 .msg.ok  { color: var(--forest); display: block; }
 .msg.err { color: #8B2A2A; display: block; }
 
+/* ── WhatsApp sticky mobile ── */
+.wa-sticky {
+  position: fixed; bottom: 20px; right: 20px; z-index: 100;
+  width: 56px; height: 56px; border-radius: 50%;
+  background: #25D366; color: #fff;
+  box-shadow: 0 6px 18px rgba(0,0,0,.18);
+  display: none; align-items: center; justify-content: center;
+  font-size: 1.7rem; line-height: 1;
+  transition: transform .2s, box-shadow .2s;
+}
+.wa-sticky:hover { transform: scale(1.08); box-shadow: 0 8px 22px rgba(0,0,0,.24); }
+@media (max-width: 880px) { .wa-sticky.show { display: inline-flex; } }
+
 /* ── Footer ── */
-footer {
-  padding: 50px 56px 60px;
+footer.foot {
+  padding: 52px 0 36px;
   border-top: 1px solid var(--rule);
-  font-size: .82rem;
-  color: var(--muted);
+  background: var(--bone);
 }
-.foot-access {
-  display: flex; gap: 28px; flex-wrap: wrap;
-  padding-bottom: 28px; margin-bottom: 28px;
-  border-bottom: 1px solid var(--rule);
+.foot-grid {
+  display: grid; grid-template-columns: 2fr 1fr 1fr;
+  gap: 36px; margin-bottom: 30px;
 }
-.foot-access a {
-  font-family: 'Fraunces', serif;
-  font-style: italic;
-  font-size: .98rem;
-  color: var(--forest);
-  border-bottom: 1px solid var(--ochre);
-  padding-bottom: 1px;
-  transition: color .15s, border-color .15s;
+@media (max-width: 720px) {
+  .foot-grid { grid-template-columns: 1fr; gap: 24px; }
 }
-.foot-access a:hover { color: var(--ochre); border-bottom-color: var(--forest); }
-.foot-access .access-label {
-  font-family: 'Inter', sans-serif;
-  font-size: .7rem;
-  font-weight: 600;
-  letter-spacing: .22em;
-  text-transform: uppercase;
-  color: var(--muted);
-  border: none; padding: 0;
-  align-self: center;
+.foot-brand .brand { font-size: 1.5rem; }
+.foot-brand p { margin-top: 10px; color: var(--muted); font-size: .9rem; line-height: 1.6; max-width: 34ch; }
+.foot-col h4 {
+  font-family: 'Inter', sans-serif; font-size: .68rem; font-weight: 700;
+  letter-spacing: .2em; text-transform: uppercase; color: var(--ochre);
+  margin-bottom: 14px;
 }
+.foot-col ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.foot-col li a {
+  font-family: 'Fraunces', serif; font-style: italic;
+  font-size: .94rem; color: var(--forest);
+  border-bottom: 1px solid var(--ochre); padding-bottom: 1px;
+}
+.foot-col li a:hover { color: var(--ochre); border-bottom-color: var(--forest); }
 .foot-meta {
-  display: flex; align-items: baseline; justify-content: space-between;
-  flex-wrap: wrap; gap: 16px;
+  padding-top: 22px; border-top: 1px solid var(--rule);
+  display: flex; justify-content: space-between; flex-wrap: wrap;
+  gap: 14px; font-size: .78rem; color: var(--muted);
 }
-.foot-meta a { border-bottom: 1px solid var(--ochre); padding-bottom: 1px; }
-.foot-meta .copy { font-style: italic; }
-@media (max-width: 720px) { footer { padding: 36px 22px 44px; } }
+.foot-meta a { color: var(--forest); border-bottom: 1px solid var(--ochre); padding-bottom: 1px; }
 </style>
 </head>
 <body>
 
 <!-- ── BANNER STICKY ── -->
 <div class="banner-pro" id="banner-pro">
-  <span>🌱 ¿Tu finca lista para PrimusGFS, BPM o MAGA?</span>
-  <a href="https://sis.agroajua.com/marketing">Conocé AJUA Pro →</a>
+  <span>🌱 Sistema gratis para tu finca · vegetal fresco al mundo</span>
+  <a href="#sistema">Conocé las dos puertas →</a>
   <button class="banner-close" id="banner-close" aria-label="Cerrar banner">×</button>
 </div>
 
-<header id="top">
-  <a href="#" class="mark">AJUA</a>
+<!-- ── HEADER ── -->
+<header class="top" id="top">
+  <a href="#" class="brand">AJ<em>U</em>A</a>
   <nav>
-    <a href="#precios">Planes</a>
+    <a href="#sistema">Sistema</a>
+    <a href="#productos">Productos</a>
+    <a href="#hablanos">Hablanos</a>
     <a href="https://sis.agroajua.com/login" class="cta">Entrar</a>
   </nav>
 </header>
 
 <!-- ── HERO ── -->
 <section class="hero">
-  <div class="stamp">Cumplimiento agroindustrial — 2026</div>
-  <h1>
-    ¡<em>AJUUUAAA,</em> ya cumplo!
-  </h1>
-  <p class="sub">
-    La plataforma chapina para que tu finca o empacadora deje de pelearse con Excel
-    y tenga PrimusGFS, BPM, MAGA y Agrequima en regla — con bitácoras digitales,
-    binder PDF para el auditor y trazabilidad lote a lote.
-  </p>
-  <div class="row">
-    <a href="https://sis.agroajua.com/registro" class="btn-primary">Crear empresa gratis →</a>
-    <a href="https://sis.agroajua.com/login" class="btn-ghost">Probar demo</a>
-    <span class="aside">Sin tarjeta · empezás en 2 minutos</span>
-  </div>
-  <div class="hero-shot">
-    <img src="https://sis.agroajua.com/marketing/01-hero.png" alt="Dashboard AJUA Pro — Listo para auditoría" loading="eager">
-  </div>
-</section>
-
-<!-- ── 01 — AUDIENCIAS ── -->
-<section class="audiencias" id="quienes">
-  <div class="head wrap" style="padding: 0;">
-    <div class="section-num">— Sección 01 / Para quién</div>
-    <h2>Tres perfiles, <em>una misma</em> plataforma.</h2>
-    <p class="lead">
-      No importa si tu rol está en el campo, en la línea de empaque o en la mesa de compras —
-      AJUA se ajusta a cómo trabajás vos.
-    </p>
-  </div>
-
-  <div class="aud-list">
-    <div class="aud-row">
-      <div class="aud-num">01</div>
-      <div class="aud-title">Productores</div>
-      <div class="aud-body">
-        Para quien cultiva, riega, fumiga y cosecha. Llevás el control diario de campo
-        — aplicaciones agrícolas, períodos de carencia, capacitación de personal,
-        trazabilidad de lote desde la finca.
-        <span>Bitácoras de aplicación. Registros de cosecha. Hojas de campo digitales.</span>
+  <div class="wrap hero-grid">
+    <div class="hero-text">
+      <div class="stamp">AJUA · Guatemala · 2026</div>
+      <h1>Del campo guatemalteco <em>al mundo</em> — y el sistema que lo hace posible.</h1>
+      <p class="hero-sub">
+        Vendemos, importamos y exportamos vegetal y fruta fresca entre Guatemala, México y Estados Unidos.
+        Y construimos el sistema digital para que tu finca cumpla los estándares internacionales sin papeles que se mojen.
+      </p>
+      <div class="hero-actions">
+        <a href="#productos" class="btn btn-forest">Conocé nuestros productos →</a>
+        <a href="#sistema" class="btn btn-ghost">Entrá al sistema</a>
       </div>
+      <p class="hero-trust">
+        Operamos desde 2018 · productores en altiplano · compradores en Guatemala, México y Estados Unidos.
+      </p>
     </div>
-    <div class="aud-row">
-      <div class="aud-num">02</div>
-      <div class="aud-title">Empacadores</div>
-      <div class="aud-body">
-        Para quien recibe, lava, clasifica y despacha. Operás bajo norma de inocuidad
-        con control de temperatura, cloro, plagas, vidrio y plástico, despacho y báscula.
-        Inspecciones y CAPA listas para auditoría.
-        <span>Cumplimiento BPM. Cadena de frío. Trazabilidad lote a lote.</span>
-      </div>
-    </div>
-    <div class="aud-row">
-      <div class="aud-num">03</div>
-      <div class="aud-title">Compradores</div>
-      <div class="aud-body">
-        Para quien recibe producto de varios proveedores. Verificás cumplimiento,
-        registrás recepciones y rechazos, llevás cuentas por pagar y exigís —
-        con evidencia — el estándar que necesita tu cliente.
-        <span>Historial de proveedor. Rechazos documentados. Pago contra cumplimiento.</span>
-      </div>
+    <div class="hero-img">
+      <img src="https://images.unsplash.com/photo-1542838132-92c53300491e?w=900&q=85&auto=format&fit=crop"
+           alt="Cosecha fresca de vegetales del altiplano guatemalteco" loading="eager">
+      <span class="hero-img-tag">Altiplano · cosecha de mañana</span>
     </div>
   </div>
 </section>
 
-<!-- ── 02 — MÓDULOS ── -->
-<section class="modulos">
-  <div class="head">
-    <div class="section-num">— Sección 02 / Lo que controlás</div>
-    <h2>Trece áreas operativas, <em>una sola</em> base de datos.</h2>
-    <p class="lead">
-      Lo que antes vivía en cuadernos, hojas sueltas y carpetas físicas — ahora ordenado,
-      buscable y exportable.
-    </p>
-  </div>
-
-  <div class="mod-groups">
-    <div class="mod-group">
-      <div class="mod-group-label">Inspección y cumplimiento</div>
-      <div class="mod-items">
-        <div class="mod-item">
-          <span class="mod-item-name">Inspecciones BPM</span>
-          <span class="mod-item-desc">Checklist de 49 puntos con clasificación de severidad — prioritarias, mayores, menores.</span>
-        </div>
-        <div class="mod-item">
-          <span class="mod-item-name">CAPA</span>
-          <span class="mod-item-desc">Acciones correctivas y preventivas con causa raíz, responsable y verificación de cierre.</span>
-        </div>
-        <div class="mod-item">
-          <span class="mod-item-name">Manejo integrado de plagas</span>
-          <span class="mod-item-desc">Croquis de trampas numeradas, revisión periódica, registros de novedad.</span>
-        </div>
-        <div class="mod-item">
-          <span class="mod-item-name">Vidrio y plástico</span>
-          <span class="mod-item-desc">Inspección por área con hallazgos, acciones y evidencia fotográfica.</span>
-        </div>
-      </div>
+<!-- ── SISTEMA — 2 PUERTAS ── -->
+<section class="sistema" id="sistema">
+  <div class="wrap">
+    <div class="head">
+      <div class="eyebrow">— 02 / Sistema</div>
+      <h2 class="h-section">Dos puertas. <em>Una sola</em> plataforma.</h2>
+      <p class="lead">
+        Elegí por dónde entrás. El sistema entiende cuál sos vos.
+      </p>
     </div>
 
-    <div class="mod-group">
-      <div class="mod-group-label">Operación diaria</div>
-      <div class="mod-items">
-        <div class="mod-item">
-          <span class="mod-item-name">Cadena de frío</span>
-          <span class="mod-item-desc">Toma de temperatura por cooler, alertas fuera de rango, histórico continuo.</span>
-        </div>
-        <div class="mod-item">
-          <span class="mod-item-name">Control de cloro</span>
-          <span class="mod-item-desc">Cloración de agua y lavado de producto con rangos validados.</span>
-        </div>
-        <div class="mod-item">
-          <span class="mod-item-name">Fumigación y sanitización</span>
-          <span class="mod-item-desc">Programa mensual y semanal por instalación, registros de aplicación.</span>
-        </div>
-        <div class="mod-item">
-          <span class="mod-item-name">Transporte y despacho</span>
-          <span class="mod-item-desc">Limpieza de camiones, inspección previa a carga y control de salida.</span>
-        </div>
-        <div class="mod-item">
-          <span class="mod-item-name">Báscula y peso</span>
-          <span class="mod-item-desc">Calibración, revisión diaria y registro de variaciones por equipo.</span>
-        </div>
-        <div class="mod-item">
-          <span class="mod-item-name">Personal y visitas</span>
-          <span class="mod-item-desc">Higiene, capacitaciones, empleados enfermos y control de visitantes externos.</span>
-        </div>
-      </div>
-    </div>
+    <div class="puertas">
 
-    <div class="mod-group">
-      <div class="mod-group-label">Gestión y trazabilidad</div>
-      <div class="mod-items">
-        <div class="mod-item">
-          <span class="mod-item-name">Inventario y stock vivo</span>
-          <span class="mod-item-desc">Recepción y salida con seguimiento lote a lote en tiempo real.</span>
+      <!-- PUERTA CAMPO -->
+      <div class="puerta puerta-campo">
+        <div class="puerta-head">
+          <span class="puerta-icon">🌱</span>
+          <span class="puerta-badge">Gratis</span>
         </div>
-        <div class="mod-item">
-          <span class="mod-item-name">Cuentas por pagar y cobrar</span>
-          <span class="mod-item-desc">Recepciones, pagos, rechazos y estados de cuenta por proveedor o cliente.</span>
-        </div>
-        <div class="mod-item">
-          <span class="mod-item-name">Reportes y exportación</span>
-          <span class="mod-item-desc">Excel, PDF y resúmenes por período listos para auditor o gerencia.</span>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ── 03 — PROCESO ── -->
-<section class="proceso">
-  <div class="head">
-    <div class="section-num">— Sección 03 / Implementación</div>
-    <h2>De diagnóstico a operación, <em>en una semana.</em></h2>
-    <p class="lead">
-      Configuramos contigo. No te dejamos solo frente a una pantalla en blanco.
-    </p>
-  </div>
-
-  <div class="proc-steps">
-    <div class="proc-step">
-      <div class="proc-num">01</div>
-      <div>
-        <div class="proc-title">Diagnóstico</div>
-        <p class="proc-body">
-          Demo personalizada y mapeo de tus procesos actuales — qué llevás en papel,
-          qué en Excel, qué cuello de botella te ahoga. Sin compromiso.
+        <h3>AJUA Campo</h3>
+        <p class="puerta-pitch">
+          Para tu finca, en el celular. Te armamos el programa de siembra, te recordamos por WhatsApp,
+          y tu historial te acerca a crédito agrícola.
         </p>
+        <ul class="puerta-bullets">
+          <li>Programa de siembra automático</li>
+          <li>Recordatorios por WhatsApp</li>
+          <li>Historial que vale para crédito</li>
+        </ul>
+        <div class="puerta-cta-block">
+          <a href="https://sis.agroajua.com/campo/registro" class="btn btn-forest btn-block">
+            Empezá gratis en 30 segundos →
+          </a>
+          <div class="puerta-foot">Solo nombre y WhatsApp. Sin tarjeta.</div>
+        </div>
       </div>
-    </div>
-    <div class="proc-step">
-      <div class="proc-num">02</div>
-      <div>
-        <div class="proc-title">Configuración</div>
-        <p class="proc-body">
-          Cargamos tu personal, productos, proveedores, áreas y umbrales operativos.
-          Entrenamiento a tu equipo en uso diario.
+
+      <!-- PUERTA PRO -->
+      <div class="puerta puerta-pro">
+        <div class="puerta-head">
+          <span class="puerta-icon">🛡️</span>
+          <span class="puerta-badge">Empresa</span>
+        </div>
+        <h3>AJUA Pro</h3>
+        <p class="puerta-pitch">
+          Para empacadoras, exportadores y quien vende a cadenas y supermercados premium.
+          Cumplí los estándares internacionales y prepará tus auditorías sin papeles que se mojen.
         </p>
+        <ul class="puerta-bullets">
+          <li>Trazabilidad lote por lote</li>
+          <li>Bitácoras digitales + expediente PDF</li>
+          <li>Mock-recall y capacitaciones con firma</li>
+        </ul>
+        <div class="puerta-cta-block">
+          <a href="https://sis.agroajua.com/registro" class="btn btn-moss btn-block">
+            Crear empresa →
+          </a>
+          <div class="puerta-foot">Probador gratis · planes desde Q199/mes</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="sistema-bottom">
+      ¿Ya tenés cuenta?
+      <a href="https://sis.agroajua.com/login">Entrá</a> ·
+      <a href="https://sis.agroajua.com/login/demo">Probá la demo</a>
+    </div>
+  </div>
+</section>
+
+<!-- ── IMPORT/EXPORT ── -->
+<section class="export" id="productos">
+  <div class="wrap">
+    <div class="head">
+      <div class="eyebrow">— 03 / Lo que vendemos</div>
+      <h2 class="h-section">Del altiplano guatemalteco <em>al mundo.</em></h2>
+      <p class="lead">
+        Cultivamos en frío natural, coordinamos volumen por temporada, y entregamos con expediente —
+        no con promesas. Importamos y exportamos vegetal y fruta fresca entre tres países.
+      </p>
+      <div class="flags-line">
+        <span>🇺🇸</span> Estados Unidos
+        <span>·</span>
+        <span>🇬🇹</span> Guatemala
+        <span>·</span>
+        <span>🇲🇽</span> México
       </div>
     </div>
-    <div class="proc-step">
-      <div class="proc-num">03</div>
-      <div>
-        <div class="proc-title">Operación con soporte</div>
-        <p class="proc-body">
-          Tu equipo registra en web o celular. Vos accedés a reportes, auditorías y
-          trazabilidad desde el primer día. Soporte por WhatsApp directo.
+
+    <!-- 3 valores -->
+    <div class="valores-grid">
+      <div class="valor-card">
+        <div class="valor-icon">🌿</div>
+        <h3>Calidad de altura</h3>
+        <p>Cultivado en el altiplano guatemalteco. Frío natural igual a mejor sabor y vida de anaquel.</p>
+      </div>
+      <div class="valor-card">
+        <div class="valor-icon">📋</div>
+        <h3>Trazabilidad real</h3>
+        <p>Cada lote viene del sistema AJUA: finca, fechas y cumplimiento documentado. Recibís expediente, no promesas.</p>
+      </div>
+      <div class="valor-card">
+        <div class="valor-icon">📦</div>
+        <h3>Volumen confiable</h3>
+        <p>Red de productores coordinada por temporada. Entregamos consistente, sin desaparecer la siguiente cosecha.</p>
+      </div>
+    </div>
+
+    <!-- VERDURAS -->
+    <div class="cat-head">
+      <h3>Verduras <em>de exportación</em></h3>
+      <span class="cat-tag">— Altiplano fresh</span>
+    </div>
+    <div class="cat-grid">
+      <div class="cat-card">
+        <div class="cat-card-img"><img src="https://loremflickr.com/600/450/broccoli,fresh?lock=11" alt="Brócoli fresco" loading="lazy"></div>
+        <div class="cat-card-body"><div class="cat-card-kind">Verdura</div><div class="cat-card-name">Brócoli</div></div>
+      </div>
+      <div class="cat-card">
+        <div class="cat-card-img"><img src="https://loremflickr.com/600/450/snow-peas,green?lock=12" alt="Arveja china fresca" loading="lazy"></div>
+        <div class="cat-card-body"><div class="cat-card-kind">Verdura</div><div class="cat-card-name">Arveja china</div></div>
+      </div>
+      <div class="cat-card">
+        <div class="cat-card-img"><img src="https://loremflickr.com/600/450/green-beans,fresh?lock=13" alt="Ejote francés fresco" loading="lazy"></div>
+        <div class="cat-card-body"><div class="cat-card-kind">Verdura</div><div class="cat-card-name">Ejote francés</div></div>
+      </div>
+      <div class="cat-card">
+        <div class="cat-card-img"><img src="https://loremflickr.com/600/450/sugar-snap-peas?lock=14" alt="Arveja dulce sugar snap" loading="lazy"></div>
+        <div class="cat-card-body"><div class="cat-card-kind">Verdura</div><div class="cat-card-name">Arveja dulce</div></div>
+      </div>
+      <div class="cat-card">
+        <div class="cat-card-img"><img src="https://loremflickr.com/600/450/baby-vegetables,carrot?lock=15" alt="Mini vegetales mixtos" loading="lazy"></div>
+        <div class="cat-card-body"><div class="cat-card-kind">Verdura</div><div class="cat-card-name">Mini vegetales</div></div>
+      </div>
+      <div class="cat-card">
+        <div class="cat-card-img"><img src="https://loremflickr.com/600/450/onion,fresh?lock=16" alt="Cebolla fresca" loading="lazy"></div>
+        <div class="cat-card-body"><div class="cat-card-kind">Verdura</div><div class="cat-card-name">Cebolla</div></div>
+      </div>
+    </div>
+
+    <!-- FRUTAS -->
+    <div class="cat-head">
+      <h3>Frutas <em>de exportación</em></h3>
+      <span class="cat-tag">— Tropical premium</span>
+    </div>
+    <div class="cat-grid">
+      <div class="cat-card">
+        <div class="cat-card-img"><img src="https://loremflickr.com/600/450/avocado,hass?lock=21" alt="Aguacate Hass" loading="lazy"></div>
+        <div class="cat-card-body"><div class="cat-card-kind">Fruta</div><div class="cat-card-name">Aguacate</div></div>
+      </div>
+      <div class="cat-card">
+        <div class="cat-card-img"><img src="https://loremflickr.com/600/450/mango,tropical?lock=22" alt="Mango fresco" loading="lazy"></div>
+        <div class="cat-card-body"><div class="cat-card-kind">Fruta</div><div class="cat-card-name">Mango</div></div>
+      </div>
+      <div class="cat-card">
+        <div class="cat-card-img"><img src="https://loremflickr.com/600/450/papaya,fresh?lock=23" alt="Papaya fresca" loading="lazy"></div>
+        <div class="cat-card-body"><div class="cat-card-kind">Fruta</div><div class="cat-card-name">Papaya</div></div>
+      </div>
+      <div class="cat-card">
+        <div class="cat-card-img"><img src="https://loremflickr.com/600/450/berries,strawberry?lock=24" alt="Berries y fresas frescas" loading="lazy"></div>
+        <div class="cat-card-body"><div class="cat-card-kind">Fruta</div><div class="cat-card-name">Berries</div></div>
+      </div>
+      <div class="cat-card">
+        <div class="cat-card-img"><img src="https://loremflickr.com/600/450/banana,tropical?lock=25" alt="Banano fresco" loading="lazy"></div>
+        <div class="cat-card-body"><div class="cat-card-kind">Fruta</div><div class="cat-card-name">Banano</div></div>
+      </div>
+      <div class="cat-card" style="background: rgba(168,131,90,.18); border-style: dashed;">
+        <div class="cat-card-body" style="padding: 28px 16px; text-align: center; border-top: none;">
+          <div class="cat-card-kind">+ Más</div>
+          <div class="cat-card-name" style="margin-top: 4px;">¿Otro producto?</div>
+          <p style="font-size: .78rem; color: rgba(248,243,233,.7); margin-top: 6px; font-style: italic;">Lo coordinamos</p>
+        </div>
+      </div>
+    </div>
+
+    <p class="cat-footer-note">
+      ¿Buscás otro producto o volumen específico? Lo coordinamos por temporada con la red de productores.
+    </p>
+
+    <!-- Importación -->
+    <div class="import-block">
+      <h3>📥 También importamos</h3>
+      <p>
+        Movemos semilla certificada, fertilizantes y materiales para tu finca entre Estados Unidos, México y Guatemala —
+        con la logística resuelta. Preguntá por disponibilidad y volúmenes.
+      </p>
+    </div>
+
+    <!-- CTA WhatsApp Mari -->
+    <div class="export-cta">
+      <a href="https://wa.me/50234158700?text=Hola%20AJUA%2C%20me%20interesa%20import%2Fexport" class="btn btn-moss">
+        Cotizá por WhatsApp con Mari →
+      </a>
+      <a href="#hablanos" class="btn btn-ochre-ghost-light">Escribir un mensaje</a>
+      <span class="mari-pill">
+        <span class="mari-avatar">M</span>
+        <span><b>Mari</b> responde en menos de 30 min · hábil GT</span>
+      </span>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── TRUST ── -->
+<section class="trust">
+  <div class="wrap">
+    <div class="head">
+      <div class="eyebrow">— 04 / Por qué funciona</div>
+      <h2 class="h-section">No es solo tecnología. <em>Es cómo</em> trabajamos.</h2>
+    </div>
+
+    <div class="trust-list">
+      <div class="trust-row">
+        <div class="trust-num">01</div>
+        <div>
+          <h3>El campo lo conocemos.</h3>
+          <p>Operamos en el altiplano desde 2018. No somos un broker que llegó ayer ni un SaaS que nunca tocó tierra.</p>
+        </div>
+      </div>
+      <div class="trust-row">
+        <div class="trust-num">02</div>
+        <div>
+          <h3>El sistema lo construimos.</h3>
+          <p>AJUA Campo y AJUA Pro corren en producción real, no en demos. Probado en cosecha, en planta y en frontera entre tres países.</p>
+        </div>
+      </div>
+      <div class="trust-row">
+        <div class="trust-num">03</div>
+        <div>
+          <h3>La trazabilidad la entregamos.</h3>
+          <p>Cada lote sale con expediente digital firmado. Lo que el comprador internacional pide, lo damos antes de que lo pida.</p>
+        </div>
+      </div>
+      <div class="trust-row">
+        <div class="trust-num">04</div>
+        <div>
+          <h3>La conversación es humana.</h3>
+          <p>Mari por WhatsApp. Ricardo si subiste el escalón. Sin tickets, sin bots, sin colas para que te respondan.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="trust-strip">
+      <div class="stat">+100<span>Fincas activas</span></div>
+      <div class="stat">3<span>Países operación</span></div>
+      <div class="stat">8<span>Años en altiplano</span></div>
+      <div class="stat">11<span>Productos export</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── HABLANOS ── -->
+<section class="contacto" id="hablanos">
+  <div class="wrap">
+    <div class="head">
+      <div class="eyebrow">— 05 / Conversemos</div>
+      <h2 class="h-section">Una conversación <em>vale más</em> que un formulario.</h2>
+      <p class="lead">
+        En LATAM las decisiones se toman hablando. Te dejamos las dos opciones — pero te invitamos a escribir por WhatsApp.
+      </p>
+    </div>
+
+    <div class="contacto-grid">
+
+      <!-- WhatsApp Mari -->
+      <div class="mari-card">
+        <div class="mari-card-head">
+          <div class="mari-avatar-lg">M</div>
+          <div>
+            <div class="mari-card-name">Mari Sagastume</div>
+            <div class="mari-card-role">AJUA Comercial</div>
+          </div>
+        </div>
+        <p>
+          Te respondo de <b>7am a 8pm GT</b> por WhatsApp. Comprador internacional, productor con dudas, o quien quiera
+          conocer el sistema — escribime sin compromiso.
         </p>
+        <a href="https://wa.me/50234158700?text=Hola%20Mari%2C%20me%20interesa%20conocer%20AJUA" class="btn btn-moss btn-block">
+          Escribime por WhatsApp →
+        </a>
+        <div class="mari-phone">+502 3415-8700</div>
       </div>
+
+      <!-- Form -->
+      <div class="form-card">
+        <h3>O mandanos un mensaje</h3>
+        <p class="h-sub">Si preferís asíncrono, te respondemos en menos de 24 horas hábiles.</p>
+        <form id="lead-form" class="form">
+          <div class="field">
+            <label for="f-nombre">Nombre</label>
+            <input id="f-nombre" name="nombre" type="text" required placeholder="Tu nombre">
+          </div>
+          <div class="field">
+            <label for="f-contacto">WhatsApp o correo</label>
+            <input id="f-contacto" name="contacto" type="text" required placeholder="5555-1234 o vos@ejemplo.com">
+          </div>
+          <div class="field">
+            <label for="f-tipo">Sos</label>
+            <select id="f-tipo" name="tipo" required>
+              <option value="">Seleccionar…</option>
+              <option value="productor">Productor agrícola</option>
+              <option value="empacador">Empacadora / exportador</option>
+              <option value="comprador">Comprador internacional</option>
+              <option value="otro">Otro</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="f-msg">Qué te interesa</label>
+            <textarea id="f-msg" name="mensaje" rows="2" placeholder="Contanos brevemente…"></textarea>
+          </div>
+          <button type="submit" class="submit" id="f-submit">Enviar mensaje →</button>
+          <div class="msg" id="f-msg-ok">Recibido. Te contactamos pronto.</div>
+          <div class="msg" id="f-msg-err">Hubo un problema. Escribinos a <a href="mailto:contacto@agroajua.com" style="border-bottom:1px solid currentColor">contacto@agroajua.com</a></div>
+        </form>
+      </div>
+
     </div>
   </div>
 </section>
 
-<!-- ── 04 — DIFERENCIADORES ── -->
-<section class="dif">
-  <div class="head">
-    <div class="section-num">— Sección 04 / Por qué AJUA</div>
-    <h2>Hecho en operación, <em>no en presentaciones.</em></h2>
-  </div>
-
-  <div class="dif-list">
-    <div class="dif-item">
-      <div class="dif-mark">i.</div>
-      <div class="dif-text">
-        <strong>Validado en producción real</strong>
-        <p>Plataforma usada todos los días en planta empacadora certificada — no un prototipo de demo.</p>
+<!-- ── FOOTER ── -->
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a href="#" class="brand">AJ<em>U</em>A</a>
+        <p>Vegetal y fruta fresca entre Guatemala, México y Estados Unidos. Y el sistema digital para que tu finca cumpla.</p>
+      </div>
+      <div class="foot-col">
+        <h4>Sistema</h4>
+        <ul>
+          <li><a href="https://sis.agroajua.com/campo/registro">AJUA Campo (Gratis)</a></li>
+          <li><a href="https://sis.agroajua.com/registro">AJUA Pro</a></li>
+          <li><a href="https://sis.agroajua.com/login">Entrar</a></li>
+          <li><a href="https://sis.agroajua.com/marketing">Presentación</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Operación</h4>
+        <ul>
+          <li><a href="https://app.agroajua.com">Sistema interno</a></li>
+          <li><a href="https://proveedores.agroajua.com">Portal proveedores</a></li>
+          <li><a href="https://mari.agroajua.com">MARI</a></li>
+          <li><a href="https://tienda.agroajua.com">Tienda</a></li>
+        </ul>
       </div>
     </div>
-    <div class="dif-item">
-      <div class="dif-mark">ii.</div>
-      <div class="dif-text">
-        <strong>Web y móvil, sin instalación</strong>
-        <p>Funciona en computadora, tablet y celular. Acceso desde cualquier conexión.</p>
-      </div>
+    <div class="foot-meta">
+      <span>Guatemala · Operamos desde 2018 · <a href="mailto:contacto@agroajua.com">contacto@agroajua.com</a></span>
+      <span>© 2026 AJUA</span>
     </div>
-    <div class="dif-item">
-      <div class="dif-mark">iii.</div>
-      <div class="dif-text">
-        <strong>Datos seguros en la nube</strong>
-        <p>Respaldo automático diario. Tu información permanece tuya y accesible.</p>
-      </div>
-    </div>
-    <div class="dif-item">
-      <div class="dif-mark">iv.</div>
-      <div class="dif-text">
-        <strong>Listo para auditoría</strong>
-        <p>Reportes en PDF y Excel exportables para cualquier auditor, en segundos.</p>
-      </div>
-    </div>
-    <div class="dif-item">
-      <div class="dif-mark">v.</div>
-      <div class="dif-text">
-        <strong>Adaptado a Guatemala</strong>
-        <p>Pensado para normativa MAGA y estándares regionales de cadenas de supermercados.</p>
-      </div>
-    </div>
-    <div class="dif-item">
-      <div class="dif-mark">vi.</div>
-      <div class="dif-text">
-        <strong>Soporte humano</strong>
-        <p>WhatsApp directo con alguien que entiende tu operación. Sin tickets ni colas.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ── PANTALLAZOS ── -->
-<section class="shots" id="pantallazos">
-  <div class="head">
-    <div class="section-num">— Sección 05 / Pantallazos del sistema</div>
-    <h2>Esto es lo que <em>vas a usar</em> todos los días.</h2>
-    <p class="lead">
-      Capturas reales de AJUA Pro en producción — no maquetas. Dashboard, binder PrimusGFS,
-      mock-recall, capacitaciones y triple lavado de envases.
-    </p>
-  </div>
-
-  <div class="shots-grid">
-    <div class="shot">
-      <img src="https://sis.agroajua.com/marketing/04-listo-auditoria.png" alt="Dashboard Listo para auditoría" loading="lazy">
-      <div class="shot-caption">
-        <div class="shot-num">01 · Dashboard</div>
-        <div class="shot-title">Listo para auditoría</div>
-        <div class="shot-desc">Score global de cumplimiento por sección — agua, calibración, capacitaciones, agroquímicos, triple lavado. Sabés exactamente qué falta.</div>
-      </div>
-    </div>
-    <div class="shot">
-      <img src="https://sis.agroajua.com/marketing/05-binder-pdf.png" alt="Binder PrimusGFS PDF" loading="lazy">
-      <div class="shot-caption">
-        <div class="shot-num">02 · Auditor</div>
-        <div class="shot-title">Binder PrimusGFS en PDF</div>
-        <div class="shot-desc">Expediente completo de cumplimiento — 9 secciones, tablas profesionales, listo para entregar al auditor sin armar nada a mano.</div>
-      </div>
-    </div>
-    <div class="shot">
-      <img src="https://sis.agroajua.com/marketing/06-mock-recall.png" alt="Mock recall trazabilidad" loading="lazy">
-      <div class="shot-caption">
-        <div class="shot-num">03 · Trazabilidad</div>
-        <div class="shot-title">Mock-recall · simulacro de retiro</div>
-        <div class="shot-desc">Simulacro de recall con historial — duración y % de recuperación de lote. PrimusGFS exige uno al año; con AJUA lo corrés en 5 minutos.</div>
-      </div>
-    </div>
-    <div class="shot">
-      <img src="https://sis.agroajua.com/marketing/07-capacitacion.png" alt="Capacitaciones personal" loading="lazy">
-      <div class="shot-caption">
-        <div class="shot-num">04 · Personal</div>
-        <div class="shot-title">Capacitaciones con firma digital</div>
-        <div class="shot-desc">Examen de 5 preguntas pre-cargado por tema (PrimusGFS 1.06.05) + firma del trabajador. Sin papeles, sin perderse.</div>
-      </div>
-    </div>
-    <div class="shot">
-      <img src="https://sis.agroajua.com/marketing/08-triple-lavado.png" alt="Triple lavado de envases" loading="lazy">
-      <div class="shot-caption">
-        <div class="shot-num">05 · MAGA</div>
-        <div class="shot-title">Triple lavado de envases</div>
-        <div class="shot-desc">Bitácora según Acuerdo Gubernativo 377-90 MAGA + protocolo Agrequima — 3 lavados, perforado y foto. Pensado para Guatemala.</div>
-      </div>
-    </div>
-    <div class="shot">
-      <img src="https://sis.agroajua.com/marketing/10-registro.png" alt="Registro empresa" loading="lazy">
-      <div class="shot-caption">
-        <div class="shot-num">06 · Empezar</div>
-        <div class="shot-title">Registro en 2 minutos</div>
-        <div class="shot-desc">Productor, empacadora, integrado o comercializadora. Tu empresa tiene subdomain propio (ej. finca-sanlucas.pro.agroajua.com) desde el primer login.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ── PRECIOS ── -->
-<section class="pricing" id="precios">
-  <div class="head">
-    <div class="section-num">— Sección 06 / Planes</div>
-    <h2>Pagás cuando <em>crece</em> tu finca.</h2>
-  </div>
-  <div class="pricing-tagline">
-    Empezá <span>GRATIS</span>. Sin tarjeta. Cobramos <span>3% solo si vendés</span> por el marketplace.<br>
-    El plan mensual desde <span>Q199</span> — y bajás a 1% de comisión en AJUA Pro.
-  </div>
-  <div class="plans">
-    <div class="plan">
-      <div class="plan-name">AJUA Probador</div>
-      <div class="plan-pitch">Para conocer la plataforma antes de comprometerte.</div>
-      <div class="plan-price">Gratis<em>/mes</em></div>
-      <div class="plan-commission">Comisión marketplace: 3%</div>
-      <ul class="plan-feats">
-        <li>1 finca o empacadora</li>
-        <li>Hasta 3 usuarios</li>
-        <li>Bitácoras básicas BPM</li>
-        <li>Soporte por email</li>
-      </ul>
-      <a href="https://sis.agroajua.com/registro" class="plan-cta">Empezar gratis</a>
-    </div>
-    <div class="plan">
-      <div class="plan-name">AJUA Básico</div>
-      <div class="plan-pitch">Para fincas pequeñas que ya operan y necesitan registros formales.</div>
-      <div class="plan-price">Q199<em>/mes</em></div>
-      <div class="plan-commission">Comisión marketplace: 3%</div>
-      <ul class="plan-feats">
-        <li>Hasta 10 usuarios</li>
-        <li>BPM + bitácoras + reportes Excel</li>
-        <li>Capacitaciones con firma</li>
-        <li>Soporte WhatsApp</li>
-      </ul>
-      <a href="https://sis.agroajua.com/upgrade" class="plan-cta">Ver plan</a>
-    </div>
-    <div class="plan featured">
-      <span class="plan-rec">Recomendado</span>
-      <div class="plan-name">AJUA Cumple</div>
-      <div class="plan-pitch">Para fincas que van por PrimusGFS o ya tienen auditorías al año.</div>
-      <div class="plan-price">Q499<em>/mes</em></div>
-      <div class="plan-commission">Comisión marketplace: 3%</div>
-      <ul class="plan-feats">
-        <li>Usuarios ilimitados</li>
-        <li>Binder PrimusGFS PDF</li>
-        <li>Mock-recall · trazabilidad lote</li>
-        <li>Triple lavado MAGA · Agrequima</li>
-        <li>Soporte prioritario</li>
-      </ul>
-      <a href="https://sis.agroajua.com/upgrade" class="plan-cta">Ver plan</a>
-    </div>
-    <div class="plan">
-      <div class="plan-name">AJUA Pro</div>
-      <div class="plan-pitch">Para empacadoras grandes y comercializadoras multi-finca.</div>
-      <div class="plan-price">Q899<em>/mes</em></div>
-      <div class="plan-commission">Comisión marketplace: 1%</div>
-      <ul class="plan-feats">
-        <li>Todo lo de Cumple</li>
-        <li>Multi-finca consolidado</li>
-        <li>API + integración compradores</li>
-        <li>Onboarding dedicado</li>
-        <li>Comisión marketplace reducida</li>
-      </ul>
-      <a href="https://sis.agroajua.com/upgrade" class="plan-cta">Ver plan</a>
-    </div>
-  </div>
-</section>
-
-<!-- ── 07 — CONTACTO ── -->
-<section class="contacto" id="contacto">
-  <div class="head">
-    <div class="section-num" style="text-align: center;">— Sección 07 / Hablanos</div>
-    <h2>¿Querés una <em>demo guiada</em>?</h2>
-    <p class="lead">
-      Si preferís que te mostremos AJUA Pro antes de registrarte, escribinos.
-      Te respondemos en menos de 24 horas.
-    </p>
-  </div>
-
-  <form id="lead-form" class="form">
-    <div class="row2">
-      <div class="field">
-        <label for="f-nombre">Nombre</label>
-        <input id="f-nombre" name="nombre" type="text" required placeholder="Tu nombre">
-      </div>
-      <div class="field">
-        <label for="f-empresa">Empresa</label>
-        <input id="f-empresa" name="empresa" type="text" required placeholder="Nombre de la empresa">
-      </div>
-    </div>
-    <div class="row2">
-      <div class="field">
-        <label for="f-tel">Teléfono / WhatsApp</label>
-        <input id="f-tel" name="telefono" type="tel" required placeholder="5555-1234" pattern="[0-9\s\-+()]{7,}">
-      </div>
-      <div class="field">
-        <label for="f-email">Correo</label>
-        <input id="f-email" name="email" type="email" placeholder="vos@ejemplo.com">
-      </div>
-    </div>
-    <div class="field">
-      <label for="f-tipo">Tipo de operación</label>
-      <select id="f-tipo" name="tipo" required>
-        <option value="">Seleccionar...</option>
-        <option value="productor">Productor agrícola</option>
-        <option value="empacador">Empacador / planta</option>
-        <option value="productor-empacador">Productor y empacador</option>
-        <option value="comprador">Comprador / distribuidor</option>
-        <option value="otro">Otro</option>
-      </select>
-    </div>
-    <div class="field">
-      <label for="f-msg">Qué te interesa resolver</label>
-      <textarea id="f-msg" name="mensaje" rows="2" placeholder="Contanos brevemente..."></textarea>
-    </div>
-    <button type="submit" class="submit" id="f-submit">Enviar solicitud →</button>
-    <div class="msg" id="f-msg-ok">Recibido. Te contactamos pronto.</div>
-    <div class="msg" id="f-msg-err">Hubo un problema. Escribinos a <a href="mailto:contacto@agroajua.com" style="border-bottom:1px solid currentColor">contacto@agroajua.com</a></div>
-  </form>
-</section>
-
-<footer>
-  <div class="foot-access">
-    <span class="access-label">Accesos</span>
-    <a href="https://sis.agroajua.com/marketing"><b>AJUA Pro · Cumplimiento</b></a>
-    <a href="https://app.agroajua.com">Sistema interno</a>
-    <a href="https://mari.agroajua.com">MARI</a>
-    <a href="https://tienda.agroajua.com">Tienda</a>
-  </div>
-  <div class="foot-meta">
-    <span class="mark">AJUA</span>
-    <span><a href="mailto:contacto@agroajua.com">contacto@agroajua.com</a></span>
-    <span class="copy">© 2026 · ¡AJUUUAAA, ya cumplo!</span>
   </div>
 </footer>
 
+<!-- ── WhatsApp sticky mobile ── -->
+<a href="https://wa.me/50234158700?text=Hola%20AJUA" class="wa-sticky" id="wa-sticky" aria-label="WhatsApp con Mari">💬</a>
+
 <script>
+// Header lined on scroll
 const header = document.getElementById('top');
+const waSticky = document.getElementById('wa-sticky');
 window.addEventListener('scroll', () => {
-  header.classList.toggle('lined', window.scrollY > 30);
+  const sy = window.scrollY;
+  header.classList.toggle('lined', sy > 30);
+  if (waSticky) waSticky.classList.toggle('show', sy > 400);
 });
 
-// Banner sticky — cerrar y recordar 30 días
+// Banner sticky cerrable con localStorage 30 días
 const bannerEl = document.getElementById('banner-pro');
 const bannerCloseBtn = document.getElementById('banner-close');
 function dismissBanner() {
@@ -1258,6 +1075,7 @@ try {
 } catch (e) {}
 bannerCloseBtn.addEventListener('click', dismissBanner);
 
+// Form a Firestore
 const form = document.getElementById('lead-form');
 const btn  = document.getElementById('f-submit');
 const okEl = document.getElementById('f-msg-ok');
@@ -1266,18 +1084,17 @@ const erEl = document.getElementById('f-msg-err');
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   okEl.style.display = 'none'; erEl.style.display = 'none';
-  btn.disabled = true; btn.textContent = 'Enviando...';
+  okEl.classList.remove('ok'); erEl.classList.remove('err');
+  btn.disabled = true; btn.textContent = 'Enviando…';
 
   const data = Object.fromEntries(new FormData(form).entries());
   const fields = {
     nombre:   { stringValue: data.nombre || '' },
-    empresa:  { stringValue: data.empresa || '' },
-    telefono: { stringValue: data.telefono || '' },
-    email:    { stringValue: data.email || '' },
+    contacto: { stringValue: data.contacto || '' },
     tipo:     { stringValue: data.tipo || '' },
     mensaje:  { stringValue: data.mensaje || '' },
     creadoEn: { stringValue: new Date().toISOString() },
-    origen:   { stringValue: 'landing-ajua' },
+    origen:   { stringValue: 'landing-ajua-v2' },
     estado:   { stringValue: 'nuevo' },
   };
 
@@ -1292,7 +1109,7 @@ form.addEventListener('submit', async (e) => {
     btn.textContent = '✓ Enviado';
   } catch (err) {
     erEl.classList.add('err');
-    btn.disabled = false; btn.textContent = 'Enviar solicitud →';
+    btn.disabled = false; btn.textContent = 'Enviar mensaje →';
   }
 });
 </script>
