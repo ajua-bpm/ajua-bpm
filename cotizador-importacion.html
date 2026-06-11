@@ -601,6 +601,12 @@ function renderGastos(){
         const idx=+e.target.dataset.i, f=e.target.dataset.f, t=e.target.dataset.t;
         const a=t==='mx'?gastosMX:gastosGT;
         a[idx][f]=f==='concepto'?e.target.value:(parseFloat(e.target.value)||0);
+        // Actualizar celda GTQ por fila cuando cambia monto MX
+        if(t==='mx' && f==='monto'){
+          const tcNow=parseFloat($('tcMXN').value)||0;
+          const cell=e.target.closest('td').nextElementSibling;
+          if(cell) cell.textContent=fmtQ((parseFloat(e.target.value)||0)*tcNow);
+        }
         recalc();
       });
     });
