@@ -242,7 +242,7 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
 }
 @media (max-width:780px){.page{padding:24px 18px;}.head-row{flex-direction:column;}.meta{text-align:left;}table.t{font-size:.78rem;}}
 </style>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 </head>
 <body>
 
@@ -923,200 +923,444 @@ async function saveCotizacion(extraFields){
   }
 }
 // ── Descargar Excel — genera .xlsx con todo el desglose para mandar al productor
-function descargarExcel(){
-  if(typeof XLSX==='undefined'){ alert('SheetJS no cargado todavía. Refrescá la página.'); return; }
-  // Asegurar cálculos al día
+async function descargarExcel(){
+  if(typeof ExcelJS==='undefined'){ alert('ExcelJS aún no carga. Refrescá la página.'); return; }
   recalc();
 
+  // ── Datos del cotizador ──────────────────────────────────────
   const numero=$('m-numero').value.trim() || 'SIN-NUMERO';
-  const fecha=$('m-fecha').value || today();
+  const fechaStr=$('m-fecha').value || today();
+  const fechaDate=new Date(fechaStr+'T00:00:00');
   const productor=$('m-productor').value || '';
   const productorEmail=$('m-productorEmail').value || '';
   const ubicacion=$('m-ubic').value || '';
   const nit=$('m-nit').value || '';
   const contacto=$('m-contacto').value || '';
-
   const tc=parseFloat($('tcMXN').value)||0.4425;
   const tcUSD=parseFloat($('tcUSD').value)||7.78;
-  const ivaPct=parseFloat($('ivaPct').value)||12;
-  const retIvaPct=parseFloat($('retIvaPct').value)||80;
-  const prontoPct=parseFloat($('prontoPct').value)||1.25;
+  const ivaPctF=(parseFloat($('ivaPct').value)||0)/100;
+  const retIvaPctF=(parseFloat($('retIvaPct').value)||0)/100;
+  const prontoPctF=(parseFloat($('prontoPct').value)||0)/100;
 
-  // Totales del contenedor
-  let totalKg=0, totalLbs=0, totalCajas=0, totalPallets=0, totalUnid=0;
-  productos.forEach(p=>{
-    const kg=+p.kgCaja||0, ue=+p.uniCaja||0, cxp=+p.cajasPorPallet||0, pall=+p.pallets||0;
-    const cajas=cxp*pall;
-    totalKg+=cajas*kg; totalLbs+=cajas*kg*2.20462; totalCajas+=cajas; totalPallets+=pall;
-    if(p.modoVenta==='unidad') totalUnid+=cajas*ue;
-  });
+  // ── Paleta AGROAJUA (ARGB ExcelJS, FF prefix = full opacity) ─
+  const CL={
+    GREEN_DARK:'FF1F3D2E', GREEN_MED:'FF2E5440', GOLD:'FF9C7C4D',
+    CREAM:'FFF5F0E6', INPUT:'FFFFF7DC', TOTAL:'FFEDE4D3',
+    WHITE:'FFFFFFFF', BLACK:'FF000000', GRAY:'FF6B6256', LINE:'FFD9D2C5',
+    BLUE:'FF0000FF', GREENTXT:'FF006100',
+  };
+  const FONT='Arial';
+  const FMT={
+    GTQ:'"Q" #,##0.00;"Q" (#,##0.00);"-"',
+    MXN:'"$" #,##0.00;"$" (#,##0.00);"-"',
+    PCT:'0.0%', N2:'#,##0.00;(#,##0.00);"-"', N0:'#,##0;(#,##0);"-"',
+    TCF:'0.0000',
+  };
+  const ALLB={
+    top:{style:'thin',color:{argb:CL.LINE}}, left:{style:'thin',color:{argb:CL.LINE}},
+    bottom:{style:'thin',color:{argb:CL.LINE}}, right:{style:'thin',color:{argb:CL.LINE}},
+  };
 
-  const wb=XLSX.utils.book_new();
+  // ── Helpers ──────────────────────────────────────────────────
+  const F=(sz=11,b=false,color=CL.BLACK,it=false)=>({name:FONT,size:sz,bold:b,color:{argb:color},italic:it});
+  const FILL=(c)=>({type:'pattern',pattern:'solid',fgColor:{argb:c}});
+  const A=(h='left',v='middle')=>({horizontal:h,vertical:v});
 
-  // ── Hoja 1: RESUMEN ──
-  const resumen=[
-    ['COTIZACIÓN DE IMPORTACIÓN MÉXICO → GUATEMALA'],
-    [''],
-    ['Cotización N°', numero],
-    ['Fecha', fecha],
-    ['Productor', productor],
-    ['Email portal', productorEmail],
-    ['Ubicación', ubicacion],
-    ['NIT/RFC', nit],
-    ['Contacto', contacto],
-    [''],
-    ['── CONFIGURACIÓN ──'],
-    ['TC MXN → GTQ', tc],
-    ['TC USD → GTQ', tcUSD],
-    ['IVA Guatemala (%)', ivaPct],
-    ['Retención IVA cliente (%)', retIvaPct],
-    ['Pronto pago (%)', prontoPct],
-    [''],
-    ['── CONTENEDOR ──'],
-    ['Total pallets', totalPallets],
-    ['Total cajas', totalCajas],
-    ['Total kg', +totalKg.toFixed(2)],
-    ['Total lbs', +totalLbs.toFixed(2)],
-    ['Total unidades', totalUnid],
-    ['Cantidad productos', productos.length],
+  function band(ws,row,text,lastCol,opts={}){
+    const sz=opts.sz||13, h=opts.h||26, bg=opts.bg||CL.GREEN_DARK, fg=opts.fg||CL.WHITE;
+    ws.mergeCells(`A${row}:${lastCol}${row}`);
+    const c=ws.getCell(`A${row}`);
+    c.value=text; c.font=F(sz,true,fg); c.alignment=A('left');
+    // Fill all merged cells
+    const lastIdx=lastCol.charCodeAt(0)-64;
+    for(let i=1;i<=lastIdx;i++){
+      ws.getCell(`${String.fromCharCode(64+i)}${row}`).fill=FILL(bg);
+    }
+    ws.getRow(row).height=h;
+  }
+  const sec=(ws,row,text,lastCol)=>band(ws,row,text,lastCol,{sz:10,h:19,bg:CL.GREEN_MED});
+  function lab(ws,addr,text,bold=false,color=CL.BLACK,align='left',sz=11){
+    const c=ws.getCell(addr); c.value=text; c.font=F(sz,bold,color); c.alignment=A(align);
+  }
+  function inp(ws,addr,val,fmt=null,align='left',bold=false,note=null){
+    const c=ws.getCell(addr); c.value=val; c.font=F(11,bold,CL.BLUE);
+    c.fill=FILL(CL.INPUT); c.border=ALLB; c.alignment=A(align);
+    if(fmt) c.numFmt=fmt;
+    if(note) c.note=note;
+  }
+
+  // ── Workbook ─────────────────────────────────────────────────
+  const wb=new ExcelJS.Workbook();
+  wb.creator='AGROAJUA'; wb.created=new Date();
+
+  // ============================================================
+  // HOJA 1: PARAMETROS
+  // ============================================================
+  const wsP=wb.addWorksheet('Parametros',{views:[{showGridLines:false}]});
+  wsP.columns=[{width:30},{width:24},{width:42}];
+  band(wsP,1,'PARÁMETROS DE LA COTIZACIÓN','C');
+  wsP.mergeCells('A2:C2');
+  const subP=wsP.getCell('A2');
+  subP.value='Edite solo las celdas resaltadas (texto azul). Todo lo demás se calcula solo.';
+  subP.font=F(9,false,CL.GOLD,true);
+
+  sec(wsP,4,'DATOS GENERALES','C');
+  const datos=[
+    ['Cotización N°', numero, null],
+    ['Fecha', fechaDate, 'dd/mm/yyyy'],
+    ['Productor', productor, null],
+    ['Email portal', productorEmail, null],
+    ['Ubicación', ubicacion, null],
+    ['NIT/RFC productor', nit, null],
+    ['Contacto', contacto, null],
   ];
-  const wsResumen=XLSX.utils.aoa_to_sheet(resumen);
-  wsResumen['!cols']=[{wch:28},{wch:24}];
-  XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen');
+  datos.forEach(([l,v,fmt],i)=>{
+    const r=5+i; lab(wsP,`A${r}`,l,true); inp(wsP,`B${r}`,v,fmt);
+  });
 
-  // ── Hoja 2: GASTOS ──
-  const gastosRows=[
-    ['GASTOS DEL CONTENEDOR'],
-    [''],
-    ['── México (origen) ──'],
-    ['Concepto', 'Monto MXN', 'Equivalente GTQ'],
-  ];
-  let totMXmxn=0, totMXgtq=0;
-  gastosMX.forEach(g=>{
-    const m=parseFloat(g.monto)||0;
-    totMXmxn+=m; totMXgtq+=m*tc;
-    gastosRows.push([g.concepto, m, +(m*tc).toFixed(2)]);
-  });
-  gastosRows.push(['TOTAL ORIGEN', +totMXmxn.toFixed(2), +totMXgtq.toFixed(2)]);
-  gastosRows.push(['']);
-  gastosRows.push(['── Guatemala (destino) ──']);
-  gastosRows.push(['Concepto', 'Monto GTQ', '']);
-  let totGTgtq=0;
-  gastosGT.forEach(g=>{
-    const m=parseFloat(g.monto)||0;
-    totGTgtq+=m;
-    gastosRows.push([g.concepto, +m.toFixed(2), '']);
-  });
-  gastosRows.push(['TOTAL DESTINO', +totGTgtq.toFixed(2), '']);
-  gastosRows.push(['']);
-  gastosRows.push(['TOTAL GASTOS GTQ', +(totMXgtq+totGTgtq).toFixed(2), '']);
-  const wsGastos=XLSX.utils.aoa_to_sheet(gastosRows);
-  wsGastos['!cols']=[{wch:36},{wch:18},{wch:18}];
-  XLSX.utils.book_append_sheet(wb, wsGastos, 'Gastos');
+  sec(wsP,12,'TIPOS DE CAMBIO','C');
+  lab(wsP,'A13','TC · 1 MXN = Q',true); inp(wsP,'B13',tc,FMT.TCF);
+  lab(wsP,'C13','Conversión MXN → GTQ',false,CL.GRAY);
+  lab(wsP,'A14','TC · 1 USD = Q',true); inp(wsP,'B14',tcUSD,FMT.TCF);
+  lab(wsP,'C14','Conversión USD → GTQ',false,CL.GRAY);
 
-  // ── Hoja 3: PRODUCTOS ──
-  const prodRows=[
-    ['PRODUCTOS — DETALLE Y CÁLCULO'],
-    [''],
-    [
-      'Producto','Empaque','Modo venta','Pallets','Cajas/pallet','Total cajas',
-      'Kg/caja','Unid/caja','Total kg','Total lbs','Total unidades',
-      'Precio venta (Q/u)','Comisión AJUA (Q/u)','Costo sugerido (MXN/u)',
-      'Venta bruta (Q)','Retenciones (Q)','Venta neta (Q)',
-      'Gastos MX prorr. (Q)','Gastos GT prorr. (Q)','Comisión (Q)','Pago productor (Q)',
-      'Pago productor (MXN)','Máximo MXN/u','Propuesta productor (MXN/u)',
-    ],
-  ];
-  productos.forEach(p=>{
-    const isU=p.modoVenta==='unidad';
-    const cxp=+p.cajasPorPallet||0, pall=+p.pallets||0;
-    const totC=cxp*pall;
-    prodRows.push([
-      p.nombre||'—',
-      p.empaque||'caja',
-      isU?'unidad':'lb',
-      pall,
-      cxp,
-      totC,
-      +p.kgCaja||0,
-      +p.uniCaja||0,
-      +(totC*(+p.kgCaja||0)).toFixed(2),
-      +(totC*(+p.kgCaja||0)*2.20462).toFixed(2),
-      isU?totC*(+p.uniCaja||0):0,
-      +parseFloat(p.precioVentaU)||0,
-      +parseFloat(p.comPorU)||0,
-      p.costoSugeridoMXN||'',
-      +(p._ventaBruta||0).toFixed(2),
-      +(p._retenciones||0).toFixed(2),
-      +(p._ventaNeta||0).toFixed(2),
-      +(p._gMXp||0).toFixed(2),
-      +(p._gGTp||0).toFixed(2),
-      +(p._comProd||0).toFixed(2),
-      +(p._dispGTQ||0).toFixed(2),
-      +(p._dispMXN||0).toFixed(2),
-      +(p._maxMXNu||0).toFixed(4),
-      p.propuestaProductor||'',
-    ]);
-  });
-  const wsProd=XLSX.utils.aoa_to_sheet(prodRows);
-  wsProd['!cols']=[
-    {wch:28},{wch:10},{wch:11},{wch:8},{wch:11},{wch:11},
-    {wch:9},{wch:9},{wch:10},{wch:10},{wch:13},
-    {wch:14},{wch:15},{wch:18},
-    {wch:14},{wch:14},{wch:14},
-    {wch:16},{wch:16},{wch:13},{wch:18},
-    {wch:18},{wch:14},{wch:18},
-  ];
-  XLSX.utils.book_append_sheet(wb, wsProd, 'Productos');
+  sec(wsP,16,'RETENCIONES E IMPUESTOS','C');
+  lab(wsP,'A17','IVA Guatemala',true); inp(wsP,'B17',ivaPctF,FMT.PCT);
+  lab(wsP,'C17','Tasa de IVA sobre precio de venta',false,CL.GRAY);
+  lab(wsP,'A18','Retención IVA del cliente',true); inp(wsP,'B18',retIvaPctF,FMT.PCT);
+  lab(wsP,'C18','% del IVA que el cliente retiene',false,CL.GRAY);
+  lab(wsP,'A19','Descuento pronto pago',true); inp(wsP,'B19',prontoPctF,FMT.PCT);
+  lab(wsP,'C19','% sobre precio de venta',false,CL.GRAY);
 
-  // ── Hoja 4: ANÁLISIS ──
-  let sumVB=0, sumRet=0, sumVN=0, sumGMX=0, sumGGT=0, sumCom=0, sumDispGTQ=0;
-  productos.forEach(p=>{
-    sumVB+=p._ventaBruta||0;
-    sumRet+=p._retenciones||0;
-    sumVN+=p._ventaNeta||0;
-    sumGMX+=p._gMXp||0;
-    sumGGT+=p._gGTp||0;
-    sumCom+=p._comProd||0;
-    sumDispGTQ+=p._dispGTQ||0;
-  });
-  const sumDispMXN=tc>0?sumDispGTQ/tc:0;
-  const analisis=[
-    ['ANÁLISIS FINANCIERO DEL CONTENEDOR'],
-    [''],
-    ['Concepto', 'Monto (GTQ)'],
-    ['Venta bruta total', +sumVB.toFixed(2)],
-    ['− Retenciones (IVA + pronto pago)', +sumRet.toFixed(2)],
-    ['Venta neta', +sumVN.toFixed(2)],
-    ['− Gastos México (prorrateado)', +sumGMX.toFixed(2)],
-    ['− Gastos Guatemala (prorrateado)', +sumGGT.toFixed(2)],
-    ['− Comisión AGROAJUA', +sumCom.toFixed(2)],
-    ['= DISPONIBLE PARA PRODUCTOR', +sumDispGTQ.toFixed(2)],
-    [''],
-    ['Equivalente en MXN', +sumDispMXN.toFixed(2)],
-    ['TC usado', tc],
-    [''],
-    ['── POR PRODUCTO ──'],
-    ['Producto','Máximo MXN/u','Unidad neg.','Cantidad neg.','Total máximo MXN'],
-  ];
-  productos.forEach(p=>{
-    const isU=p.modoVenta==='unidad';
-    const cantNeg=isU?(p._unidTotal||0):(p._kgTotal||0);
-    analisis.push([
-      p.nombre||'—',
-      +(p._maxMXNu||0).toFixed(4),
-      isU?'unidad':'kg',
-      +cantNeg.toFixed(2),
-      +((p._maxMXNu||0)*cantNeg).toFixed(2),
-    ]);
-  });
-  const wsAnalisis=XLSX.utils.aoa_to_sheet(analisis);
-  wsAnalisis['!cols']=[{wch:36},{wch:16},{wch:14},{wch:16},{wch:18}];
-  XLSX.utils.book_append_sheet(wb, wsAnalisis, 'Analisis');
+  sec(wsP,21,'CONSTANTES','C');
+  lab(wsP,'A22','Factor kg → lb',true); inp(wsP,'B22',2.20462,'0.00000');
+  lab(wsP,'C22','1 kg = 2.20462 lb',false,CL.GRAY);
 
-  // Descargar
+  // Referencias de fórmula
+  const TC_MXN='Parametros!$B$13', TC_USD='Parametros!$B$14';
+  const IVA='Parametros!$B$17', RETIVA='Parametros!$B$18';
+  const PRONTO='Parametros!$B$19', FACTOR='Parametros!$B$22';
+
+  // ============================================================
+  // HOJA 2: GASTOS
+  // ============================================================
+  const wsG=wb.addWorksheet('Gastos',{views:[{showGridLines:false}]});
+  wsG.columns=[{width:42},{width:20},{width:22}];
+  band(wsG,1,'GASTOS DE IMPORTACIÓN','C');
+  wsG.mergeCells('A2:C2');
+  wsG.getCell('A2').value='Los gastos de origen (MXN) se convierten a GTQ automáticamente.';
+  wsG.getCell('A2').font=F(9,false,CL.GOLD,true);
+
+  sec(wsG,4,'GASTOS EN ORIGEN · MÉXICO (MXN)','C');
+  ['CONCEPTO','MONTO MXN','EQUIVALENTE GTQ'].forEach((h,i)=>{
+    const c=wsG.getCell(5,i+1); c.value=h; c.font=F(9,true,CL.WHITE);
+    c.fill=FILL(CL.GREEN_DARK); c.alignment=A(i?'center':'left'); c.border=ALLB;
+  });
+  let r=6;
+  gastosMX.forEach(it=>{
+    lab(wsG,`A${r}`,it.concepto); wsG.getCell(`A${r}`).border=ALLB;
+    inp(wsG,`B${r}`,parseFloat(it.monto)||0,FMT.N2,'right');
+    const cG=wsG.getCell(`C${r}`);
+    cG.value={formula:`B${r}*${TC_MXN}`};
+    cG.font=F(11,false,CL.GREENTXT); cG.numFmt=FMT.GTQ; cG.alignment=A('right'); cG.border=ALLB;
+    r++;
+  });
+  const r_ot=r;
+  lab(wsG,`A${r_ot}`,'TOTAL ORIGEN',true);
+  wsG.getCell(`A${r_ot}`).fill=FILL(CL.TOTAL); wsG.getCell(`A${r_ot}`).border=ALLB;
+  const cB_ot=wsG.getCell(`B${r_ot}`);
+  cB_ot.value={formula:`SUM(B6:B${r_ot-1})`};
+  cB_ot.font=F(11,true); cB_ot.numFmt=FMT.N2; cB_ot.alignment=A('right'); cB_ot.fill=FILL(CL.TOTAL); cB_ot.border=ALLB;
+  const cC_ot=wsG.getCell(`C${r_ot}`);
+  cC_ot.value={formula:`SUM(C6:C${r_ot-1})`};
+  cC_ot.font=F(11,true); cC_ot.numFmt=FMT.GTQ; cC_ot.alignment=A('right'); cC_ot.fill=FILL(CL.TOTAL); cC_ot.border=ALLB;
+  const GMX=`Gastos!$C$${r_ot}`;
+
+  const r_sec2=r_ot+2;
+  sec(wsG,r_sec2,'GASTOS EN DESTINO · GUATEMALA (GTQ)','C');
+  const r_h2=r_sec2+1;
+  ['CONCEPTO','MONTO GTQ',''].forEach((h,i)=>{
+    const c=wsG.getCell(r_h2,i+1); c.value=h; c.font=F(9,true,CL.WHITE);
+    c.fill=FILL(CL.GREEN_DARK); c.alignment=A(i?'center':'left'); c.border=ALLB;
+  });
+  r=r_h2+1; const r_d0=r;
+  gastosGT.forEach(it=>{
+    lab(wsG,`A${r}`,it.concepto); wsG.getCell(`A${r}`).border=ALLB;
+    inp(wsG,`B${r}`,parseFloat(it.monto)||0,FMT.N2,'right');
+    wsG.getCell(`C${r}`).border=ALLB;
+    r++;
+  });
+  const r_dt=r;
+  lab(wsG,`A${r_dt}`,'TOTAL DESTINO',true);
+  wsG.getCell(`A${r_dt}`).fill=FILL(CL.TOTAL); wsG.getCell(`A${r_dt}`).border=ALLB;
+  const cB_dt=wsG.getCell(`B${r_dt}`);
+  cB_dt.value={formula:`SUM(B${r_d0}:B${r_dt-1})`};
+  cB_dt.font=F(11,true); cB_dt.numFmt=FMT.GTQ; cB_dt.alignment=A('right'); cB_dt.fill=FILL(CL.TOTAL); cB_dt.border=ALLB;
+  wsG.getCell(`C${r_dt}`).fill=FILL(CL.TOTAL); wsG.getCell(`C${r_dt}`).border=ALLB;
+  const GGT=`Gastos!$B$${r_dt}`;
+
+  const r_gt=r_dt+2;
+  const cA_gt=wsG.getCell(`A${r_gt}`);
+  cA_gt.value='TOTAL GASTOS DE IMPORTACIÓN (GTQ)'; cA_gt.font=F(11,true,CL.WHITE); cA_gt.fill=FILL(CL.GREEN_DARK);
+  const cB_gt=wsG.getCell(`B${r_gt}`);
+  cB_gt.value={formula:`C${r_ot}+B${r_dt}`};
+  cB_gt.font=F(12,true,CL.WHITE); cB_gt.numFmt=FMT.GTQ; cB_gt.alignment=A('right'); cB_gt.fill=FILL(CL.GREEN_DARK);
+  wsG.getCell(`C${r_gt}`).fill=FILL(CL.GREEN_DARK);
+  wsG.getRow(r_gt).height=22;
+  const GTOT=`Gastos!$B$${r_gt}`;
+
+  // ============================================================
+  // HOJA 3: PRODUCTOS (matriz vertical - cada producto = columna)
+  // ============================================================
+  const wsR=wb.addWorksheet('Productos',{views:[{showGridLines:false,state:'frozen',xSplit:1,ySplit:3}]});
+  const nprod=productos.length;
+  const colLet=(i)=>String.fromCharCode(64+i); // 1->A
+  const pcols=[]; for(let i=0;i<nprod;i++) pcols.push(colLet(2+i)); // B,C,D...
+  const tcol=colLet(2+nprod); // columna TOTAL
+
+  // Column widths
+  const colWidths=[{width:36}];
+  pcols.forEach(()=>colWidths.push({width:18}));
+  colWidths.push({width:21});
+  wsR.columns=colWidths;
+
+  band(wsR,1,'PRODUCTOS · CÁLCULO POR CONTENEDOR',tcol);
+  wsR.mergeCells(`A2:${tcol}2`);
+  wsR.getCell('A2').value='Llene las filas de DATOS DE ENTRADA (texto azul). Modo de venta: lb, kg o unidad.';
+  wsR.getCell('A2').font=F(9,false,CL.GOLD,true);
+
+  // Encabezado fila 3
+  const cH3=wsR.getCell('A3'); cH3.value='CONCEPTO'; cH3.font=F(10,true,CL.WHITE);
+  cH3.fill=FILL(CL.GREEN_DARK); cH3.border=ALLB; cH3.alignment=A('left');
+  pcols.forEach((pc,i)=>{
+    const c=wsR.getCell(`${pc}3`); c.value=`PRODUCTO ${i+1}`; c.font=F(10,true,CL.WHITE);
+    c.fill=FILL(CL.GREEN_DARK); c.alignment=A('center'); c.border=ALLB;
+  });
+  const cT3=wsR.getCell(`${tcol}3`); cT3.value='TOTAL CONTENEDOR'; cT3.font=F(10,true,CL.WHITE);
+  cT3.fill=FILL(CL.GREEN_DARK); cT3.alignment=A('center'); cT3.border=ALLB;
+  wsR.getRow(3).height=20;
+
+  // Nombre del producto (fila 4)
+  const cA4=wsR.getCell('A4'); cA4.value='Producto'; cA4.font=F(10,true,CL.GREEN_DARK); cA4.border=ALLB;
+  pcols.forEach((pc,i)=>{
+    const c=wsR.getCell(`${pc}4`); c.value=productos[i].nombre||'';
+    c.font=F(11,true,CL.BLUE); c.fill=FILL(CL.INPUT); c.alignment=A('left'); c.border=ALLB;
+  });
+  const cTc4=wsR.getCell(`${tcol}4`); cTc4.value='contenedor'; cTc4.font=F(9,true,CL.GOLD);
+  cTc4.alignment=A('center'); cTc4.border=ALLB;
+
+  // Input row helper
+  function inputrow(row,label,getVal,fmt=null,align='right',isText=false,note=null){
+    const cl=wsR.getCell(`A${row}`); cl.value=label; cl.font=F(10,false); cl.alignment=A('left'); cl.border=ALLB;
+    if(note) cl.note=note;
+    pcols.forEach((pc,i)=>{
+      const c=wsR.getCell(`${pc}${row}`); c.value=getVal(productos[i]);
+      c.font=F(11,false,CL.BLUE); c.fill=FILL(CL.INPUT); c.border=ALLB; c.alignment=A(align);
+      if(fmt&&!isText) c.numFmt=fmt;
+    });
+    wsR.getCell(`${tcol}${row}`).border=ALLB;
+  }
+  inputrow(5,'Modo de venta (lb / kg / unidad)',p=>(p.modoVenta==='unidad'?'unidad':'lb'),null,'center',true,
+    'Determina sobre qué cantidad se multiplica el precio y la base del costo sugerido.');
+  inputrow(6,'Empaque',p=>p.empaque||'caja',null,'center',true);
+  inputrow(7,'Pallets',p=>parseFloat(p.pallets)||0,FMT.N0);
+  inputrow(8,'Cajas por pallet',p=>parseFloat(p.cajasPorPallet)||0,FMT.N0);
+  inputrow(9,'Kg por caja',p=>parseFloat(p.kgCaja)||0,FMT.N2);
+  inputrow(10,'Unidades por caja',p=>parseFloat(p.uniCaja)||0,FMT.N0,'right',false,'Solo para productos vendidos por unidad.');
+  inputrow(11,'Precio de venta (Q por unidad de venta)',p=>parseFloat(p.precioVentaU)||0,FMT.GTQ);
+  inputrow(12,'Comisión AGROAJUA (Q por unidad de venta)',p=>parseFloat(p.comPorU)||0,FMT.GTQ);
+  inputrow(13,'Costo sugerido al productor (MXN por unidad)',p=>parseFloat(p.costoSugeridoMXN)||0,FMT.MXN);
+
+  const TOTKG=`Productos!$${tcol}$15`;
+
+  // Calc row helper
+  function calc(row,label,fx,fmt,opts={}){
+    const total=opts.total||false, bold=opts.bold||false, fillc=opts.fillc||null, center=opts.center||false;
+    const cl=wsR.getCell(`A${row}`); cl.value=label; cl.font=F(10,bold,bold?CL.GREEN_DARK:CL.BLACK);
+    cl.alignment=A('left'); cl.border=ALLB; if(fillc) cl.fill=FILL(fillc);
+    pcols.forEach(pc=>{
+      const c=wsR.getCell(`${pc}${row}`); c.value={formula:fx(pc)};
+      c.font=F(11,bold); if(fmt) c.numFmt=fmt;
+      c.alignment=A(center?'center':'right'); c.border=ALLB;
+      if(fillc) c.fill=FILL(fillc);
+    });
+    const cE=wsR.getCell(`${tcol}${row}`); cE.border=ALLB; cE.alignment=A('right'); cE.font=F(11,true,CL.GREEN_DARK);
+    if(total){
+      cE.value={formula:`SUM(${pcols[0]}${row}:${pcols[nprod-1]}${row})`};
+      if(fmt) cE.numFmt=fmt;
+    }
+    if(fillc) cE.fill=FILL(fillc);
+  }
+
+  calc(14,'Total de cajas',          c=>`${c}7*${c}8`, FMT.N0, {total:true});
+  calc(15,'Total de kilogramos',     c=>`${c}14*${c}9`, FMT.N2, {total:true});
+  calc(16,'Total de libras',         c=>`${c}15*${FACTOR}`, FMT.N2, {total:true});
+  calc(17,'Total de unidades',       c=>`${c}14*${c}10`, FMT.N0, {total:true});
+  calc(18,'Cantidad en unidad de venta', c=>`IF(${c}5="unidad",${c}17,IF(${c}5="kg",${c}15,${c}16))`, FMT.N2);
+  calc(19,'Venta bruta (Q)',         c=>`${c}11*${c}18`, FMT.GTQ, {total:true,bold:true});
+  calc(20,'(−) Retenciones IVA + pronto pago (Q)', c=>`${c}19*(${IVA}/(1+${IVA}))*${RETIVA}+${c}19*${PRONTO}`, FMT.GTQ, {total:true});
+  calc(21,'Venta neta (Q)',          c=>`${c}19-${c}20`, FMT.GTQ, {total:true,bold:true});
+  calc(22,'(−) Gastos México prorrateados (Q)',    c=>`IFERROR(${GMX}*${c}15/${TOTKG},0)`, FMT.GTQ, {total:true});
+  calc(23,'(−) Gastos Guatemala prorrateados (Q)', c=>`IFERROR(${GGT}*${c}15/${TOTKG},0)`, FMT.GTQ, {total:true});
+  calc(24,'(−) Comisión AGROAJUA (Q)',             c=>`${c}12*${c}18`, FMT.GTQ, {total:true});
+  calc(25,'PAGO AL PRODUCTOR (Q)',   c=>`${c}21-${c}22-${c}23-${c}24`, FMT.GTQ, {total:true,bold:true,fillc:CL.TOTAL});
+  calc(26,'PAGO AL PRODUCTOR (MXN)', c=>`IFERROR(${c}25/${TC_MXN},0)`, FMT.MXN, {total:true,bold:true,fillc:CL.TOTAL});
+  calc(27,'Base de costo (kg o unidades)', c=>`IF(${c}5="unidad",${c}17,${c}15)`, FMT.N2);
+  calc(28,'Máximo a pagar (MXN por unidad)', c=>`IFERROR(${c}26/${c}27,0)`, FMT.MXN, {bold:true});
+  calc(29,'Costo sugerido (MXN por unidad)', c=>`${c}13`, FMT.MXN);
+  calc(30,'Holgura (MXN por unidad)', c=>`${c}28-${c}29`, FMT.MXN);
+  calc(31,'Total sugerido (MXN)',    c=>`${c}29*${c}27`, FMT.MXN, {total:true});
+  calc(32,'¿Cabe el costo sugerido?', c=>`IF(${c}28>=${c}29,"✓ Cabe","✗ No cabe")`, null, {bold:true,center:true});
+
+  // Total pallets en columna TOTAL fila 7 (para dashboard)
+  const cE7=wsR.getCell(`${tcol}7`);
+  cE7.value={formula:`SUM(${pcols[0]}7:${pcols[nprod-1]}7)`};
+  cE7.font=F(11,true,CL.GREEN_DARK); cE7.numFmt=FMT.N0; cE7.alignment=A('right'); cE7.border=ALLB;
+
+  // Refs para otras hojas
+  const T=(row)=>`Productos!${tcol}${row}`;
+  const RANGO_NOM=`Productos!${pcols[0]}4:${pcols[nprod-1]}4`;
+
+  // ============================================================
+  // HOJA 4: RESUMEN (dashboard)
+  // ============================================================
+  const wsRs=wb.addWorksheet('Resumen',{views:[{showGridLines:false}]});
+  wsRs.columns=[{width:3},{width:22},{width:18},{width:3},{width:22},{width:18},{width:3},{width:22},{width:18},{width:3}];
+
+  // Header AGROAJUA
+  wsRs.mergeCells('A1:J3');
+  const cBrand=wsRs.getCell('A1'); cBrand.value='AGROAJUA'; cBrand.font=F(26,true,CL.WHITE); cBrand.alignment=A('left');
+  for(let c=1;c<=10;c++){ wsRs.getCell(1,c).fill=FILL(CL.GREEN_DARK); wsRs.getCell(2,c).fill=FILL(CL.GREEN_DARK); wsRs.getCell(3,c).fill=FILL(CL.GREEN_DARK); }
+  wsRs.getRow(3).height=18;
+
+  wsRs.mergeCells('A4:J4');
+  const cSub=wsRs.getCell('A4'); cSub.value='COTIZACIÓN DE IMPORTACIÓN  ·  México → Guatemala  ·  análisis de pago máximo al productor';
+  cSub.font=F(11,true,CL.GOLD);
+  for(let c=1;c<=10;c++) wsRs.getCell(4,c).fill=FILL(CL.CREAM);
+  wsRs.getRow(4).height=22;
+
+  // Identidad
+  wsRs.getCell('B6').value='Cotización N°'; wsRs.getCell('B6').font=F(9,true,CL.GRAY);
+  wsRs.getCell('B7').value={formula:'Parametros!B5'}; wsRs.getCell('B7').font=F(13,true,CL.GREEN_DARK);
+  wsRs.getCell('E6').value='Fecha'; wsRs.getCell('E6').font=F(9,true,CL.GRAY);
+  wsRs.getCell('E7').value={formula:'Parametros!B6'}; wsRs.getCell('E7').font=F(13,true,CL.GREEN_DARK); wsRs.getCell('E7').numFmt='dd/mm/yyyy';
+  wsRs.getCell('H6').value='Productor'; wsRs.getCell('H6').font=F(9,true,CL.GRAY);
+  wsRs.getCell('H7').value={formula:'Parametros!B7'}; wsRs.getCell('H7').font=F(13,true,CL.GREEN_DARK);
+
+  function rband(row,text){
+    wsRs.mergeCells(`A${row}:J${row}`);
+    wsRs.getCell(`A${row}`).value=text; wsRs.getCell(`A${row}`).font=F(10,true,CL.WHITE);
+    for(let c=1;c<=10;c++) wsRs.getCell(row,c).fill=FILL(CL.GREEN_MED);
+    wsRs.getRow(row).height=20;
+  }
+  function kpi(col,row,label,fx,fmt,sub=null,subfmt=null,vc=CL.GREEN_DARK){
+    wsRs.getCell(`${col}${row}`).value=label; wsRs.getCell(`${col}${row}`).font=F(8.5,true,CL.GOLD);
+    const cv=wsRs.getCell(`${col}${row+1}`); cv.value={formula:fx}; cv.font=F(15,true,vc); cv.numFmt=fmt;
+    if(sub!=null){
+      const cs=wsRs.getCell(`${col}${row+2}`);
+      if(typeof sub==='string'&&sub.startsWith('=')) cs.value={formula:sub.slice(1)};
+      else if(typeof sub==='string') cs.value=sub;
+      else cs.value=sub;
+      cs.font=F(9,false,CL.GRAY); if(subfmt) cs.numFmt=subfmt;
+    }
+  }
+  rband(9,'INDICADORES CLAVE DE LA OPERACIÓN');
+  kpi('B',11,'VENTA BRUTA',T(19),FMT.GTQ,`=${T(19)}/${TC_USD}`,FMT.MXN);
+  kpi('E',11,'VENTA NETA (post retenciones)',T(21),FMT.GTQ,`=${T(21)}/${TC_USD}`,FMT.MXN);
+  kpi('H',11,'GASTOS DE IMPORTACIÓN',GTOT,FMT.GTQ,`=${GTOT}/${T(21)}`,FMT.PCT);
+  kpi('B',15,'COMISIÓN AGROAJUA',T(24),FMT.GTQ,`=${T(24)}/${T(19)}`,FMT.PCT);
+  kpi('E',15,'PAGO AL PRODUCTOR',T(25),FMT.GTQ,`=${T(26)}`,FMT.MXN,CL.GOLD);
+  kpi('H',15,'% AL PRODUCTOR (de venta bruta)',`${T(25)}/${T(19)}`,FMT.PCT,'lo que retorna a origen');
+  kpi('B',19,'Q/LB PROMEDIO AL PRODUCTOR',`${T(25)}/${T(16)}`,FMT.GTQ,`=${T(26)}/${T(16)}`,'"$" #,##0.00 "MXN/lb"');
+  kpi('E',19,'PRECIO PROMEDIO DE VENTA',`${T(19)}/${T(16)}`,'"Q" #,##0.0000','Q por libra · venta bruta');
+  kpi('H',19,'RENDIMIENTO (pago ÷ gastos)',`${T(25)}/${GTOT}`,'0.00"x"','pago productor sobre gastos');
+
+  rband(23,'RESUMEN DEL CONTENEDOR');
+  const kpiRow=[
+    ['B','Pallets',T(7),FMT.N0],['C','Cajas',T(14),FMT.N0],
+    ['E','Kilogramos',T(15),FMT.N2],['F','Libras',T(16),FMT.N2],
+    ['H','Unidades',T(17),FMT.N0],['I','Productos',`COUNTA(${RANGO_NOM})`,FMT.N0],
+  ];
+  kpiRow.forEach(([col,l,fx,fmt])=>{
+    wsRs.getCell(`${col}25`).value=l; wsRs.getCell(`${col}25`).font=F(8.5,true,CL.GOLD);
+    const cv=wsRs.getCell(`${col}26`); cv.value={formula:fx}; cv.font=F(14,true,CL.GREEN_DARK); cv.numFmt=fmt;
+  });
+  wsRs.mergeCells('A28:J28');
+  wsRs.getCell('A28').value='Documento generado por AGROAJUA · contacto@agroajua.com';
+  wsRs.getCell('A28').font=F(8,false,CL.GRAY);
+
+  // ============================================================
+  // HOJA 5: ANALISIS (cascada financiera)
+  // ============================================================
+  const wsAn=wb.addWorksheet('Analisis',{views:[{showGridLines:false}]});
+  wsAn.columns=[{width:42},{width:22},{width:22}];
+  band(wsAn,1,'ANÁLISIS FINANCIERO DEL CONTENEDOR','C');
+  wsAn.mergeCells('A2:C2');
+  wsAn.getCell('A2').value='Venta − retenciones − gastos − comisión = disponible para el productor.';
+  wsAn.getCell('A2').font=F(9,false,CL.GOLD,true);
+
+  sec(wsAn,4,'CASCADA FINANCIERA','C');
+  ['CONCEPTO','MONTO (GTQ)','MONTO (MXN)'].forEach((h,i)=>{
+    const c=wsAn.getCell(5,i+1); c.value=h; c.font=F(9,true,CL.WHITE);
+    c.fill=FILL(CL.GREEN_DARK); c.alignment=A(i?'center':'left'); c.border=ALLB;
+  });
+  const casc=[
+    ['Venta bruta total',T(19),true],
+    ['(−) Retenciones (IVA + pronto pago)',T(20),false],
+    ['Venta neta',T(21),true],
+    ['(−) Gastos México (prorrateado)',T(22),false],
+    ['(−) Gastos Guatemala (prorrateado)',T(23),false],
+    ['(−) Comisión AGROAJUA',T(24),false],
+    ['DISPONIBLE PARA PRODUCTOR',T(25),true],
+  ];
+  let rr=6;
+  casc.forEach(([l,ref,bold])=>{
+    const cA=wsAn.getCell(`A${rr}`); cA.value=l; cA.font=F(11,bold,bold?CL.GREEN_DARK:CL.BLACK); cA.border=ALLB;
+    const cB=wsAn.getCell(`B${rr}`); cB.value={formula:ref}; cB.font=F(11,bold,CL.GREENTXT); cB.numFmt=FMT.GTQ; cB.alignment=A('right'); cB.border=ALLB;
+    const cC=wsAn.getCell(`C${rr}`); cC.value={formula:`${ref}/${TC_MXN}`}; cC.font=F(11,bold); cC.numFmt=FMT.MXN; cC.alignment=A('right'); cC.border=ALLB;
+    if(bold){ cA.fill=FILL(CL.TOTAL); cB.fill=FILL(CL.TOTAL); cC.fill=FILL(CL.TOTAL); }
+    rr++;
+  });
+
+  const r_sec=rr+1;
+  sec(wsAn,r_sec,'PAGO MÁXIMO POR PRODUCTO','C');
+  const r_h=r_sec+1;
+  ['PRODUCTO','MÁXIMO (MXN/u)','TOTAL SUGERIDO (MXN)'].forEach((h,i)=>{
+    const c=wsAn.getCell(r_h,i+1); c.value=h; c.font=F(9,true,CL.WHITE);
+    c.fill=FILL(CL.GREEN_DARK); c.alignment=A(i?'center':'left'); c.border=ALLB;
+  });
+  let rA=r_h+1;
+  pcols.forEach(pc=>{
+    const cA=wsAn.getCell(`A${rA}`); cA.value={formula:`Productos!${pc}4`}; cA.font=F(11,false,CL.GREEN_DARK); cA.border=ALLB;
+    const cB=wsAn.getCell(`B${rA}`); cB.value={formula:`Productos!${pc}28`}; cB.numFmt=FMT.MXN; cB.alignment=A('right'); cB.border=ALLB; cB.font=F(11);
+    const cC=wsAn.getCell(`C${rA}`); cC.value={formula:`Productos!${pc}31`}; cC.numFmt=FMT.MXN; cC.alignment=A('right'); cC.border=ALLB; cC.font=F(11);
+    rA++;
+  });
+  const cTotA=wsAn.getCell(`A${rA}`); cTotA.value='TOTAL SUGERIDO (MXN)'; cTotA.font=F(11,true); cTotA.fill=FILL(CL.TOTAL); cTotA.border=ALLB;
+  wsAn.getCell(`B${rA}`).fill=FILL(CL.TOTAL); wsAn.getCell(`B${rA}`).border=ALLB;
+  const cTotC=wsAn.getCell(`C${rA}`); cTotC.value={formula:`SUM(C${r_h+1}:C${rA-1})`};
+  cTotC.font=F(11,true); cTotC.numFmt=FMT.MXN; cTotC.alignment=A('right'); cTotC.fill=FILL(CL.TOTAL); cTotC.border=ALLB;
+
+  // ── Reordenar hojas: Resumen primero ─────────────────────────
+  wsRs.orderNo=0; wsP.orderNo=1; wsG.orderNo=2; wsR.orderNo=3; wsAn.orderNo=4;
+
+  // Print setup en cada hoja
+  wb.worksheets.forEach(s=>{
+    s.pageSetup.orientation='landscape';
+    s.pageSetup.fitToPage=true;
+    s.pageSetup.fitToWidth=1; s.pageSetup.fitToHeight=0;
+    s.pageSetup.margins={left:0.4,right:0.4,top:0.5,bottom:0.5,header:0.3,footer:0.3};
+  });
+
+  // ── Descargar ────────────────────────────────────────────────
   const safeNum=numero.replace(/[^a-zA-Z0-9_-]/g,'_');
-  XLSX.writeFile(wb, `cotizacion-${safeNum}-${fecha}.xlsx`);
+  const buf=await wb.xlsx.writeBuffer();
+  const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const a=document.createElement('a');
+  const url=URL.createObjectURL(blob);
+  a.href=url; a.download=`cotizacion-${safeNum}-${fechaStr}.xlsx`;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); },100);
 }
 
 async function enviarAportal(){
