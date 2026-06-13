@@ -242,6 +242,7 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
 }
 @media (max-width:780px){.page{padding:24px 18px;}.head-row{flex-direction:column;}.meta{text-align:left;}table.t{font-size:.78rem;}}
 </style>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -409,6 +410,7 @@ footer.doc-foot{margin-top:50px;padding-top:20px;border-top:1px solid var(--rule
 
   <div class="actions">
     <button class="btn btn-secondary" onclick="loadCotizacionPicker()">Cargar cotización</button>
+    <button class="btn btn-secondary" onclick="descargarExcel()" title="Descarga la cotización completa como archivo Excel para mandarla al productor">📊 Descargar Excel</button>
     <button class="btn btn-secondary" onclick="printDoc()">Imprimir / PDF</button>
     <button class="btn btn-secondary" onclick="saveCotizacion()">Guardar cotización</button>
     <button class="btn btn-print" onclick="enviarAportal()" title="Asigna email del productor + envía la cotización al portal proveedores.agroajua.com">Enviar al portal del productor</button>
@@ -920,6 +922,203 @@ async function saveCotizacion(extraFields){
     return false;
   }
 }
+// ── Descargar Excel — genera .xlsx con todo el desglose para mandar al productor
+function descargarExcel(){
+  if(typeof XLSX==='undefined'){ alert('SheetJS no cargado todavía. Refrescá la página.'); return; }
+  // Asegurar cálculos al día
+  recalc();
+
+  const numero=$('m-numero').value.trim() || 'SIN-NUMERO';
+  const fecha=$('m-fecha').value || today();
+  const productor=$('m-productor').value || '';
+  const productorEmail=$('m-productorEmail').value || '';
+  const ubicacion=$('m-ubic').value || '';
+  const nit=$('m-nit').value || '';
+  const contacto=$('m-contacto').value || '';
+
+  const tc=parseFloat($('tcMXN').value)||0.4425;
+  const tcUSD=parseFloat($('tcUSD').value)||7.78;
+  const ivaPct=parseFloat($('ivaPct').value)||12;
+  const retIvaPct=parseFloat($('retIvaPct').value)||80;
+  const prontoPct=parseFloat($('prontoPct').value)||1.25;
+
+  // Totales del contenedor
+  let totalKg=0, totalLbs=0, totalCajas=0, totalPallets=0, totalUnid=0;
+  productos.forEach(p=>{
+    const kg=+p.kgCaja||0, ue=+p.uniCaja||0, cxp=+p.cajasPorPallet||0, pall=+p.pallets||0;
+    const cajas=cxp*pall;
+    totalKg+=cajas*kg; totalLbs+=cajas*kg*2.20462; totalCajas+=cajas; totalPallets+=pall;
+    if(p.modoVenta==='unidad') totalUnid+=cajas*ue;
+  });
+
+  const wb=XLSX.utils.book_new();
+
+  // ── Hoja 1: RESUMEN ──
+  const resumen=[
+    ['COTIZACIÓN DE IMPORTACIÓN MÉXICO → GUATEMALA'],
+    [''],
+    ['Cotización N°', numero],
+    ['Fecha', fecha],
+    ['Productor', productor],
+    ['Email portal', productorEmail],
+    ['Ubicación', ubicacion],
+    ['NIT/RFC', nit],
+    ['Contacto', contacto],
+    [''],
+    ['── CONFIGURACIÓN ──'],
+    ['TC MXN → GTQ', tc],
+    ['TC USD → GTQ', tcUSD],
+    ['IVA Guatemala (%)', ivaPct],
+    ['Retención IVA cliente (%)', retIvaPct],
+    ['Pronto pago (%)', prontoPct],
+    [''],
+    ['── CONTENEDOR ──'],
+    ['Total pallets', totalPallets],
+    ['Total cajas', totalCajas],
+    ['Total kg', +totalKg.toFixed(2)],
+    ['Total lbs', +totalLbs.toFixed(2)],
+    ['Total unidades', totalUnid],
+    ['Cantidad productos', productos.length],
+  ];
+  const wsResumen=XLSX.utils.aoa_to_sheet(resumen);
+  wsResumen['!cols']=[{wch:28},{wch:24}];
+  XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen');
+
+  // ── Hoja 2: GASTOS ──
+  const gastosRows=[
+    ['GASTOS DEL CONTENEDOR'],
+    [''],
+    ['── México (origen) ──'],
+    ['Concepto', 'Monto MXN', 'Equivalente GTQ'],
+  ];
+  let totMXmxn=0, totMXgtq=0;
+  gastosMX.forEach(g=>{
+    const m=parseFloat(g.monto)||0;
+    totMXmxn+=m; totMXgtq+=m*tc;
+    gastosRows.push([g.concepto, m, +(m*tc).toFixed(2)]);
+  });
+  gastosRows.push(['TOTAL ORIGEN', +totMXmxn.toFixed(2), +totMXgtq.toFixed(2)]);
+  gastosRows.push(['']);
+  gastosRows.push(['── Guatemala (destino) ──']);
+  gastosRows.push(['Concepto', 'Monto GTQ', '']);
+  let totGTgtq=0;
+  gastosGT.forEach(g=>{
+    const m=parseFloat(g.monto)||0;
+    totGTgtq+=m;
+    gastosRows.push([g.concepto, +m.toFixed(2), '']);
+  });
+  gastosRows.push(['TOTAL DESTINO', +totGTgtq.toFixed(2), '']);
+  gastosRows.push(['']);
+  gastosRows.push(['TOTAL GASTOS GTQ', +(totMXgtq+totGTgtq).toFixed(2), '']);
+  const wsGastos=XLSX.utils.aoa_to_sheet(gastosRows);
+  wsGastos['!cols']=[{wch:36},{wch:18},{wch:18}];
+  XLSX.utils.book_append_sheet(wb, wsGastos, 'Gastos');
+
+  // ── Hoja 3: PRODUCTOS ──
+  const prodRows=[
+    ['PRODUCTOS — DETALLE Y CÁLCULO'],
+    [''],
+    [
+      'Producto','Empaque','Modo venta','Pallets','Cajas/pallet','Total cajas',
+      'Kg/caja','Unid/caja','Total kg','Total lbs','Total unidades',
+      'Precio venta (Q/u)','Comisión AJUA (Q/u)','Costo sugerido (MXN/u)',
+      'Venta bruta (Q)','Retenciones (Q)','Venta neta (Q)',
+      'Gastos MX prorr. (Q)','Gastos GT prorr. (Q)','Comisión (Q)','Pago productor (Q)',
+      'Pago productor (MXN)','Máximo MXN/u','Propuesta productor (MXN/u)',
+    ],
+  ];
+  productos.forEach(p=>{
+    const isU=p.modoVenta==='unidad';
+    const cxp=+p.cajasPorPallet||0, pall=+p.pallets||0;
+    const totC=cxp*pall;
+    prodRows.push([
+      p.nombre||'—',
+      p.empaque||'caja',
+      isU?'unidad':'lb',
+      pall,
+      cxp,
+      totC,
+      +p.kgCaja||0,
+      +p.uniCaja||0,
+      +(totC*(+p.kgCaja||0)).toFixed(2),
+      +(totC*(+p.kgCaja||0)*2.20462).toFixed(2),
+      isU?totC*(+p.uniCaja||0):0,
+      +parseFloat(p.precioVentaU)||0,
+      +parseFloat(p.comPorU)||0,
+      p.costoSugeridoMXN||'',
+      +(p._ventaBruta||0).toFixed(2),
+      +(p._retenciones||0).toFixed(2),
+      +(p._ventaNeta||0).toFixed(2),
+      +(p._gMXp||0).toFixed(2),
+      +(p._gGTp||0).toFixed(2),
+      +(p._comProd||0).toFixed(2),
+      +(p._dispGTQ||0).toFixed(2),
+      +(p._dispMXN||0).toFixed(2),
+      +(p._maxMXNu||0).toFixed(4),
+      p.propuestaProductor||'',
+    ]);
+  });
+  const wsProd=XLSX.utils.aoa_to_sheet(prodRows);
+  wsProd['!cols']=[
+    {wch:28},{wch:10},{wch:11},{wch:8},{wch:11},{wch:11},
+    {wch:9},{wch:9},{wch:10},{wch:10},{wch:13},
+    {wch:14},{wch:15},{wch:18},
+    {wch:14},{wch:14},{wch:14},
+    {wch:16},{wch:16},{wch:13},{wch:18},
+    {wch:18},{wch:14},{wch:18},
+  ];
+  XLSX.utils.book_append_sheet(wb, wsProd, 'Productos');
+
+  // ── Hoja 4: ANÁLISIS ──
+  let sumVB=0, sumRet=0, sumVN=0, sumGMX=0, sumGGT=0, sumCom=0, sumDispGTQ=0;
+  productos.forEach(p=>{
+    sumVB+=p._ventaBruta||0;
+    sumRet+=p._retenciones||0;
+    sumVN+=p._ventaNeta||0;
+    sumGMX+=p._gMXp||0;
+    sumGGT+=p._gGTp||0;
+    sumCom+=p._comProd||0;
+    sumDispGTQ+=p._dispGTQ||0;
+  });
+  const sumDispMXN=tc>0?sumDispGTQ/tc:0;
+  const analisis=[
+    ['ANÁLISIS FINANCIERO DEL CONTENEDOR'],
+    [''],
+    ['Concepto', 'Monto (GTQ)'],
+    ['Venta bruta total', +sumVB.toFixed(2)],
+    ['− Retenciones (IVA + pronto pago)', +sumRet.toFixed(2)],
+    ['Venta neta', +sumVN.toFixed(2)],
+    ['− Gastos México (prorrateado)', +sumGMX.toFixed(2)],
+    ['− Gastos Guatemala (prorrateado)', +sumGGT.toFixed(2)],
+    ['− Comisión AGROAJUA', +sumCom.toFixed(2)],
+    ['= DISPONIBLE PARA PRODUCTOR', +sumDispGTQ.toFixed(2)],
+    [''],
+    ['Equivalente en MXN', +sumDispMXN.toFixed(2)],
+    ['TC usado', tc],
+    [''],
+    ['── POR PRODUCTO ──'],
+    ['Producto','Máximo MXN/u','Unidad neg.','Cantidad neg.','Total máximo MXN'],
+  ];
+  productos.forEach(p=>{
+    const isU=p.modoVenta==='unidad';
+    const cantNeg=isU?(p._unidTotal||0):(p._kgTotal||0);
+    analisis.push([
+      p.nombre||'—',
+      +(p._maxMXNu||0).toFixed(4),
+      isU?'unidad':'kg',
+      +cantNeg.toFixed(2),
+      +((p._maxMXNu||0)*cantNeg).toFixed(2),
+    ]);
+  });
+  const wsAnalisis=XLSX.utils.aoa_to_sheet(analisis);
+  wsAnalisis['!cols']=[{wch:36},{wch:16},{wch:14},{wch:16},{wch:18}];
+  XLSX.utils.book_append_sheet(wb, wsAnalisis, 'Analisis');
+
+  // Descargar
+  const safeNum=numero.replace(/[^a-zA-Z0-9_-]/g,'_');
+  XLSX.writeFile(wb, `cotizacion-${safeNum}-${fecha}.xlsx`);
+}
+
 async function enviarAportal(){
   const numero=$('m-numero').value.trim();
   const email=($('m-productorEmail').value||'').trim().toLowerCase();
